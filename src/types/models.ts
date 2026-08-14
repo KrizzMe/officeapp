@@ -34,15 +34,23 @@ export interface UserProfile {
   /** Standard-Wegstrecke Wohnadresse -> Arbeitsadresse in km. Pro Tag überschreibbar (DayEntry.distanceKm). */
   defaultCommuteDistanceKm: number
   bundesland: Bundesland
-  /** Regelurlaub in Tagen/Jahr. */
-  annualVacationDays: number
-  /** Resturlaub aus dem Vorjahr in Tagen. */
-  carryoverVacationDays: number
+  /**
+   * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
+   * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein
+   * Sonderfall. Beim Onboarding vorbelegt mit den IDs 'urlaub' und
+   * 'resturlaub', danach frei um weitere Arten ergänzbar (Abschnitt 4.3).
+   */
   vacationTypes: VacationType[]
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */
 export type BaseDayStatus = 'buero' | 'homeoffice' | 'dienstreise'
+
+/** IDs der beim Onboarding vorbelegten Urlaubsarten (siehe UserProfile.vacationTypes). */
+export const DEFAULT_VACATION_TYPE_IDS = {
+  urlaub: 'urlaub',
+  resturlaub: 'resturlaub',
+} as const
 
 /**
  * Status eines Tages: einer der festen Basis-Status oder die id einer

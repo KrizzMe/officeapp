@@ -1,37 +1,53 @@
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth'
+import { signInWithPopup, signOut } from 'firebase/auth'
 import { auth, googleProvider } from './firebase/config'
+import { useAuth } from './hooks/useAuth'
+import { useUserProfile } from './hooks/useUserProfile'
+import { ProfileSetup } from './components/ProfileSetup'
+import { CalendarPage } from './components/CalendarPage'
+import { useState } from 'react'
 
 function App() {
-  const [user, setUser] = useState<User | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => onAuthStateChanged(auth, setUser), [])
+  const { user, loading: authLoading } = useAuth()
+  const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   const login = async () => {
-    setError(null)
+    setLoginError(null)
     try {
       await signInWithPopup(auth, googleProvider)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setLoginError(err instanceof Error ? err.message : String(err))
     }
   }
 
-  return (
-    <div>
-      <h1>Office App</h1>
-      <p>Anwesenheits- &amp; Urlaubs-Tracker — Scaffold</p>
+  if (authLoading) return null
 
-      {user ? (
+  if (!user) {
+    return (
+      <div>
+        <h1>Office App</h1>
+        <p>Anwesenheits- &amp; Urlaubs-Tracker</p>
+        <button onClick={login}>Mit Google anmelden</button>
+        {loginError && <p style={{ color: 'red' }}>{loginError}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Office App</h1>
         <div>
-          <p>Angemeldet als {user.displayName} ({user.email})</p>
+          <span>{user.displayName}</span>{' '}
           <button onClick={() => signOut(auth)}>Abmelden</button>
         </div>
-      ) : (
-        <button onClick={login}>Mit Google anmelden</button>
-      )}
+      </header>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {profileLoading ? null : profile ? (
+        <CalendarPage user={user} profile={profile} />
+      ) : (
+        <ProfileSetup user={user} onDone={reload} />
+      )}
     </div>
   )
 }
