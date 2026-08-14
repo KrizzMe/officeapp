@@ -666,8 +666,22 @@ select.input:focus {
 .weekday-row,
 .month-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-1);
+}
+
+/*
+ * Mobil (< 640px) wird ohne Wochenende dargestellt — bei 7 Spalten auf
+ * schmalen Bildschirmen war jede Zelle kaum noch nutzbar. Sa/So sind in
+ * jeder Woche des Grids (getMonthGrid, immer volle Mo-So-Wochen) fest an
+ * Position 6/7 jedes 7er-Zyklus, daher per nth-child ausblendbar statt
+ * die Grid-Erzeugung selbst anzupassen.
+ */
+.weekday-row > div:nth-child(7n - 1),
+.weekday-row > div:nth-child(7n),
+.day-cell:nth-child(7n - 1),
+.day-cell:nth-child(7n) {
+  display: none;
 }
 
 .weekday-row {
@@ -742,9 +756,24 @@ select.input:focus {
     padding: var(--space-6);
   }
 
+  .weekday-row,
+  .month-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .weekday-row > div:nth-child(7n - 1),
+  .weekday-row > div:nth-child(7n) {
+    display: block;
+  }
+
   .day-cell {
     min-height: 84px;
     padding: var(--space-2);
+  }
+
+  .day-cell:nth-child(7n - 1),
+  .day-cell:nth-child(7n) {
+    display: flex;
   }
 
   .day-status-select {
