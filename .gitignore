@@ -20,6 +20,9 @@ docs/Steuern_2026.xlsx
 .DS_Store
 *.local
 
+# Claude Code local session config (personal, not shared)
+.claude/settings.local.json
+
 # Logs
 npm-debug.log*
 *.log
