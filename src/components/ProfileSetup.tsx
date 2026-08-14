@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
 import { DEFAULT_VACATION_TYPE_IDS } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
+import { DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
 
 interface Props {
@@ -32,6 +33,7 @@ export function ProfileSetup({ user, onDone }: Props) {
         workAddress,
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland: bundesland as UserProfile['bundesland'],
+        colorTheme: DEFAULT_COLOR_THEME,
         vacationTypes: [
           { id: DEFAULT_VACATION_TYPE_IDS.urlaub, name: 'Urlaub', totalDays: Number(urlaubTage) || 0 },
           { id: DEFAULT_VACATION_TYPE_IDS.resturlaub, name: 'Resturlaub', totalDays: Number(resturlaubTage) || 0 },

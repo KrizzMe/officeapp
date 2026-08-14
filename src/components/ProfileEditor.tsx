@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
-import type { UserProfile } from '../types/models'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import type { ColorTheme, UserProfile } from '../types/models'
 import { DEFAULT_VACATION_TYPE_IDS } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
+import { COLOR_THEMES, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
 
 interface Props {
@@ -27,8 +28,25 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [bundesland, setBundesland] = useState<UserProfile['bundesland']>(profile.bundesland)
   const [urlaubTage, setUrlaubTage] = useState(vacationDays(profile, DEFAULT_VACATION_TYPE_IDS.urlaub))
   const [resturlaubTage, setResturlaubTage] = useState(vacationDays(profile, DEFAULT_VACATION_TYPE_IDS.resturlaub))
+  const [colorTheme, setColorTheme] = useState<ColorTheme>(profile.colorTheme ?? DEFAULT_COLOR_THEME)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const themeCommitted = useRef(false)
+
+  // Direktvorschau: gewähltes Design sofort anwenden, beim Verlassen ohne
+  // Speichern wieder auf das aktuell gespeicherte Design zurücksetzen.
+  useEffect(() => {
+    document.documentElement.dataset.theme = colorTheme
+  }, [colorTheme])
+
+  useEffect(
+    () => () => {
+      if (!themeCommitted.current) {
+        document.documentElement.dataset.theme = profile.colorTheme ?? DEFAULT_COLOR_THEME
+      }
+    },
+    [profile.colorTheme],
+  )
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -44,6 +62,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         workAddress,
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland,
+        colorTheme,
         vacationTypes: [
           { id: DEFAULT_VACATION_TYPE_IDS.urlaub, name: 'Urlaub', totalDays: Number(urlaubTage) || 0 },
           { id: DEFAULT_VACATION_TYPE_IDS.resturlaub, name: 'Resturlaub', totalDays: Number(resturlaubTage) || 0 },
@@ -51,6 +70,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         ],
       }
       await saveUserProfile(updated)
+      themeCommitted.current = true
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -124,6 +144,34 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           required
         />
       </label>
+
+      <div className="field">
+        <span>Farbdesign</span>
+        <div className="theme-picker">
+          {COLOR_THEMES.map((theme) => (
+            <label
+              key={theme.id}
+              className={`theme-option${colorTheme === theme.id ? ' theme-option--active' : ''}`}
+            >
+              <input
+                type="radio"
+                name="colorTheme"
+                value={theme.id}
+                checked={colorTheme === theme.id}
+                onChange={() => setColorTheme(theme.id)}
+              />
+              <span
+                className="theme-option-swatch"
+                style={{ background: `linear-gradient(135deg, ${theme.swatches[0]}, ${theme.swatches[1]})` }}
+              />
+              <span className="theme-option-label">
+                {theme.label}
+                <small>{theme.hint}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       {error && <p className="form-error">{error}</p>}
 
