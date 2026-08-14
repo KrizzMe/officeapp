@@ -70,7 +70,14 @@ export function CalendarPage({ user, profile }: Props) {
 
   return (
     <div>
-      <Dashboard quota={quota} quotaLabel={monthLabel(year, month)} balances={balances} vacationTypes={profile.vacationTypes} />
+      <Dashboard
+        quota={quota}
+        quotaLabel={monthLabel(year, month)}
+        balances={balances}
+        vacationTypes={profile.vacationTypes}
+        homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
+        homeofficeQuote={profile.homeofficeQuote ?? 100}
+      />
 
       {warning && <p className="form-warning">{warning}</p>}
 
@@ -91,6 +98,7 @@ export function CalendarPage({ user, profile }: Props) {
           bundesland={profile.bundesland}
           entries={entries}
           vacationTypes={profile.vacationTypes}
+          homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
           onStatusChange={handleStatusChange}
           onClearStatus={handleClearStatus}
         />

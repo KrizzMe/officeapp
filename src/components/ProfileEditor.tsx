@@ -29,6 +29,8 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [urlaubTage, setUrlaubTage] = useState(vacationDays(profile, DEFAULT_VACATION_TYPE_IDS.urlaub))
   const [resturlaubTage, setResturlaubTage] = useState(vacationDays(profile, DEFAULT_VACATION_TYPE_IDS.resturlaub))
   const [colorTheme, setColorTheme] = useState<ColorTheme>(profile.colorTheme ?? DEFAULT_COLOR_THEME)
+  const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(profile.homeofficeErlaubt ?? true)
+  const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 100))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const themeCommitted = useRef(false)
@@ -63,6 +65,8 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland,
         colorTheme,
+        homeofficeErlaubt,
+        homeofficeQuote: Number(homeofficeQuote) || 0,
         vacationTypes: [
           { id: DEFAULT_VACATION_TYPE_IDS.urlaub, name: 'Urlaub', totalDays: Number(urlaubTage) || 0 },
           { id: DEFAULT_VACATION_TYPE_IDS.resturlaub, name: 'Resturlaub', totalDays: Number(resturlaubTage) || 0 },
@@ -144,6 +148,30 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           required
         />
       </label>
+
+      <label className="checkbox-label" style={{ marginBottom: 'var(--space-3)' }}>
+        <input
+          type="checkbox"
+          checked={homeofficeErlaubt}
+          onChange={(e) => setHomeofficeErlaubt(e.target.checked)}
+        />
+        <span>Home Office erlaubt</span>
+      </label>
+
+      {homeofficeErlaubt && (
+        <label className="field">
+          <span>Home-Office-Quote (max. % der Arbeitstage)</span>
+          <input
+            className="input"
+            type="number"
+            min="0"
+            max="100"
+            value={homeofficeQuote}
+            onChange={(e) => setHomeofficeQuote(e.target.value)}
+            required
+          />
+        </label>
+      )}
 
       <div className="field">
         <span>Farbdesign</span>

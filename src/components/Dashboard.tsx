@@ -6,9 +6,11 @@ interface Props {
   quotaLabel: string
   balances: VacationBalance[]
   vacationTypes: VacationType[]
+  homeofficeErlaubt: boolean
+  homeofficeQuote: number
 }
 
-export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props) {
+export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt, homeofficeQuote }: Props) {
   const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
   const colorOf = (id: string) => {
     const type = vacationTypes.find((v) => v.id === id)
@@ -16,6 +18,8 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props)
   }
   const totalRemaining = balances.reduce((sum, b) => sum + b.remainingDays, 0)
   const quotaPercent = Math.min(100, quota.ratio * 100)
+  const homeofficeActualPercent = quota.possibleWorkDays === 0 ? 0 : (quota.homeofficeDays / quota.possibleWorkDays) * 100
+  const homeofficeWithinQuote = homeofficeActualPercent <= homeofficeQuote
 
   return (
     <div className="card-grid">
@@ -38,6 +42,28 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props)
           Arbeitstagen · Ziel ≥ 40%
         </span>
       </div>
+
+      {homeofficeErlaubt && (
+        <div className="card stat-tile">
+          <span className="stat-label">Home-Office-Quote ({quotaLabel})</span>
+          <span className={`stat-value ${homeofficeWithinQuote ? 'is-positive' : 'is-negative'}`}>
+            {homeofficeActualPercent.toFixed(1)}%
+          </span>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{
+                width: `${Math.min(100, homeofficeActualPercent)}%`,
+                background: homeofficeWithinQuote ? 'var(--color-success)' : 'var(--color-danger)',
+              }}
+            />
+          </div>
+          <span className="stat-sub">
+            Homeoffice {quota.homeofficeDays} von {quota.possibleWorkDays} möglichen Arbeitstagen · Vorgabe ≤{' '}
+            {homeofficeQuote}%
+          </span>
+        </div>
+      )}
 
       <div className="card stat-tile">
         <span className="stat-label">Urlaub gesamt verbleibend</span>

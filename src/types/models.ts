@@ -43,6 +43,18 @@ export interface UserProfile {
    */
   colorTheme?: ColorTheme
   /**
+   * Ob der Status 'homeoffice' im Kalender überhaupt auswählbar ist (manche
+   * Tätigkeiten erlauben kein Homeoffice). Optional für Rückwärtskompatibilität
+   * mit Profilen von vor diesem Feature — beim Fehlen gilt true (erlaubt).
+   */
+  homeofficeErlaubt?: boolean
+  /**
+   * Vorgegebene Homeoffice-Obergrenze in Prozent der möglichen Arbeitstage
+   * (Büro + Homeoffice + Dienstreise), zum Vergleich mit der tatsächlichen
+   * Quote im Dashboard. Optional — beim Fehlen gilt 100 (keine Einschränkung).
+   */
+  homeofficeQuote?: number
+  /**
    * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
    * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein
    * Sonderfall. Beim Onboarding vorbelegt mit den IDs 'urlaub' und

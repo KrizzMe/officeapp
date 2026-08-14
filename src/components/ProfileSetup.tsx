@@ -18,6 +18,8 @@ export function ProfileSetup({ user, onDone }: Props) {
   const [bundesland, setBundesland] = useState('BY')
   const [urlaubTage, setUrlaubTage] = useState('30')
   const [resturlaubTage, setResturlaubTage] = useState('0')
+  const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(true)
+  const [homeofficeQuote, setHomeofficeQuote] = useState('100')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +36,8 @@ export function ProfileSetup({ user, onDone }: Props) {
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland: bundesland as UserProfile['bundesland'],
         colorTheme: DEFAULT_COLOR_THEME,
+        homeofficeErlaubt,
+        homeofficeQuote: Number(homeofficeQuote) || 0,
         vacationTypes: [
           { id: DEFAULT_VACATION_TYPE_IDS.urlaub, name: 'Urlaub', totalDays: Number(urlaubTage) || 0 },
           { id: DEFAULT_VACATION_TYPE_IDS.resturlaub, name: 'Resturlaub', totalDays: Number(resturlaubTage) || 0 },
@@ -110,6 +114,30 @@ export function ProfileSetup({ user, onDone }: Props) {
           required
         />
       </label>
+
+      <label className="checkbox-label" style={{ marginBottom: 'var(--space-3)' }}>
+        <input
+          type="checkbox"
+          checked={homeofficeErlaubt}
+          onChange={(e) => setHomeofficeErlaubt(e.target.checked)}
+        />
+        <span>Home Office erlaubt</span>
+      </label>
+
+      {homeofficeErlaubt && (
+        <label className="field">
+          <span>Home-Office-Quote (max. % der Arbeitstage)</span>
+          <input
+            className="input"
+            type="number"
+            min="0"
+            max="100"
+            value={homeofficeQuote}
+            onChange={(e) => setHomeofficeQuote(e.target.value)}
+            required
+          />
+        </label>
+      )}
 
       {error && <p className="form-error">{error}</p>}
 

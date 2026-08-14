@@ -34,6 +34,8 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Resturlaub aus Vorjahr (Anzahl Tage)
 - Frei definierbare **Urlaubsarten** (siehe 4.3) — pro Nutzer individuell, da sich die Arten zwischen den beiden Nutzern unterscheiden (z. B. Dispositionstage nur bei einem, Sonderurlaub nur bei der anderen Person)
 - Bundesland (für automatische Feiertagszuordnung — die bisherige Excel nutzt bayerische Feiertage, das sollte aber nicht hart codiert sein)
+- Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
+- Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
 
 ### 4.2 Tagesstatus (ein Eintrag pro Tag im Kalender)
 

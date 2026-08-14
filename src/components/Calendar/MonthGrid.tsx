@@ -11,6 +11,8 @@ interface Props {
   bundesland: Bundesland
   entries: Map<string, DayEntry>
   vacationTypes: VacationType[]
+  /** Ob der Status 'homeoffice' im Dropdown auswählbar ist (UserProfile.homeofficeErlaubt). */
+  homeofficeErlaubt: boolean
   onStatusChange: (date: Date, status: string) => void
   onClearStatus: (date: Date) => void
 }
@@ -29,6 +31,7 @@ export function MonthGrid({
   bundesland,
   entries,
   vacationTypes,
+  homeofficeErlaubt,
   onStatusChange,
   onClearStatus,
 }: Props) {
@@ -93,7 +96,9 @@ export function MonthGrid({
                   onChange={(e) => handleSelect(date, e.target.value)}
                 >
                   <option value="buero">🏢 {statusLabel('buero')}</option>
-                  <option value="homeoffice">🏠 {statusLabel('homeoffice')}</option>
+                  {(homeofficeErlaubt || statusId === 'homeoffice') && (
+                    <option value="homeoffice">🏠 {statusLabel('homeoffice')}</option>
+                  )}
                   <option value="dienstreise">✈️ {statusLabel('dienstreise')}</option>
                   <option value="krank">🤒 {statusLabel('krank')}</option>
                   <option value="kind-krank">🤧 {statusLabel('kind-krank')}</option>
