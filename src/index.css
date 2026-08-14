@@ -732,7 +732,8 @@ select.input:focus {
  * nth-child ausgeblendet — --workday-count (MonthGrid) hält die Spaltenzahl
  * synchron zur Anzahl sichtbarer Tage.
  */
-.is-non-workday {
+.weekday-row > div.is-non-workday,
+.day-cell.is-non-workday {
   display: none;
 }
 
