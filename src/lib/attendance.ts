@@ -1,18 +1,20 @@
-import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile } from '../types/models'
-import { toIsoDate } from './dates'
-import { getHolidayName, isWeekend } from './holidays'
+import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
+import { isArbeitstag, toIsoDate } from './dates'
+import { getHolidayName } from './holidays'
 
 /**
  * Effektiver Status eines Tages inkl. Fallback-Logik (Abschnitt 5.2):
- * Wochenende/Feiertag sind nie editierbar und zählen nie mit; ein Werktag
- * ohne Eintrag gilt automatisch als `buero`.
+ * arbeitsfreie Tage (UserProfile.arbeitstage, Issue #34) und Feiertage sind
+ * nie editierbar und zählen nie mit; ein Arbeitstag ohne Eintrag gilt
+ * automatisch als `buero`.
  */
 export function effectiveDayStatus(
   date: Date,
   bundesland: Bundesland,
   entry: DayEntry | undefined,
+  arbeitstage: readonly Weekday[],
 ): BaseDayStatus | string | 'wochenende' | 'feiertag' {
-  if (isWeekend(date)) return 'wochenende'
+  if (!isArbeitstag(date, arbeitstage)) return 'wochenende'
   const holiday = getHolidayName(date, bundesland)
   if (holiday) return 'feiertag'
   return entry?.status ?? 'buero'
@@ -39,13 +41,14 @@ export function calculateAttendanceQuota(
   bundesland: Bundesland,
   entries: Map<string, DayEntry>,
   requiredRatio: number,
+  arbeitstage: readonly Weekday[],
 ): AttendanceQuota {
   let officeDays = 0
   let homeofficeDays = 0
   let businessTripDays = 0
 
   for (const date of days) {
-    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)))
+    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage)
     if (status === 'buero') officeDays++
     else if (status === 'homeoffice') homeofficeDays++
     else if (status === 'dienstreise') businessTripDays++

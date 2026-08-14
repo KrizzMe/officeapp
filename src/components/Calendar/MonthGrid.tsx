@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
-import type { Bundesland, DayEntry, VacationType } from '../../types/models'
-import { getMonthGrid, toIsoDate, weekdayLabel } from '../../lib/dates'
+import type { Bundesland, DayEntry, VacationType, Weekday } from '../../types/models'
+import { ALL_WEEKDAYS } from '../../types/models'
+import { getMonthGrid, isArbeitstag, toIsoDate, weekdayLabel } from '../../lib/dates'
 import { effectiveDayStatus } from '../../lib/attendance'
 import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { statusVisual } from '../../lib/statusColors'
@@ -14,6 +15,8 @@ interface Props {
   vacationTypes: VacationType[]
   /** Ob der Status 'homeoffice' im Dropdown auswählbar ist (UserProfile.homeofficeErlaubt). */
   homeofficeErlaubt: boolean
+  /** An welchen Wochentagen der Nutzer arbeitet (UserProfile.arbeitstage, Issue #34). */
+  arbeitstage: readonly Weekday[]
   onStatusChange: (date: Date, status: string) => void
   onClearStatus: (date: Date) => void
 }
@@ -33,6 +36,7 @@ export function MonthGrid({
   entries,
   vacationTypes,
   homeofficeErlaubt,
+  arbeitstage,
   onStatusChange,
   onClearStatus,
 }: Props) {
@@ -59,10 +63,12 @@ export function MonthGrid({
   }
 
   return (
-    <div>
+    <div style={{ '--workday-count': arbeitstage.length } as CSSProperties}>
       <div className="weekday-row">
-        {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => (
-          <div key={w}>{w}</div>
+        {ALL_WEEKDAYS.map((w) => (
+          <div key={w} className={arbeitstage.includes(w) ? undefined : 'is-non-workday'}>
+            {w}
+          </div>
         ))}
       </div>
       <div className="month-grid">
@@ -70,17 +76,18 @@ export function MonthGrid({
           const inMonth = date.getMonth() === month
           const iso = toIsoDate(date)
           const holiday = getHolidayName(date, bundesland)
-          const weekend = isWeekend(date)
+          const workday = isArbeitstag(date, arbeitstage)
           const entry = entries.get(iso)
-          const status = effectiveDayStatus(date, bundesland, entry)
+          const status = effectiveDayStatus(date, bundesland, entry, arbeitstage)
           const statusId = typeof status === 'string' ? status : 'buero'
           const visual = statusVisual(statusId)
-          const muted = weekend || !!holiday
+          const muted = !workday || !!holiday
 
           const cellClass = [
             'day-cell',
             !inMonth && 'day-cell--outside',
             muted && 'day-cell--muted',
+            !workday && 'is-non-workday',
             iso === todayIso && 'day-cell--today',
           ]
             .filter(Boolean)
@@ -93,8 +100,8 @@ export function MonthGrid({
                 <span>{weekdayLabel(date)}</span>
               </div>
 
-              {weekend ? (
-                <div className="day-note">Wochenende</div>
+              {!workday ? (
+                <div className="day-note">{isWeekend(date) ? 'Wochenende' : 'Arbeitsfrei'}</div>
               ) : holiday ? (
                 <div className="day-note">{holiday}</div>
               ) : inMonth ? (

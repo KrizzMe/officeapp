@@ -1,3 +1,6 @@
+import type { Weekday } from '../types/models'
+import { ALL_WEEKDAYS } from '../types/models'
+
 export function toIsoDate(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -15,19 +18,18 @@ export function parseIsoDate(iso: string): Date {
   return new Date(year, month - 1, day)
 }
 
-export function isWeekendLocal(date: Date): boolean {
-  const day = date.getDay()
-  return day === 0 || day === 6
-}
-
-const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTH_LABELS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ]
 
-export function weekdayLabel(date: Date): string {
-  return WEEKDAY_LABELS[(date.getDay() + 6) % 7]
+export function weekdayLabel(date: Date): Weekday {
+  return ALL_WEEKDAYS[(date.getDay() + 6) % 7]
+}
+
+/** Ob `date` laut den konfigurierten Arbeitstagen ein Arbeitstag ist (Issue #34). */
+export function isArbeitstag(date: Date, arbeitstage: readonly Weekday[]): boolean {
+  return arbeitstage.includes(weekdayLabel(date))
 }
 
 export function monthLabel(year: number, month: number): string {

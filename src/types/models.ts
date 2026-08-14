@@ -12,6 +12,15 @@ export type Bundesland =
 /** Vom Nutzer wählbares Farbdesign (Issue #21). */
 export type ColorTheme = 'lila' | 'rot-weiss' | 'gelb-gruen'
 
+/** Wochentag, für konfigurierbare Arbeitstage (Issue #34). */
+export type Weekday = 'Mo' | 'Di' | 'Mi' | 'Do' | 'Fr' | 'Sa' | 'So'
+
+/** Alle Wochentage in Kalenderreihenfolge, Montag zuerst. */
+export const ALL_WEEKDAYS: readonly Weekday[] = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+/** Default-Arbeitstage für Profile ohne explizite Angabe (Rückwärtskompatibilität, Issue #34). */
+export const DEFAULT_ARBEITSTAGE: readonly Weekday[] = ['Mo', 'Di', 'Mi', 'Do', 'Fr']
+
 /** Rhythmus-Regel für Urlaubsarten mit Kontingent-Einschränkung (z. B. Dispositionstage). */
 export interface VacationTypeRhythm {
   /** z. B. "quarterly" für "1 Tag pro Quartal". Weitere Rhythmen bei Bedarf ergänzen. */
@@ -56,6 +65,14 @@ export interface UserProfile {
    * gilt 60 (bisherige feste 40/60-Regel als Default).
    */
   homeofficeQuote?: number
+  /**
+   * An welchen Wochentagen der Nutzer arbeitet (Issue #34). Bestimmt, welche
+   * Tage im Kalender als arbeitsfrei gelten statt fest Samstag/Sonntag
+   * anzunehmen — z. B. für Teilzeitkräfte mit Arbeitstagen Do-So. Optional
+   * für Rückwärtskompatibilität mit Profilen von vor diesem Feature; beim
+   * Fehlen gilt Mo-Fr (DEFAULT_ARBEITSTAGE).
+   */
+  arbeitstage?: Weekday[]
   /**
    * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
    * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein
