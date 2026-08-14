@@ -9,6 +9,9 @@ export type Bundesland =
   | 'BW' | 'BY' | 'BE' | 'BB' | 'HB' | 'HH' | 'HE' | 'MV'
   | 'NI' | 'NW' | 'RP' | 'SL' | 'SN' | 'ST' | 'SH' | 'TH'
 
+/** Vom Nutzer wählbares Farbdesign (Issue #21). */
+export type ColorTheme = 'lila' | 'rot-weiss' | 'gelb-gruen'
+
 /** Rhythmus-Regel für Urlaubsarten mit Kontingent-Einschränkung (z. B. Dispositionstage). */
 export interface VacationTypeRhythm {
   /** z. B. "quarterly" für "1 Tag pro Quartal". Weitere Rhythmen bei Bedarf ergänzen. */
@@ -34,6 +37,11 @@ export interface UserProfile {
   /** Standard-Wegstrecke Wohnadresse -> Arbeitsadresse in km. Pro Tag überschreibbar (DayEntry.distanceKm). */
   defaultCommuteDistanceKm: number
   bundesland: Bundesland
+  /**
+   * Vom Nutzer gewähltes Farbdesign. Optional für Rückwärtskompatibilität mit
+   * Profilen aus der Zeit vor Issue #21 — beim Fehlen gilt 'lila' als Default.
+   */
+  colorTheme?: ColorTheme
   /**
    * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
    * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein

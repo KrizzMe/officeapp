@@ -7,7 +7,8 @@ import { ProfileEditor } from './components/ProfileEditor'
 import { VacationTypesManager } from './components/VacationTypesManager'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { DEFAULT_COLOR_THEME } from './lib/colorThemes'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
@@ -16,6 +17,10 @@ function App() {
   const [activePanel, setActivePanel] = useState<'profile' | 'yearOverview' | null>(null)
   const editingProfile = activePanel === 'profile'
   const showYearOverview = activePanel === 'yearOverview'
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = profile?.colorTheme ?? DEFAULT_COLOR_THEME
+  }, [profile?.colorTheme])
 
   const login = async () => {
     setLoginError(null)
