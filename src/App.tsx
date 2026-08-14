@@ -5,6 +5,7 @@ import { useUserProfile } from './hooks/useUserProfile'
 import { ProfileSetup } from './components/ProfileSetup'
 import { ProfileEditor } from './components/ProfileEditor'
 import { VacationTypesManager } from './components/VacationTypesManager'
+import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
 import { useEffect, useState } from 'react'
@@ -93,6 +94,7 @@ function App() {
                 onCancel={() => setActivePanel(null)}
               />
               <VacationTypesManager profile={profile} onUpdated={reload} />
+              <ColorThemeEditor profile={profile} onSaved={reload} />
             </>
           )}
           {!editingProfile && showYearOverview && <YearOverview user={user} profile={profile} />}

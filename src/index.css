@@ -441,6 +441,27 @@ a {
   max-width: 480px;
 }
 
+/*
+ * Breitere Variante für Formulare mit Zwei-Spalten-Layout auf Desktop
+ * (z. B. ProfileEditor: Adresse links, Bundesland/Wegstrecke rechts).
+ * Unter 640px bleibt es bei der schmalen, einspaltigen form-card-Breite.
+ */
+@media (min-width: 640px) {
+  .form-card--wide {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 640px) {
+  .profile-address-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, auto);
+    grid-auto-flow: column;
+    column-gap: var(--space-4);
+  }
+}
+
 .field {
   display: flex;
   flex-direction: column;
