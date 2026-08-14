@@ -13,8 +13,9 @@ function App() {
   const { user, loading: authLoading } = useAuth()
   const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
   const [loginError, setLoginError] = useState<string | null>(null)
-  const [editingProfile, setEditingProfile] = useState(false)
-  const [showYearOverview, setShowYearOverview] = useState(false)
+  const [activePanel, setActivePanel] = useState<'profile' | 'yearOverview' | null>(null)
+  const editingProfile = activePanel === 'profile'
+  const showYearOverview = activePanel === 'yearOverview'
 
   const login = async () => {
     setLoginError(null)
@@ -53,12 +54,18 @@ function App() {
         <div className="app-header-user">
           <span className="user-name">{user.displayName}</span>
           {profile && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setEditingProfile((v) => !v)}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActivePanel((v) => (v === 'profile' ? null : 'profile'))}
+            >
               {editingProfile ? 'Profil-Bearbeitung schließen' : 'Profil bearbeiten'}
             </button>
           )}
           {profile && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowYearOverview((v) => !v)}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActivePanel((v) => (v === 'yearOverview' ? null : 'yearOverview'))}
+            >
               {showYearOverview ? 'Jahresübersicht schließen' : 'Jahresübersicht'}
             </button>
           )}
@@ -75,10 +82,10 @@ function App() {
               <ProfileEditor
                 profile={profile}
                 onSaved={() => {
-                  setEditingProfile(false)
+                  setActivePanel(null)
                   reload()
                 }}
-                onCancel={() => setEditingProfile(false)}
+                onCancel={() => setActivePanel(null)}
               />
               <VacationTypesManager profile={profile} onUpdated={reload} />
             </>
