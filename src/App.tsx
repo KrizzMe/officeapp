@@ -83,8 +83,8 @@ function App() {
               <VacationTypesManager profile={profile} onUpdated={reload} />
             </>
           )}
-          {showYearOverview && <YearOverview user={user} profile={profile} />}
-          <CalendarPage user={user} profile={profile} />
+          {!editingProfile && showYearOverview && <YearOverview user={user} profile={profile} />}
+          {!editingProfile && <CalendarPage user={user} profile={profile} />}
         </>
       ) : (
         <ProfileSetup user={user} onDone={reload} />
