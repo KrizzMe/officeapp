@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
-import { getMonthDays, monthLabel, toIsoDate } from '../lib/dates'
+import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
@@ -25,11 +25,7 @@ export function CalendarPage({ user, profile, onProfileChange }: Props) {
 
   const entries = useYearEntries(user.uid, year)
 
-  const yearDays = useMemo(() => {
-    const days: Date[] = []
-    for (let m = 0; m < 12; m++) days.push(...getMonthDays(year, m))
-    return days
-  }, [year])
+  const yearDays = useMemo(() => getYearDays(year), [year])
 
   // Anwesenheitsquote bezieht sich auf den gerade angezeigten Monat, nicht
   // aufs ganze Jahr — sonst würden unbelegte Zukunftsmonate (Fallback auf
@@ -77,7 +73,7 @@ export function CalendarPage({ user, profile, onProfileChange }: Props) {
 
   return (
     <div>
-      <Dashboard quota={quota} balances={balances} vacationTypes={profile.vacationTypes} />
+      <Dashboard quota={quota} quotaLabel={monthLabel(year, month)} balances={balances} vacationTypes={profile.vacationTypes} />
 
       {warning && <p className="form-warning">{warning}</p>}
 

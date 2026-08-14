@@ -5,6 +5,7 @@ import { useUserProfile } from './hooks/useUserProfile'
 import { ProfileSetup } from './components/ProfileSetup'
 import { ProfileEditor } from './components/ProfileEditor'
 import { CalendarPage } from './components/CalendarPage'
+import { YearOverview } from './components/YearOverview'
 import { useState } from 'react'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [editingProfile, setEditingProfile] = useState(false)
+  const [showYearOverview, setShowYearOverview] = useState(false)
 
   const login = async () => {
     setLoginError(null)
@@ -54,6 +56,11 @@ function App() {
               {editingProfile ? 'Profil-Bearbeitung schließen' : 'Profil bearbeiten'}
             </button>
           )}
+          {profile && (
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowYearOverview((v) => !v)}>
+              {showYearOverview ? 'Jahresübersicht schließen' : 'Jahresübersicht'}
+            </button>
+          )}
           <button className="btn btn-secondary btn-sm" onClick={() => signOut(auth)}>
             Abmelden
           </button>
@@ -72,6 +79,7 @@ function App() {
               onCancel={() => setEditingProfile(false)}
             />
           )}
+          {showYearOverview && <YearOverview user={user} profile={profile} />}
           <CalendarPage user={user} profile={profile} onProfileChange={reload} />
         </>
       ) : (
