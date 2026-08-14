@@ -76,7 +76,13 @@ export function CalendarPage({ user, profile }: Props) {
 
   return (
     <div>
-      <Dashboard quota={quota} quotaLabel={monthLabel(year, month)} balances={balances} vacationTypes={profile.vacationTypes} />
+      <Dashboard
+        quota={quota}
+        quotaLabel={monthLabel(year, month)}
+        balances={balances}
+        vacationTypes={profile.vacationTypes}
+        homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
+      />
 
       {warning && <p className="form-warning">{warning}</p>}
 

@@ -11,7 +11,7 @@ interface Props {
 }
 
 /**
- * Jahresweite 40/60-Anwesenheitsquote (Abschnitt 5.1, Issue #7) — bewusst
+ * Jahresweite Anwesenheitsquote (Abschnitt 5.1, Issue #7) — bewusst
  * getrennt von CalendarPage, damit die dortige Monatslogik (Quote bezieht
  * sich auf den angezeigten Monat) unverändert bleibt. calculateAttendanceQuota
  * wird hier einmal übers ganze Jahr und einmal je Monat aufgerufen.
@@ -36,6 +36,7 @@ export function YearOverview({ user, profile }: Props) {
   )
 
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
+  const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
 
   return (
     <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
@@ -49,27 +50,29 @@ export function YearOverview({ user, profile }: Props) {
         </button>
       </div>
 
-      <div className="card-grid">
-        <div className="card stat-tile">
-          <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
-          <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-            {(yearQuota.ratio * 100).toFixed(1)}%
-          </span>
-          <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${yearQuotaPercent}%`,
-                background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-              }}
-            />
+      {homeofficeErlaubt && (
+        <div className="card-grid">
+          <div className="card stat-tile">
+            <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
+            <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
+              {(yearQuota.ratio * 100).toFixed(1)}%
+            </span>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${yearQuotaPercent}%`,
+                  background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+                }}
+              />
+            </div>
+            <span className="stat-sub">
+              Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von {yearQuota.possibleWorkDays}{' '}
+              möglichen Arbeitstagen · Ziel ≥ {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
+            </span>
           </div>
-          <span className="stat-sub">
-            Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von {yearQuota.possibleWorkDays}{' '}
-            möglichen Arbeitstagen · Ziel ≥ {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
-          </span>
         </div>
-      </div>
+      )}
 
       <div className="table-wrap">
         <table className="table">
@@ -79,7 +82,7 @@ export function YearOverview({ user, profile }: Props) {
               <th>Büro</th>
               <th>Homeoffice</th>
               <th>Dienstreise</th>
-              <th>Quote</th>
+              {homeofficeErlaubt && <th>Quote</th>}
             </tr>
           </thead>
           <tbody>
@@ -89,14 +92,16 @@ export function YearOverview({ user, profile }: Props) {
                 <td>{q.officeDays}</td>
                 <td>{q.homeofficeDays}</td>
                 <td>{q.businessTripDays}</td>
-                <td
-                  style={{
-                    fontWeight: 600,
-                    color: q.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-                  }}
-                >
-                  {q.possibleWorkDays > 0 ? `${(q.ratio * 100).toFixed(0)}%` : '–'}
-                </td>
+                {homeofficeErlaubt && (
+                  <td
+                    style={{
+                      fontWeight: 600,
+                      color: q.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+                    }}
+                  >
+                    {q.possibleWorkDays > 0 ? `${(q.ratio * 100).toFixed(0)}%` : '–'}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

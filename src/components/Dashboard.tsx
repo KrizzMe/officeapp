@@ -6,9 +6,10 @@ interface Props {
   quotaLabel: string
   balances: VacationBalance[]
   vacationTypes: VacationType[]
+  homeofficeErlaubt: boolean
 }
 
-export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props) {
+export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt }: Props) {
   const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
   const colorOf = (id: string) => {
     const type = vacationTypes.find((v) => v.id === id)
@@ -19,25 +20,27 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props)
 
   return (
     <div className="card-grid">
-      <div className="card stat-tile">
-        <span className="stat-label">Anwesenheitsquote ({quotaLabel})</span>
-        <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-          {(quota.ratio * 100).toFixed(1)}%
-        </span>
-        <div className="progress-track">
-          <div
-            className="progress-fill"
-            style={{
-              width: `${quotaPercent}%`,
-              background: quota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-            }}
-          />
+      {homeofficeErlaubt && (
+        <div className="card stat-tile">
+          <span className="stat-label">Anwesenheitsquote ({quotaLabel})</span>
+          <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
+            {(quota.ratio * 100).toFixed(1)}%
+          </span>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{
+                width: `${quotaPercent}%`,
+                background: quota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+              }}
+            />
+          </div>
+          <span className="stat-sub">
+            Büro {quota.officeDays} + Dienstreise {quota.businessTripDays} von {quota.possibleWorkDays} möglichen
+            Arbeitstagen · Homeoffice {quota.homeofficeDays} · Ziel ≥ {(quota.requiredOfficeRatio * 100).toFixed(0)}%
+          </span>
         </div>
-        <span className="stat-sub">
-          Büro {quota.officeDays} + Dienstreise {quota.businessTripDays} von {quota.possibleWorkDays} möglichen
-          Arbeitstagen · Homeoffice {quota.homeofficeDays} · Ziel ≥ {(quota.requiredOfficeRatio * 100).toFixed(0)}%
-        </span>
-      </div>
+      )}
 
       <div className="card stat-tile">
         <span className="stat-label">Urlaub gesamt verbleibend</span>
