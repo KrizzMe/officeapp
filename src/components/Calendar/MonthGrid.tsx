@@ -4,6 +4,7 @@ import { getMonthGrid, toIsoDate, weekdayLabel } from '../../lib/dates'
 import { effectiveDayStatus } from '../../lib/attendance'
 import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { statusVisual } from '../../lib/statusColors'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 interface Props {
   year: number
@@ -37,9 +38,17 @@ export function MonthGrid({
 }: Props) {
   const days = getMonthGrid(year, month)
   const todayIso = toIsoDate(new Date())
+  // Unter 640px ist die Tageszelle zu schmal für Icon + Text — der Browser
+  // schneidet den Options-Text im geschlossenen Select sonst auf ein
+  // einzelnes Zeichen ab ("B", "H", ...). Feste Basis-Status haben je ein
+  // eindeutiges Icon und zeigen dort nur noch das Icon; Urlaubsarten teilen
+  // sich alle das 🌴-Icon und bleiben daher mit Text, sonst nicht unterscheidbar.
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const statusLabel = (id: string) =>
     STATUS_LABELS[id] ?? vacationTypes.find((v) => v.id === id)?.name ?? id
+
+  const baseOptionLabel = (icon: string, id: string) => (isMobile ? icon : `${icon} ${statusLabel(id)}`)
 
   const handleSelect = (date: Date, value: string) => {
     if (value === 'buero') {
@@ -95,13 +104,13 @@ export function MonthGrid({
                   value={statusId}
                   onChange={(e) => handleSelect(date, e.target.value)}
                 >
-                  <option value="buero">🏢 {statusLabel('buero')}</option>
+                  <option value="buero">{baseOptionLabel('🏢', 'buero')}</option>
                   {(homeofficeErlaubt || statusId === 'homeoffice') && (
-                    <option value="homeoffice">🏠 {statusLabel('homeoffice')}</option>
+                    <option value="homeoffice">{baseOptionLabel('🏠', 'homeoffice')}</option>
                   )}
-                  <option value="dienstreise">✈️ {statusLabel('dienstreise')}</option>
-                  <option value="krank">🤒 {statusLabel('krank')}</option>
-                  <option value="kind-krank">🤧 {statusLabel('kind-krank')}</option>
+                  <option value="dienstreise">{baseOptionLabel('✈️', 'dienstreise')}</option>
+                  <option value="krank">{baseOptionLabel('🤒', 'krank')}</option>
+                  <option value="kind-krank">{baseOptionLabel('🤧', 'kind-krank')}</option>
                   {vacationTypes.map((v) => (
                     <option key={v.id} value={v.id}>
                       🌴 {v.name}
