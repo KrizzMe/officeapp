@@ -136,7 +136,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
   }
 
   return (
-    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+    <div className="card form-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
       <h3 style={{ marginTop: 0 }}>Urlaubsarten verwalten</h3>
 
       {error && <p className="form-error">{error}</p>}
