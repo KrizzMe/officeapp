@@ -29,6 +29,8 @@
   --status-buero: #2563eb;
   --status-homeoffice: #0d9488;
   --status-dienstreise: #ea580c;
+  --status-krank: #dc2626;
+  --status-kind-krank: #db2777;
   --status-weekend: #94a3b8;
   --status-holiday: #8b81a8;
 
@@ -132,6 +134,8 @@
     --status-buero: #60a5fa;
     --status-homeoffice: #2dd4bf;
     --status-dienstreise: #fb923c;
+    --status-krank: #f87171;
+    --status-kind-krank: #f472b6;
     --status-weekend: #6b6580;
     --status-holiday: #8a82a8;
 

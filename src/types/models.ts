@@ -52,7 +52,7 @@ export interface UserProfile {
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */
-export type BaseDayStatus = 'buero' | 'homeoffice' | 'dienstreise'
+export type BaseDayStatus = 'buero' | 'homeoffice' | 'dienstreise' | 'krank' | 'kind-krank'
 
 /** IDs der beim Onboarding vorbelegten Urlaubsarten (siehe UserProfile.vacationTypes). */
 export const DEFAULT_VACATION_TYPE_IDS = {

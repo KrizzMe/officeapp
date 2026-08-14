@@ -42,7 +42,9 @@ Statt der bisherigen zwei getrennten Excel-Felder (Homeoffice-Flag + Abwesenheit
 - `Büro` (Standard-Fallback für jeden Arbeitstag ohne andere Markierung — siehe 5.2)
 - `Homeoffice`
 - `Dienstreise`
-- plus die vom Nutzer im Profil definierten Urlaubsarten (z. B. `Urlaub`, `Resturlaub`, `Dispositionstag`, `Krank`, `Kind krank`, `Sonderurlaub`, `Umwandlungstag`, `Gleitzeit`, `Regeneration`, …)
+- `Krank`
+- `Kind krank`
+- plus die vom Nutzer im Profil definierten Urlaubsarten (z. B. `Urlaub`, `Resturlaub`, `Dispositionstag`, `Sonderurlaub`, `Umwandlungstag`, `Gleitzeit`, `Regeneration`, …) — kein Jahres-Kontingent wie bei den Urlaubsarten, da Krankheitstage nicht begrenzt sind (Issue #23)
 
 Wochenenden und Feiertage werden automatisch erkannt, nicht manuell gesetzt.
 

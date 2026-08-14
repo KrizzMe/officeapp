@@ -9,6 +9,8 @@ const BASE_VISUALS: Record<string, StatusVisual> = {
   buero: { color: 'var(--status-buero)', icon: '🏢' },
   homeoffice: { color: 'var(--status-homeoffice)', icon: '🏠' },
   dienstreise: { color: 'var(--status-dienstreise)', icon: '✈️' },
+  krank: { color: 'var(--status-krank)', icon: '🤒' },
+  'kind-krank': { color: 'var(--status-kind-krank)', icon: '🤧' },
 }
 
 const VACATION_PALETTE = [
