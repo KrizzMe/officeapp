@@ -27,7 +27,7 @@
 
   /* Statusfarben je Basis-DayStatus */
   --status-buero: #2563eb;
-  --status-homeoffice: #0d9488;
+  --status-homeoffice: #475569;
   --status-dienstreise: #ea580c;
   --status-krank: #dc2626;
   --status-kind-krank: #db2777;
@@ -132,7 +132,7 @@
     --color-warning-soft: #5c3d05;
 
     --status-buero: #60a5fa;
-    --status-homeoffice: #2dd4bf;
+    --status-homeoffice: #94a3b8;
     --status-dienstreise: #fb923c;
     --status-krank: #f87171;
     --status-kind-krank: #f472b6;
