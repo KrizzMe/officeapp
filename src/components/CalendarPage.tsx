@@ -8,17 +8,20 @@ import { calculateAttendanceQuota } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { Dashboard } from './Dashboard'
+import { VacationTypesManager } from './VacationTypesManager'
 
 interface Props {
   user: User
   profile: UserProfile
+  onProfileChange: () => void
 }
 
-export function CalendarPage({ user, profile }: Props) {
+export function CalendarPage({ user, profile, onProfileChange }: Props) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [warning, setWarning] = useState<string | null>(null)
+  const [showVacationTypes, setShowVacationTypes] = useState(false)
 
   const entries = useYearEntries(user.uid, year)
 
@@ -79,6 +82,14 @@ export function CalendarPage({ user, profile }: Props) {
       {warning && (
         <p style={{ color: '#b8860b', border: '1px solid #b8860b', padding: 8, borderRadius: 4 }}>{warning}</p>
       )}
+
+      <div style={{ marginBottom: 8 }}>
+        <button onClick={() => setShowVacationTypes((v) => !v)}>
+          {showVacationTypes ? 'Urlaubsarten ausblenden' : 'Urlaubsarten verwalten'}
+        </button>
+      </div>
+
+      {showVacationTypes && <VacationTypesManager profile={profile} onUpdated={onProfileChange} />}
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
         <button onClick={() => changeMonth(-1)}>← Vorheriger Monat</button>

@@ -4,6 +4,7 @@ import {
   doc,
   documentId,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
   setDoc,
@@ -36,6 +37,17 @@ export async function setDayEntry(uid: string, entry: DayEntry): Promise<void> {
 /** Löscht einen Tageseintrag, sodass der Tag wieder auf die Fallback-Logik zurückfällt. */
 export async function clearDayEntry(uid: string, date: string): Promise<void> {
   await deleteDoc(dayDoc(uid, date))
+}
+
+/**
+ * Zählt Tageseinträge mit gegebenem Status, über alle Jahre hinweg. Dient
+ * als Löschschutz für Urlaubsarten (Abschnitt 4.3) — solange Tage mit dieser
+ * Urlaubsart erfasst sind, würde ihre id sonst als verwaister Status übrig bleiben.
+ */
+export async function countDayEntriesWithStatus(uid: string, status: string): Promise<number> {
+  const daysRef = collection(db, 'users', uid, 'days')
+  const snapshot = await getDocs(query(daysRef, where('status', '==', status)))
+  return snapshot.size
 }
 
 /**
