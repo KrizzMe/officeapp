@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
+import { DEFAULT_ARBEITSTAGE } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
@@ -22,17 +23,18 @@ export function YearOverview({ user, profile }: Props) {
 
   const yearDays = useMemo(() => getYearDays(year), [year])
   const requiredRatio = useMemo(() => requiredOfficeRatio(profile), [profile])
+  const arbeitstage = profile.arbeitstage ?? DEFAULT_ARBEITSTAGE
   const yearQuota = useMemo(
-    () => calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio),
-    [yearDays, profile.bundesland, entries, requiredRatio],
+    () => calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio, arbeitstage),
+    [yearDays, profile.bundesland, entries, requiredRatio, arbeitstage],
   )
 
   const monthlyQuotas = useMemo(
     () =>
       Array.from({ length: 12 }, (_, m) =>
-        calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries, requiredRatio),
+        calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries, requiredRatio, arbeitstage),
       ),
-    [year, profile.bundesland, entries, requiredRatio],
+    [year, profile.bundesland, entries, requiredRatio, arbeitstage],
   )
 
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)

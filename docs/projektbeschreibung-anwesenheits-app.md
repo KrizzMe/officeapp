@@ -34,6 +34,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Resturlaub aus Vorjahr (Anzahl Tage)
 - Frei definierbare **Urlaubsarten** (siehe 4.3) — pro Nutzer individuell, da sich die Arten zwischen den beiden Nutzern unterscheiden (z. B. Dispositionstage nur bei einem, Sonderurlaub nur bei der anderen Person)
 - Bundesland (für automatische Feiertagszuordnung — die bisherige Excel nutzt bayerische Feiertage, das sollte aber nicht hart codiert sein)
+- Arbeitstage (Mo-So einzeln wählbar, Issue #34) — Default Mo-Fr; bestimmt, welche Wochentage arbeitsfrei sind statt fest Sa/So anzunehmen, z. B. für Teilzeitkräfte mit Arbeitstagen Do-So
 - Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
 - Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
 
@@ -48,7 +49,7 @@ Statt der bisherigen zwei getrennten Excel-Felder (Homeoffice-Flag + Abwesenheit
 - `Kind krank`
 - plus die vom Nutzer im Profil definierten Urlaubsarten (z. B. `Urlaub`, `Resturlaub`, `Dispositionstag`, `Sonderurlaub`, `Umwandlungstag`, `Gleitzeit`, `Regeneration`, …) — kein Jahres-Kontingent wie bei den Urlaubsarten, da Krankheitstage nicht begrenzt sind (Issue #23)
 
-Wochenenden und Feiertage werden automatisch erkannt, nicht manuell gesetzt.
+Arbeitsfreie Tage (laut den im Profil gewählten Arbeitstagen) und Feiertage werden automatisch erkannt, nicht manuell gesetzt.
 
 Für Tage mit Status `Büro` oder `Dienstreise`: Wegstrecke (km) wird automatisch aus der hinterlegten Standardstrecke übernommen, ist aber **pro Tag überschreibbar** (z. B. Ausweichroute, abweichendes Ziel bei Dienstreise).
 

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import type { UserProfile } from '../types/models'
+import type { UserProfile, Weekday } from '../types/models'
+import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { saveUserProfile } from '../firebase/firestore'
 
@@ -21,15 +22,30 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [workAddress, setWorkAddress] = useState(profile.workAddress)
   const [distanceKm, setDistanceKm] = useState(String(profile.defaultCommuteDistanceKm))
   const [bundesland, setBundesland] = useState<UserProfile['bundesland']>(profile.bundesland)
+  const [arbeitstage, setArbeitstage] = useState<Weekday[]>(profile.arbeitstage ?? [...DEFAULT_ARBEITSTAGE])
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(profile.homeofficeErlaubt ?? true)
   const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 60))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const toggleArbeitstag = (day: Weekday) => {
+    setArbeitstage((prev) => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return ALL_WEEKDAYS.filter((d) => next.has(d))
+    })
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSaving(true)
     setError(null)
+    if (arbeitstage.length === 0) {
+      setError('Bitte mindestens einen Arbeitstag auswählen.')
+      setSaving(false)
+      return
+    }
     try {
       const updated: UserProfile = {
         ...profile,
@@ -37,6 +53,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         workAddress,
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland,
+        arbeitstage,
         homeofficeErlaubt,
         homeofficeQuote: Number(homeofficeQuote) || 0,
       }
@@ -91,6 +108,23 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
             required
           />
         </label>
+      </div>
+
+      <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
+        <span>Arbeitstage</span>
+        <div className="weekday-toggle-group">
+          {ALL_WEEKDAYS.map((day) => (
+            <button
+              key={day}
+              type="button"
+              className={`weekday-toggle${arbeitstage.includes(day) ? ' weekday-toggle--active' : ''}`}
+              aria-pressed={arbeitstage.includes(day)}
+              onClick={() => toggleArbeitstag(day)}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
       </div>
 
       <label className="checkbox-label" style={{ marginBottom: 'var(--space-3)' }}>
