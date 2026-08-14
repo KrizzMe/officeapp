@@ -44,7 +44,7 @@ function App() {
       </header>
 
       {profileLoading ? null : profile ? (
-        <CalendarPage user={user} profile={profile} />
+        <CalendarPage user={user} profile={profile} onProfileChange={reload} />
       ) : (
         <ProfileSetup user={user} onDone={reload} />
       )}
