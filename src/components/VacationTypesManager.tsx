@@ -133,122 +133,137 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
   }
 
   return (
-    <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
       <h3 style={{ marginTop: 0 }}>Urlaubsarten verwalten</h3>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
-        <thead>
-          <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-            <th>Name</th>
-            <th>Kontingent/Jahr</th>
-            <th>Rhythmus</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {profile.vacationTypes.map((type) =>
-            editingId === type.id ? (
-              <tr key={type.id}>
-                <td colSpan={4}>
-                  <form onSubmit={handleSaveEdit} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '8px 0' }}>
-                    <input
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      required
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      value={editForm.totalDays}
-                      onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
-                      style={{ width: 70 }}
-                    />
-                    <label style={{ fontSize: 12 }}>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Kontingent/Jahr</th>
+              <th>Rhythmus</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {profile.vacationTypes.map((type) =>
+              editingId === type.id ? (
+                <tr key={type.id}>
+                  <td colSpan={4}>
+                    <form onSubmit={handleSaveEdit} className="inline-form">
                       <input
-                        type="checkbox"
-                        checked={editForm.rhythmEnabled}
-                        onChange={(e) => setEditForm({ ...editForm, rhythmEnabled: e.target.checked })}
-                      />{' '}
-                      max. pro Quartal
-                    </label>
-                    {editForm.rhythmEnabled && (
-                      <input
-                        type="number"
-                        min="1"
-                        value={editForm.maxPerPeriod}
-                        onChange={(e) => setEditForm({ ...editForm, maxPerPeriod: e.target.value })}
-                        style={{ width: 50 }}
+                        className="input"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        required
                       />
-                    )}
-                    <button type="submit" disabled={saving}>
-                      Speichern
-                    </button>
-                    <button type="button" onClick={cancelEdit}>
-                      Abbrechen
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            ) : (
-              <tr key={type.id}>
-                <td>{type.name}</td>
-                <td>{type.totalDays}</td>
-                <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <button type="button" onClick={() => startEdit(type)}>
-                    Bearbeiten
-                  </button>{' '}
-                  <button type="button" onClick={() => handleDelete(type)} disabled={saving}>
-                    Löschen
-                  </button>
-                  {blockedDelete?.id === type.id && (
-                    <div style={{ color: '#b8860b', fontSize: 12, marginTop: 4 }}>
-                      Kann nicht gelöscht werden: {blockedDelete.count} Tageseintrag(e) mit dieser Urlaubsart
-                      vorhanden. Erst diese Einträge ändern oder entfernen.
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        value={editForm.totalDays}
+                        onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
+                        style={{ width: 80 }}
+                      />
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={editForm.rhythmEnabled}
+                          onChange={(e) => setEditForm({ ...editForm, rhythmEnabled: e.target.checked })}
+                        />
+                        max. pro Quartal
+                      </label>
+                      {editForm.rhythmEnabled && (
+                        <input
+                          className="input"
+                          type="number"
+                          min="1"
+                          value={editForm.maxPerPeriod}
+                          onChange={(e) => setEditForm({ ...editForm, maxPerPeriod: e.target.value })}
+                          style={{ width: 60 }}
+                        />
+                      )}
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                        Speichern
+                      </button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit}>
+                        Abbrechen
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={type.id}>
+                  <td>{type.name}</td>
+                  <td>{type.totalDays}</td>
+                  <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="form-row" style={{ justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(type)}>
+                        Bearbeiten
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(type)}
+                        disabled={saving}
+                      >
+                        Löschen
+                      </button>
                     </div>
-                  )}
-                </td>
-              </tr>
-            ),
-          )}
-        </tbody>
-      </table>
+                    {blockedDelete?.id === type.id && (
+                      <div className="form-warning" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                        Kann nicht gelöscht werden: {blockedDelete.count} Tageseintrag(e) mit dieser Urlaubsart
+                        vorhanden. Erst diese Einträge ändern oder entfernen.
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <form onSubmit={handleAdd} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <form onSubmit={handleAdd} className="inline-form">
         <input
+          className="input"
           placeholder="Name (z. B. Dispositionstag)"
           value={addForm.name}
           onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
           required
         />
         <input
+          className="input"
           type="number"
           min="0"
           placeholder="Tage/Jahr"
           value={addForm.totalDays}
           onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
-          style={{ width: 90 }}
+          style={{ width: 100 }}
         />
-        <label style={{ fontSize: 12 }}>
+        <label className="checkbox-label">
           <input
             type="checkbox"
             checked={addForm.rhythmEnabled}
             onChange={(e) => setAddForm({ ...addForm, rhythmEnabled: e.target.checked })}
-          />{' '}
+          />
           max. pro Quartal
         </label>
         {addForm.rhythmEnabled && (
           <input
+            className="input"
             type="number"
             min="1"
             value={addForm.maxPerPeriod}
             onChange={(e) => setAddForm({ ...addForm, maxPerPeriod: e.target.value })}
-            style={{ width: 50 }}
+            style={{ width: 60 }}
           />
         )}
-        <button type="submit" disabled={saving}>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
           Hinzufügen
         </button>
       </form>

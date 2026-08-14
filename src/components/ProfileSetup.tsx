@@ -47,23 +47,24 @@ export function ProfileSetup({ user, onDone }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="card form-card">
       <h2>Profil einrichten</h2>
       <p>Einmalige Grundeinstellungen, später jederzeit änderbar.</p>
 
-      <label>
-        Wohnadresse
-        <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
+      <label className="field">
+        <span>Wohnadresse</span>
+        <input className="input" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
       </label>
 
-      <label>
-        Arbeitsadresse
-        <input value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
+      <label className="field">
+        <span>Arbeitsadresse</span>
+        <input className="input" value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
       </label>
 
-      <label>
-        Standard-Wegstrecke (km, einfache Fahrt)
+      <label className="field">
+        <span>Standard-Wegstrecke (km, einfache Fahrt)</span>
         <input
+          className="input"
           type="number"
           min="0"
           step="0.1"
@@ -73,9 +74,9 @@ export function ProfileSetup({ user, onDone }: Props) {
         />
       </label>
 
-      <label>
-        Bundesland
-        <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}>
+      <label className="field">
+        <span>Bundesland</span>
+        <select className="input" value={bundesland} onChange={(e) => setBundesland(e.target.value)}>
           {BUNDESLAENDER.map((b) => (
             <option key={b.code} value={b.code}>
               {b.name}
@@ -84,14 +85,22 @@ export function ProfileSetup({ user, onDone }: Props) {
         </select>
       </label>
 
-      <label>
-        Regelurlaub (Tage/Jahr)
-        <input type="number" min="0" value={urlaubTage} onChange={(e) => setUrlaubTage(e.target.value)} required />
+      <label className="field">
+        <span>Regelurlaub (Tage/Jahr)</span>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={urlaubTage}
+          onChange={(e) => setUrlaubTage(e.target.value)}
+          required
+        />
       </label>
 
-      <label>
-        Resturlaub aus Vorjahr (Tage)
+      <label className="field">
+        <span>Resturlaub aus Vorjahr (Tage)</span>
         <input
+          className="input"
           type="number"
           min="0"
           value={resturlaubTage}
@@ -100,11 +109,13 @@ export function ProfileSetup({ user, onDone }: Props) {
         />
       </label>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      <button type="submit" disabled={saving}>
-        {saving ? 'Speichern…' : 'Profil speichern'}
-      </button>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? 'Speichern…' : 'Profil speichern'}
+        </button>
+      </div>
     </form>
   )
 }

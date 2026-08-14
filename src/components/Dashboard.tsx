@@ -1,4 +1,5 @@
 import type { AttendanceQuota, VacationBalance, VacationType } from '../types/models'
+import { vacationTypeColor } from '../lib/statusColors'
 
 interface Props {
   quota: AttendanceQuota
@@ -8,35 +9,55 @@ interface Props {
 
 export function Dashboard({ quota, balances, vacationTypes }: Props) {
   const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
+  const colorOf = (id: string) => {
+    const type = vacationTypes.find((v) => v.id === id)
+    return type ? vacationTypeColor(type) : 'var(--color-primary)'
+  }
   const totalRemaining = balances.reduce((sum, b) => sum + b.remainingDays, 0)
+  const quotaPercent = Math.min(100, quota.ratio * 100)
 
   return (
-    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-      <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, minWidth: 200 }}>
-        <strong>Anwesenheitsquote (dieser Monat)</strong>
-        <div style={{ fontSize: 24, color: quota.meetsThreshold ? 'green' : 'crimson' }}>
+    <div className="card-grid">
+      <div className="card stat-tile">
+        <span className="stat-label">Anwesenheitsquote (dieser Monat)</span>
+        <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
           {(quota.ratio * 100).toFixed(1)}%
+        </span>
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{
+              width: `${quotaPercent}%`,
+              background: quota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+            }}
+          />
         </div>
-        <div style={{ fontSize: 12, color: '#666' }}>
+        <span className="stat-sub">
           Büro {quota.officeDays} + Dienstreise {quota.businessTripDays} von {quota.possibleWorkDays} möglichen
           Arbeitstagen · Ziel ≥ 40%
-        </div>
+        </span>
       </div>
 
-      <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, minWidth: 200 }}>
-        <strong>Urlaub gesamt verbleibend</strong>
-        <div style={{ fontSize: 24 }}>{totalRemaining} Tage</div>
+      <div className="card stat-tile">
+        <span className="stat-label">Urlaub gesamt verbleibend</span>
+        <span className="stat-value">{totalRemaining} Tage</span>
       </div>
 
-      {balances.map((b) => (
-        <div key={b.vacationTypeId} style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, minWidth: 160 }}>
-          <strong>{nameOf(b.vacationTypeId)}</strong>
-          <div style={{ fontSize: 24 }}>{b.remainingDays}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>
-            {b.usedDays} von {b.totalDays} genommen
+      {balances.map((b) => {
+        const ratio = b.totalDays > 0 ? Math.min(100, (b.usedDays / b.totalDays) * 100) : 0
+        return (
+          <div key={b.vacationTypeId} className="card stat-tile">
+            <span className="stat-label">{nameOf(b.vacationTypeId)}</span>
+            <span className="stat-value">{b.remainingDays}</span>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${ratio}%`, background: colorOf(b.vacationTypeId) }} />
+            </div>
+            <span className="stat-sub">
+              {b.usedDays} von {b.totalDays} genommen
+            </span>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
