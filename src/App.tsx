@@ -84,7 +84,7 @@ function App() {
             </>
           )}
           {!editingProfile && showYearOverview && <YearOverview user={user} profile={profile} />}
-          {!editingProfile && <CalendarPage user={user} profile={profile} />}
+          {!editingProfile && !showYearOverview && <CalendarPage user={user} profile={profile} />}
         </>
       ) : (
         <ProfileSetup user={user} onDone={reload} />
