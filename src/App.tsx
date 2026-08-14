@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { useUserProfile } from './hooks/useUserProfile'
 import { ProfileSetup } from './components/ProfileSetup'
 import { ProfileEditor } from './components/ProfileEditor'
+import { VacationTypesManager } from './components/VacationTypesManager'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
 import { useState } from 'react'
@@ -70,17 +71,20 @@ function App() {
       {profileLoading ? null : profile ? (
         <>
           {editingProfile && (
-            <ProfileEditor
-              profile={profile}
-              onSaved={() => {
-                setEditingProfile(false)
-                reload()
-              }}
-              onCancel={() => setEditingProfile(false)}
-            />
+            <>
+              <ProfileEditor
+                profile={profile}
+                onSaved={() => {
+                  setEditingProfile(false)
+                  reload()
+                }}
+                onCancel={() => setEditingProfile(false)}
+              />
+              <VacationTypesManager profile={profile} onUpdated={reload} />
+            </>
           )}
           {showYearOverview && <YearOverview user={user} profile={profile} />}
-          <CalendarPage user={user} profile={profile} onProfileChange={reload} />
+          <CalendarPage user={user} profile={profile} />
         </>
       ) : (
         <ProfileSetup user={user} onDone={reload} />

@@ -8,20 +8,17 @@ import { calculateAttendanceQuota } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { Dashboard } from './Dashboard'
-import { VacationTypesManager } from './VacationTypesManager'
 
 interface Props {
   user: User
   profile: UserProfile
-  onProfileChange: () => void
 }
 
-export function CalendarPage({ user, profile, onProfileChange }: Props) {
+export function CalendarPage({ user, profile }: Props) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [warning, setWarning] = useState<string | null>(null)
-  const [showVacationTypes, setShowVacationTypes] = useState(false)
 
   const entries = useYearEntries(user.uid, year)
 
@@ -76,14 +73,6 @@ export function CalendarPage({ user, profile, onProfileChange }: Props) {
       <Dashboard quota={quota} quotaLabel={monthLabel(year, month)} balances={balances} vacationTypes={profile.vacationTypes} />
 
       {warning && <p className="form-warning">{warning}</p>}
-
-      <div style={{ marginBottom: 'var(--space-3)' }}>
-        <button className="btn btn-secondary btn-sm" onClick={() => setShowVacationTypes((v) => !v)}>
-          {showVacationTypes ? 'Urlaubsarten ausblenden' : 'Urlaubsarten verwalten'}
-        </button>
-      </div>
-
-      {showVacationTypes && <VacationTypesManager profile={profile} onUpdated={onProfileChange} />}
 
       <div className="card" style={{ padding: 'var(--space-3)' }}>
         <div className="month-nav">
