@@ -15,6 +15,7 @@ export function calculateVacationBalances(
     const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)))
     if (typeof status !== 'string') continue
     if (status === 'buero' || status === 'homeoffice' || status === 'dienstreise') continue
+    if (status === 'krank' || status === 'kind-krank') continue
     if (status === 'wochenende' || status === 'feiertag') continue
     usedByType.set(status, (usedByType.get(status) ?? 0) + 1)
   }

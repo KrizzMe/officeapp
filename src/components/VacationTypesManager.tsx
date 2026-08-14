@@ -16,6 +16,9 @@ interface FormState {
 
 const EMPTY_FORM: FormState = { name: '', totalDays: '0', rhythmEnabled: false, maxPerPeriod: '1' }
 
+/** IDs, die durch feste Basis-Status bzw. automatische Tagesmarkierungen belegt sind (siehe BaseDayStatus). */
+const RESERVED_IDS = new Set(['buero', 'homeoffice', 'dienstreise', 'krank', 'kind-krank', 'wochenende', 'feiertag'])
+
 function slugify(name: string): string {
   return name
     .trim()
@@ -29,9 +32,9 @@ function slugify(name: string): string {
 function uniqueId(name: string, existing: VacationType[]): string {
   const base = slugify(name) || 'urlaubsart'
   const ids = new Set(existing.map((t) => t.id))
-  if (!ids.has(base)) return base
+  if (!ids.has(base) && !RESERVED_IDS.has(base)) return base
   let i = 2
-  while (ids.has(`${base}-${i}`)) i++
+  while (ids.has(`${base}-${i}`) || RESERVED_IDS.has(`${base}-${i}`)) i++
   return `${base}-${i}`
 }
 

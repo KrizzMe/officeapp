@@ -19,6 +19,8 @@ const STATUS_LABELS: Record<string, string> = {
   buero: 'Büro',
   homeoffice: 'Homeoffice',
   dienstreise: 'Dienstreise',
+  krank: 'Krank',
+  'kind-krank': 'Kind krank',
 }
 
 export function MonthGrid({
@@ -93,6 +95,8 @@ export function MonthGrid({
                   <option value="buero">🏢 {statusLabel('buero')}</option>
                   <option value="homeoffice">🏠 {statusLabel('homeoffice')}</option>
                   <option value="dienstreise">✈️ {statusLabel('dienstreise')}</option>
+                  <option value="krank">🤒 {statusLabel('krank')}</option>
+                  <option value="kind-krank">🤧 {statusLabel('kind-krank')}</option>
                   {vacationTypes.map((v) => (
                     <option key={v.id} value={v.id}>
                       🌴 {v.name}
