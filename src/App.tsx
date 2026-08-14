@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { useUserProfile } from './hooks/useUserProfile'
 import { ProfileSetup } from './components/ProfileSetup'
 import { ProfileEditor } from './components/ProfileEditor'
+import { VacationTypesManager } from './components/VacationTypesManager'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
 import { useState } from 'react'
@@ -12,8 +13,9 @@ function App() {
   const { user, loading: authLoading } = useAuth()
   const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
   const [loginError, setLoginError] = useState<string | null>(null)
-  const [editingProfile, setEditingProfile] = useState(false)
-  const [showYearOverview, setShowYearOverview] = useState(false)
+  const [activePanel, setActivePanel] = useState<'profile' | 'yearOverview' | null>(null)
+  const editingProfile = activePanel === 'profile'
+  const showYearOverview = activePanel === 'yearOverview'
 
   const login = async () => {
     setLoginError(null)
@@ -52,12 +54,18 @@ function App() {
         <div className="app-header-user">
           <span className="user-name">{user.displayName}</span>
           {profile && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setEditingProfile((v) => !v)}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActivePanel((v) => (v === 'profile' ? null : 'profile'))}
+            >
               {editingProfile ? 'Profil-Bearbeitung schließen' : 'Profil bearbeiten'}
             </button>
           )}
           {profile && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowYearOverview((v) => !v)}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActivePanel((v) => (v === 'yearOverview' ? null : 'yearOverview'))}
+            >
               {showYearOverview ? 'Jahresübersicht schließen' : 'Jahresübersicht'}
             </button>
           )}
@@ -70,17 +78,20 @@ function App() {
       {profileLoading ? null : profile ? (
         <>
           {editingProfile && (
-            <ProfileEditor
-              profile={profile}
-              onSaved={() => {
-                setEditingProfile(false)
-                reload()
-              }}
-              onCancel={() => setEditingProfile(false)}
-            />
+            <>
+              <ProfileEditor
+                profile={profile}
+                onSaved={() => {
+                  setActivePanel(null)
+                  reload()
+                }}
+                onCancel={() => setActivePanel(null)}
+              />
+              <VacationTypesManager profile={profile} onUpdated={reload} />
+            </>
           )}
-          {showYearOverview && <YearOverview user={user} profile={profile} />}
-          <CalendarPage user={user} profile={profile} onProfileChange={reload} />
+          {!editingProfile && showYearOverview && <YearOverview user={user} profile={profile} />}
+          {!editingProfile && !showYearOverview && <CalendarPage user={user} profile={profile} />}
         </>
       ) : (
         <ProfileSetup user={user} onDone={reload} />
