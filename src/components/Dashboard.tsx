@@ -3,11 +3,12 @@ import { vacationTypeColor } from '../lib/statusColors'
 
 interface Props {
   quota: AttendanceQuota
+  quotaLabel: string
   balances: VacationBalance[]
   vacationTypes: VacationType[]
 }
 
-export function Dashboard({ quota, balances, vacationTypes }: Props) {
+export function Dashboard({ quota, quotaLabel, balances, vacationTypes }: Props) {
   const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
   const colorOf = (id: string) => {
     const type = vacationTypes.find((v) => v.id === id)
@@ -19,7 +20,7 @@ export function Dashboard({ quota, balances, vacationTypes }: Props) {
   return (
     <div className="card-grid">
       <div className="card stat-tile">
-        <span className="stat-label">Anwesenheitsquote (dieser Monat)</span>
+        <span className="stat-label">Anwesenheitsquote ({quotaLabel})</span>
         <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
           {(quota.ratio * 100).toFixed(1)}%
         </span>

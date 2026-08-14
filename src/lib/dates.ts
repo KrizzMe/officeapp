@@ -64,3 +64,9 @@ export function getMonthDays(year: number, month: number): Date[] {
   }
   return days
 }
+
+export function getYearDays(year: number): Date[] {
+  const days: Date[] = []
+  for (let m = 0; m < 12; m++) days.push(...getMonthDays(year, m))
+  return days
+}
