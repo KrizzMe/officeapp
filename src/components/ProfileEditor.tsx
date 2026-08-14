@@ -60,25 +60,23 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, marginBottom: 16 }}
-    >
+    <form onSubmit={handleSubmit} className="card form-card" style={{ marginBottom: 'var(--space-5)' }}>
       <h3 style={{ marginTop: 0 }}>Profil bearbeiten</h3>
 
-      <label>
-        Wohnadresse
-        <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
+      <label className="field">
+        <span>Wohnadresse</span>
+        <input className="input" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
       </label>
 
-      <label>
-        Arbeitsadresse
-        <input value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
+      <label className="field">
+        <span>Arbeitsadresse</span>
+        <input className="input" value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
       </label>
 
-      <label>
-        Standard-Wegstrecke (km, einfache Fahrt)
+      <label className="field">
+        <span>Standard-Wegstrecke (km, einfache Fahrt)</span>
         <input
+          className="input"
           type="number"
           min="0"
           step="0.1"
@@ -88,9 +86,13 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         />
       </label>
 
-      <label>
-        Bundesland
-        <select value={bundesland} onChange={(e) => setBundesland(e.target.value as UserProfile['bundesland'])}>
+      <label className="field">
+        <span>Bundesland</span>
+        <select
+          className="input"
+          value={bundesland}
+          onChange={(e) => setBundesland(e.target.value as UserProfile['bundesland'])}
+        >
           {BUNDESLAENDER.map((b) => (
             <option key={b.code} value={b.code}>
               {b.name}
@@ -99,14 +101,22 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         </select>
       </label>
 
-      <label>
-        Regelurlaub (Tage/Jahr)
-        <input type="number" min="0" value={urlaubTage} onChange={(e) => setUrlaubTage(e.target.value)} required />
+      <label className="field">
+        <span>Regelurlaub (Tage/Jahr)</span>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={urlaubTage}
+          onChange={(e) => setUrlaubTage(e.target.value)}
+          required
+        />
       </label>
 
-      <label>
-        Resturlaub aus Vorjahr (Tage)
+      <label className="field">
+        <span>Resturlaub aus Vorjahr (Tage)</span>
         <input
+          className="input"
           type="number"
           min="0"
           value={resturlaubTage}
@@ -115,13 +125,13 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         />
       </label>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <button type="submit" disabled={saving}>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? 'Speichern…' : 'Speichern'}
         </button>
-        <button type="button" onClick={onCancel} disabled={saving}>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={saving}>
           Abbrechen
         </button>
       </div>

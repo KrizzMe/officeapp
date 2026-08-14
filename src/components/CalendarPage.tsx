@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
-import { getMonthDays, toIsoDate } from '../lib/dates'
+import { getMonthDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
@@ -79,32 +79,37 @@ export function CalendarPage({ user, profile, onProfileChange }: Props) {
     <div>
       <Dashboard quota={quota} balances={balances} vacationTypes={profile.vacationTypes} />
 
-      {warning && (
-        <p style={{ color: '#b8860b', border: '1px solid #b8860b', padding: 8, borderRadius: 4 }}>{warning}</p>
-      )}
+      {warning && <p className="form-warning">{warning}</p>}
 
-      <div style={{ marginBottom: 8 }}>
-        <button onClick={() => setShowVacationTypes((v) => !v)}>
+      <div style={{ marginBottom: 'var(--space-3)' }}>
+        <button className="btn btn-secondary btn-sm" onClick={() => setShowVacationTypes((v) => !v)}>
           {showVacationTypes ? 'Urlaubsarten ausblenden' : 'Urlaubsarten verwalten'}
         </button>
       </div>
 
       {showVacationTypes && <VacationTypesManager profile={profile} onUpdated={onProfileChange} />}
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <button onClick={() => changeMonth(-1)}>← Vorheriger Monat</button>
-        <button onClick={() => changeMonth(1)}>Nächster Monat →</button>
-      </div>
+      <div className="card" style={{ padding: 'var(--space-3)' }}>
+        <div className="month-nav">
+          <button className="btn btn-secondary btn-sm" onClick={() => changeMonth(-1)}>
+            ← Vorheriger Monat
+          </button>
+          <h2>{monthLabel(year, month)}</h2>
+          <button className="btn btn-secondary btn-sm" onClick={() => changeMonth(1)}>
+            Nächster Monat →
+          </button>
+        </div>
 
-      <MonthGrid
-        year={year}
-        month={month}
-        bundesland={profile.bundesland}
-        entries={entries}
-        vacationTypes={profile.vacationTypes}
-        onStatusChange={handleStatusChange}
-        onClearStatus={handleClearStatus}
-      />
+        <MonthGrid
+          year={year}
+          month={month}
+          bundesland={profile.bundesland}
+          entries={entries}
+          vacationTypes={profile.vacationTypes}
+          onStatusChange={handleStatusChange}
+          onClearStatus={handleClearStatus}
+        />
+      </div>
     </div>
   )
 }

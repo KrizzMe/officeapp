@@ -26,27 +26,37 @@ function App() {
 
   if (!user) {
     return (
-      <div>
+      <div className="login-screen">
+        <div className="brand-mark" style={{ width: 56, height: 56, fontSize: '1.75rem' }}>
+          📅
+        </div>
         <h1>Office App</h1>
         <p>Anwesenheits- &amp; Urlaubs-Tracker</p>
-        <button onClick={login}>Mit Google anmelden</button>
-        {loginError && <p style={{ color: 'red' }}>{loginError}</p>}
+        <button className="btn btn-primary" onClick={login}>
+          Mit Google anmelden
+        </button>
+        {loginError && <p className="form-error">{loginError}</p>}
       </div>
     )
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Office App</h1>
-        <div>
-          <span>{user.displayName}</span>{' '}
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="brand">
+          <span className="brand-mark">📅</span>
+          <h1>Office App</h1>
+        </div>
+        <div className="app-header-user">
+          <span className="user-name">{user.displayName}</span>
           {profile && (
-            <button onClick={() => setEditingProfile((v) => !v)}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditingProfile((v) => !v)}>
               {editingProfile ? 'Profil-Bearbeitung schließen' : 'Profil bearbeiten'}
             </button>
-          )}{' '}
-          <button onClick={() => signOut(auth)}>Abmelden</button>
+          )}
+          <button className="btn btn-secondary btn-sm" onClick={() => signOut(auth)}>
+            Abmelden
+          </button>
         </div>
       </header>
 
