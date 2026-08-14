@@ -4,7 +4,7 @@ import type { UserProfile } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
-import { calculateAttendanceQuota } from '../lib/attendance'
+import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { Dashboard } from './Dashboard'
@@ -31,8 +31,14 @@ export function CalendarPage({ user, profile }: Props) {
   const currentMonthDays = useMemo(() => getMonthDays(year, month), [year, month])
 
   const quota = useMemo(
-    () => calculateAttendanceQuota(currentMonthDays, profile.bundesland, entries),
-    [currentMonthDays, profile.bundesland, entries],
+    () =>
+      calculateAttendanceQuota(
+        currentMonthDays,
+        profile.bundesland,
+        entries,
+        requiredOfficeRatio(profile),
+      ),
+    [currentMonthDays, profile, entries],
   )
 
   const balances = useMemo(
@@ -70,14 +76,7 @@ export function CalendarPage({ user, profile }: Props) {
 
   return (
     <div>
-      <Dashboard
-        quota={quota}
-        quotaLabel={monthLabel(year, month)}
-        balances={balances}
-        vacationTypes={profile.vacationTypes}
-        homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
-        homeofficeQuote={profile.homeofficeQuote ?? 100}
-      />
+      <Dashboard quota={quota} quotaLabel={monthLabel(year, month)} balances={balances} vacationTypes={profile.vacationTypes} />
 
       {warning && <p className="form-warning">{warning}</p>}
 

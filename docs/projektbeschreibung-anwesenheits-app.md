@@ -62,7 +62,7 @@ Jede Urlaubsart hat:
 
 ## 5. Berechnungslogik (aus bestehender Excel übernommen)
 
-### 5.1 Anwesenheitsquote (40/60-Regel)
+### 5.1 Anwesenheitsquote
 
 ```
 Mögliche Arbeitstage = Tage mit Status Büro + Homeoffice + Dienstreise
@@ -71,7 +71,7 @@ Mögliche Arbeitstage = Tage mit Status Büro + Homeoffice + Dienstreise
 Anwesenheitsquote = (Büro-Tage + Dienstreise-Tage) / Mögliche Arbeitstage
 ```
 
-- Muss ≥ 40 % sein (max. 60 % Homeoffice)
+- Die geforderte Mindestquote ist kein fester Wert, sondern ergibt sich pro Nutzer aus `100 % - Home-Office-Quote` (Profil-Feld, siehe 4.1) — je nach Arbeitgeber-Vorgabe unterschiedlich. Ohne explizite Angabe gilt die ursprüngliche 40/60-Regel (≥ 40 % Anwesenheit, max. 60 % Homeoffice) als Default. Ist Homeoffice im Profil nicht erlaubt, sind 100 % Anwesenheit gefordert.
 - **Live und direkt sichtbar** in der App (nicht nur als separate Auswertung) — z. B. laufender Prozentwert/Fortschrittsanzeige für den aktuellen Zeitraum
 
 ### 5.2 Standard-Fallback-Logik für Bürotage
@@ -96,7 +96,7 @@ Jeder Werktag (Mo–Fr, kein Feiertag) ohne anderen gesetzten Status gilt automa
 ## 6. UI-Anforderungen
 
 - Kalenderansicht (Monat) als zentrale Eingabe: Tag anklicken → Status wählen
-- 40/60-Anwesenheitsquote permanent sichtbar (z. B. im Kalender-Header oder als Dashboard-Kachel)
+- Anwesenheitsquote (gegen die individuelle Home-Office-Quote) permanent sichtbar (z. B. im Kalender-Header oder als Dashboard-Kachel)
 - Übersicht verbleibender Urlaubstage (gesamt + pro Art)
 - Responsive: vollwertig nutzbar auf Smartphone und Desktop
 

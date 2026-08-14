@@ -49,9 +49,11 @@ export interface UserProfile {
    */
   homeofficeErlaubt?: boolean
   /**
-   * Vorgegebene Homeoffice-Obergrenze in Prozent der möglichen Arbeitstage
-   * (Büro + Homeoffice + Dienstreise), zum Vergleich mit der tatsächlichen
-   * Quote im Dashboard. Optional — beim Fehlen gilt 100 (keine Einschränkung).
+   * Vom Arbeitgeber vorgegebene Homeoffice-Obergrenze in Prozent der
+   * möglichen Arbeitstage (Büro + Homeoffice + Dienstreise). Bestimmt die
+   * geforderte Mindest-Anwesenheitsquote (100 - homeofficeQuote), individuell
+   * pro Nutzer statt fest im Code (Abschnitt 5.1). Optional — beim Fehlen
+   * gilt 60 (bisherige feste 40/60-Regel als Default).
    */
   homeofficeQuote?: number
   /**
@@ -105,7 +107,9 @@ export interface AttendanceQuota {
   possibleWorkDays: number
   /** (officeDays + businessTripDays) / possibleWorkDays. */
   ratio: number
-  /** ratio >= 0.4 */
+  /** Geforderte Mindestquote (1 - UserProfile.homeofficeQuote / 100), siehe requiredOfficeRatio(). */
+  requiredOfficeRatio: number
+  /** ratio >= requiredOfficeRatio */
   meetsThreshold: boolean
 }
 

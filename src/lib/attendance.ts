@@ -1,4 +1,4 @@
-import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry } from '../types/models'
+import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile } from '../types/models'
 import { toIsoDate } from './dates'
 import { getHolidayName, isWeekend } from './holidays'
 
@@ -20,11 +20,25 @@ export function effectiveDayStatus(
 
 const BASE_STATUSES: readonly BaseDayStatus[] = ['buero', 'homeoffice', 'dienstreise']
 
-/** Berechnet die 40/60-Anwesenheitsquote (Abschnitt 5.1) über eine Liste von Tagen. */
+/**
+ * Geforderte Mindest-Anwesenheitsquote eines Nutzers (1 - homeofficeQuote/100).
+ * Ist Homeoffice nicht erlaubt, wird 100% Anwesenheit gefordert. Ersetzt die
+ * frühere, für alle Nutzer fest verdrahtete 40%-Schwelle durch einen Wert
+ * pro Profil (Abschnitt 5.1) — z. B. für zwei Nutzer mit unterschiedlichen
+ * Arbeitgeber-Vorgaben.
+ */
+export function requiredOfficeRatio(profile: Pick<UserProfile, 'homeofficeErlaubt' | 'homeofficeQuote'>): number {
+  if (profile.homeofficeErlaubt === false) return 1
+  const quote = profile.homeofficeQuote ?? 60
+  return Math.max(0, Math.min(1, 1 - quote / 100))
+}
+
+/** Berechnet die Anwesenheitsquote (Abschnitt 5.1) über eine Liste von Tagen. */
 export function calculateAttendanceQuota(
   days: Date[],
   bundesland: Bundesland,
   entries: Map<string, DayEntry>,
+  requiredRatio: number,
 ): AttendanceQuota {
   let officeDays = 0
   let homeofficeDays = 0
@@ -46,7 +60,8 @@ export function calculateAttendanceQuota(
     businessTripDays,
     possibleWorkDays,
     ratio,
-    meetsThreshold: ratio >= 0.4,
+    requiredOfficeRatio: requiredRatio,
+    meetsThreshold: ratio >= requiredRatio,
   }
 }
 

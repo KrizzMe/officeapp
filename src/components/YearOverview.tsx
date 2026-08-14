@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
-import { calculateAttendanceQuota } from '../lib/attendance'
+import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
 
 interface Props {
   user: User
@@ -21,17 +21,18 @@ export function YearOverview({ user, profile }: Props) {
   const entries = useYearEntries(user.uid, year)
 
   const yearDays = useMemo(() => getYearDays(year), [year])
+  const requiredRatio = useMemo(() => requiredOfficeRatio(profile), [profile])
   const yearQuota = useMemo(
-    () => calculateAttendanceQuota(yearDays, profile.bundesland, entries),
-    [yearDays, profile.bundesland, entries],
+    () => calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio),
+    [yearDays, profile.bundesland, entries, requiredRatio],
   )
 
   const monthlyQuotas = useMemo(
     () =>
       Array.from({ length: 12 }, (_, m) =>
-        calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries),
+        calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries, requiredRatio),
       ),
-    [year, profile.bundesland, entries],
+    [year, profile.bundesland, entries, requiredRatio],
   )
 
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
@@ -65,7 +66,7 @@ export function YearOverview({ user, profile }: Props) {
           </div>
           <span className="stat-sub">
             Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von {yearQuota.possibleWorkDays}{' '}
-            möglichen Arbeitstagen · Ziel ≥ 40%
+            möglichen Arbeitstagen · Ziel ≥ {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
           </span>
         </div>
       </div>

@@ -19,7 +19,7 @@ export function ProfileSetup({ user, onDone }: Props) {
   const [urlaubTage, setUrlaubTage] = useState('30')
   const [resturlaubTage, setResturlaubTage] = useState('0')
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(true)
-  const [homeofficeQuote, setHomeofficeQuote] = useState('100')
+  const [homeofficeQuote, setHomeofficeQuote] = useState('60')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -126,7 +126,7 @@ export function ProfileSetup({ user, onDone }: Props) {
 
       {homeofficeErlaubt && (
         <label className="field">
-          <span>Home-Office-Quote (max. % der Arbeitstage)</span>
+          <span>Home-Office-Quote (max. % der Arbeitstage, Rest muss Büro/Dienstreise sein)</span>
           <input
             className="input"
             type="number"

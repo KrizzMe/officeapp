@@ -30,7 +30,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [resturlaubTage, setResturlaubTage] = useState(vacationDays(profile, DEFAULT_VACATION_TYPE_IDS.resturlaub))
   const [colorTheme, setColorTheme] = useState<ColorTheme>(profile.colorTheme ?? DEFAULT_COLOR_THEME)
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(profile.homeofficeErlaubt ?? true)
-  const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 100))
+  const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 60))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const themeCommitted = useRef(false)
@@ -160,7 +160,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
 
       {homeofficeErlaubt && (
         <label className="field">
-          <span>Home-Office-Quote (max. % der Arbeitstage)</span>
+          <span>Home-Office-Quote (max. % der Arbeitstage, Rest muss Büro/Dienstreise sein)</span>
           <input
             className="input"
             type="number"
