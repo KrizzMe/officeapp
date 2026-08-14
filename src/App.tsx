@@ -9,7 +9,7 @@ import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
 import { useEffect, useState } from 'react'
-import { DEFAULT_COLOR_THEME } from './lib/colorThemes'
+import { applyColorTheme, DEFAULT_COLOR_THEME } from './lib/colorThemes'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
@@ -20,7 +20,7 @@ function App() {
   const showYearOverview = activePanel === 'yearOverview'
 
   useEffect(() => {
-    document.documentElement.dataset.theme = profile?.colorTheme ?? DEFAULT_COLOR_THEME
+    applyColorTheme(profile?.colorTheme ?? DEFAULT_COLOR_THEME)
   }, [profile?.colorTheme])
 
   const login = async () => {

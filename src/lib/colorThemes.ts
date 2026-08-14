@@ -8,3 +8,16 @@ export const COLOR_THEMES: { id: ColorTheme; label: string; hint: string; swatch
 ]
 
 export const DEFAULT_COLOR_THEME: ColorTheme = 'lila'
+
+/**
+ * Setzt das Farbdesign (data-theme fürs CSS) und synchronisiert die
+ * `<meta name="theme-color">` aus index.html mit der jeweiligen Primärfarbe
+ * (swatches[0], identisch zu --color-primary je Design) — sonst bleibt die
+ * Browser-/PWA-Titelleiste immer beim hart codierten Lila-Standardwert.
+ */
+export function applyColorTheme(theme: ColorTheme): void {
+  document.documentElement.dataset.theme = theme
+  const meta = document.querySelector('meta[name="theme-color"]')
+  const primary = COLOR_THEMES.find((t) => t.id === theme)?.swatches[0]
+  if (meta && primary) meta.setAttribute('content', primary)
+}

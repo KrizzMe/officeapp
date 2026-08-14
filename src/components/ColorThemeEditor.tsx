@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ColorTheme, UserProfile } from '../types/models'
-import { COLOR_THEMES, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
+import { applyColorTheme, COLOR_THEMES, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
 
 interface Props {
@@ -18,13 +18,13 @@ export function ColorThemeEditor({ profile, onSaved }: Props) {
   // Direktvorschau: gewähltes Design sofort anwenden, beim Verlassen ohne
   // Speichern wieder auf das aktuell gespeicherte Design zurücksetzen.
   useEffect(() => {
-    document.documentElement.dataset.theme = colorTheme
+    applyColorTheme(colorTheme)
   }, [colorTheme])
 
   useEffect(
     () => () => {
       if (!themeCommitted.current) {
-        document.documentElement.dataset.theme = profile.colorTheme ?? DEFAULT_COLOR_THEME
+        applyColorTheme(profile.colorTheme ?? DEFAULT_COLOR_THEME)
       }
     },
     [profile.colorTheme],
