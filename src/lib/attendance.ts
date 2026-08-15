@@ -68,4 +68,23 @@ export function calculateAttendanceQuota(
   }
 }
 
+/** Anzahl Krankheitstage (`krank`, `kind-krank`, getrennt gezählt) über eine Liste von Tagen (Issue #31). */
+export function calculateSickDays(
+  days: Date[],
+  bundesland: Bundesland,
+  entries: Map<string, DayEntry>,
+  arbeitstage: readonly Weekday[],
+): { krankDays: number; kindKrankDays: number } {
+  let krankDays = 0
+  let kindKrankDays = 0
+
+  for (const date of days) {
+    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage)
+    if (status === 'krank') krankDays++
+    else if (status === 'kind-krank') kindKrankDays++
+  }
+
+  return { krankDays, kindKrankDays }
+}
+
 export { BASE_STATUSES }

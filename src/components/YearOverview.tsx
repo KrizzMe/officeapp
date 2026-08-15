@@ -4,7 +4,8 @@ import type { UserProfile } from '../types/models'
 import { DEFAULT_ARBEITSTAGE } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
-import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
+import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
+import { statusVisual } from '../lib/statusColors'
 
 interface Props {
   user: User
@@ -35,6 +36,14 @@ export function YearOverview({ user, profile }: Props) {
         calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries, requiredRatio, arbeitstage),
       ),
     [year, profile.bundesland, entries, requiredRatio, arbeitstage],
+  )
+
+  const monthlySickDays = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, m) =>
+        calculateSickDays(getMonthDays(year, m), profile.bundesland, entries, arbeitstage),
+      ),
+    [year, profile.bundesland, entries, arbeitstage],
   )
 
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
@@ -84,6 +93,8 @@ export function YearOverview({ user, profile }: Props) {
               <th>Büro</th>
               <th>Homeoffice</th>
               <th>Dienstreise</th>
+              <th>{statusVisual('krank').icon} Krank</th>
+              <th>{statusVisual('kind-krank').icon} Kind krank</th>
               {homeofficeErlaubt && <th>Quote</th>}
             </tr>
           </thead>
@@ -94,6 +105,8 @@ export function YearOverview({ user, profile }: Props) {
                 <td>{q.officeDays}</td>
                 <td>{q.homeofficeDays}</td>
                 <td>{q.businessTripDays}</td>
+                <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
+                <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
                 {homeofficeErlaubt && (
                   <td
                     style={{
