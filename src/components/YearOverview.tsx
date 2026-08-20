@@ -1,15 +1,26 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
-import type { UserProfile } from '../types/models'
+import type { BaseDayStatus, UserProfile } from '../types/models'
 import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
+import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
+import { StatusRangesTable } from './StatusRangesTable'
 
 interface Props {
   user: User
   profile: UserProfile
+}
+
+/** Per Klick aufklappbare Detail-Zeiträume oben in der Jahresübersicht (Issue #33). */
+type DetailStatus = Extract<BaseDayStatus, 'dienstreise' | 'krank' | 'kind-krank'>
+
+const DETAIL_LABELS: Record<DetailStatus, { title: string; grundPlaceholder: string }> = {
+  dienstreise: { title: 'Dienstreisen', grundPlaceholder: 'Grund der Dienstreise (optional)' },
+  krank: { title: 'Krankheitstage', grundPlaceholder: 'Grund der Krankheit (optional)' },
+  'kind-krank': { title: 'Kind-krank-Tage', grundPlaceholder: 'Grund / Kind (optional)' },
 }
 
 /**
@@ -20,6 +31,7 @@ interface Props {
  */
 export function YearOverview({ user, profile }: Props) {
   const [year, setYear] = useState(new Date().getFullYear())
+  const [activeDetail, setActiveDetail] = useState<DetailStatus | null>(null)
   const entries = useYearEntries(user.uid, year)
 
   const yearDays = useMemo(() => getYearDays(year), [year])
@@ -65,87 +77,154 @@ export function YearOverview({ user, profile }: Props) {
     [year, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
+  const yearSickDays = useMemo(
+    () => calculateSickDays(yearDays, profile.bundesland, agFreieTage, entries, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, arbeitstage],
+  )
+
+  const activeRanges = useMemo(() => {
+    if (!activeDetail) return []
+    return computeStatusRanges(year, activeDetail, profile.bundesland, agFreieTage, entries, arbeitstage)
+  }, [activeDetail, year, profile.bundesland, agFreieTage, entries, arbeitstage])
+
+  const toggleDetail = (status: DetailStatus) => setActiveDetail((cur) => (cur === status ? null : status))
+
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
   const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
 
   return (
-    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-      <div className="month-nav">
-        <button className="btn btn-secondary btn-sm" onClick={() => setYear((y) => y - 1)}>
-          ← Vorheriges Jahr
-        </button>
-        <h2>Jahresübersicht {year}</h2>
-        <button className="btn btn-secondary btn-sm" onClick={() => setYear((y) => y + 1)}>
-          Nächstes Jahr →
-        </button>
-      </div>
-
-      {homeofficeErlaubt && (
-        <div className="card-grid">
-          <div className="card stat-tile">
-            <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
-            <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-              {(yearQuota.ratio * 100).toFixed(1)}%
-            </span>
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${yearQuotaPercent}%`,
-                  background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-                }}
-              />
-            </div>
-            <span className="stat-sub">
-              Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von {yearQuota.possibleWorkDays}{' '}
-              möglichen Arbeitstagen · Ziel ≥ {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
-            </span>
-          </div>
+    <div>
+      <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+        <div className="month-nav">
+          <button className="btn btn-secondary btn-sm" onClick={() => setYear((y) => y - 1)}>
+            ← Vorheriges Jahr
+          </button>
+          <h2>Jahresübersicht {year}</h2>
+          <button className="btn btn-secondary btn-sm" onClick={() => setYear((y) => y + 1)}>
+            Nächstes Jahr →
+          </button>
         </div>
-      )}
 
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Monat</th>
-              <th>Büro</th>
-              <th>Homeoffice</th>
-              <th>Dienstreise</th>
-              <th>{statusVisual('krank').icon} Krank</th>
-              <th>{statusVisual('kind-krank').icon} Kind krank</th>
-              {homeofficeErlaubt && <th>Quote</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {monthlyQuotas.map((q, m) => (
-              <tr key={m}>
-                <td>{monthLabel(year, m)}</td>
-                <td>{q.officeDays}</td>
-                <td>{q.homeofficeDays}</td>
-                <td>{q.businessTripDays}</td>
-                <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
-                <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
-                {homeofficeErlaubt && (
-                  <td
-                    style={{
-                      fontWeight: 600,
-                      color: q.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-                    }}
-                  >
-                    {q.possibleWorkDays > 0 ? `${(q.ratio * 100).toFixed(0)}%` : '–'}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {homeofficeErlaubt && (
+          <div className="card-grid">
+            <div className="card stat-tile">
+              <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
+              <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
+                {(yearQuota.ratio * 100).toFixed(1)}%
+              </span>
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${yearQuotaPercent}%`,
+                    background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+                  }}
+                />
+              </div>
+              <span className="stat-sub">
+                Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von{' '}
+                {yearQuota.possibleWorkDays} möglichen Arbeitstagen · Ziel ≥{' '}
+                {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
+              </span>
+            </div>
+
+            {yearQuota.businessTripDays > 0 && (
+              <button
+                type="button"
+                className={`card stat-tile stat-tile-button ${activeDetail === 'dienstreise' ? 'is-active' : ''}`}
+                onClick={() => toggleDetail('dienstreise')}
+                aria-pressed={activeDetail === 'dienstreise'}
+              >
+                <span className="stat-label">
+                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title}
+                </span>
+                <span className="stat-value">{yearQuota.businessTripDays}</span>
+                <span className="stat-sub">Tage im Jahr {year}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className={`card stat-tile stat-tile-button ${activeDetail === 'krank' ? 'is-active' : ''}`}
+              onClick={() => toggleDetail('krank')}
+              aria-pressed={activeDetail === 'krank'}
+            >
+              <span className="stat-label">
+                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title}
+              </span>
+              <span className="stat-value">{yearSickDays.krankDays}</span>
+              <span className="stat-sub">Tage im Jahr {year}</span>
+            </button>
+
+            {yearSickDays.kindKrankDays > 0 && (
+              <button
+                type="button"
+                className={`card stat-tile stat-tile-button ${activeDetail === 'kind-krank' ? 'is-active' : ''}`}
+                onClick={() => toggleDetail('kind-krank')}
+                aria-pressed={activeDetail === 'kind-krank'}
+              >
+                <span className="stat-label">
+                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title}
+                </span>
+                <span className="stat-value">{yearSickDays.kindKrankDays}</span>
+                <span className="stat-sub">Tage im Jahr {year}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {activeDetail && (
+          <>
+            <h3 style={{ marginBottom: 'var(--space-3)' }}>{DETAIL_LABELS[activeDetail].title}</h3>
+            <StatusRangesTable
+              uid={user.uid}
+              ranges={activeRanges}
+              grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
+            />
+          </>
+        )}
       </div>
 
-      <p className="form-hint" style={{ marginTop: 'var(--space-3)' }}>
-        Tage ohne Eintrag zählen als Büro (Fallback-Logik) — Monate ganz oder teilweise in der Zukunft zeigen daher
-        vorläufig eine höhere Quote, als sich am Ende tatsächlich ergibt.
-      </p>
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Monatsübersicht {year}</h2>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Monat</th>
+                <th>Büro</th>
+                <th>Homeoffice</th>
+                <th>Dienstreise</th>
+                <th>{statusVisual('krank').icon} Krank</th>
+                <th>{statusVisual('kind-krank').icon} Kind krank</th>
+                {homeofficeErlaubt && <th>Quote</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {monthlyQuotas.map((q, m) => (
+                <tr key={m}>
+                  <td>{monthLabel(year, m)}</td>
+                  <td>{q.officeDays}</td>
+                  <td>{q.homeofficeDays}</td>
+                  <td>{q.businessTripDays}</td>
+                  <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
+                  <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
+                  {homeofficeErlaubt && (
+                    <td
+                      style={{
+                        fontWeight: 600,
+                        color: q.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
+                      }}
+                    >
+                      {q.possibleWorkDays > 0 ? `${(q.ratio * 100).toFixed(0)}%` : '–'}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
