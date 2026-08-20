@@ -240,17 +240,7 @@ export function YearOverview({ user, profile }: Props) {
               <tr>
                 <th>Monat</th>
                 {TABLE_COLUMNS.map((status) => (
-                  <th key={status}>
-                    {isMobile ? (
-                      <TableHeaderCell status={status} />
-                    ) : status === 'krank' || status === 'kind-krank' ? (
-                      <>
-                        {statusVisual(status).icon} {statusLabel(status, [])}
-                      </>
-                    ) : (
-                      statusLabel(status, [])
-                    )}
-                  </th>
+                  <th key={status}>{isMobile ? <TableHeaderCell status={status} /> : statusLabel(status, [])}</th>
                 ))}
                 {homeofficeErlaubt && <th>Quote</th>}
               </tr>
