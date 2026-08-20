@@ -35,10 +35,6 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeoffi
               }}
             />
           </div>
-          <span className="stat-sub">
-            Büro {quota.officeDays} + Dienstreise {quota.businessTripDays} von {quota.possibleWorkDays} möglichen
-            Arbeitstagen · Homeoffice {quota.homeofficeDays} · Ziel ≥ {(quota.requiredOfficeRatio * 100).toFixed(0)}%
-          </span>
         </div>
       )}
 
