@@ -392,20 +392,6 @@ a {
   font-size: var(--font-size-xs);
 }
 
-/*
- * "Bearbeiten"/"Löschen" (Urlaubsarten verwalten) gleich groß anzeigen,
- * unabhängig von der unterschiedlichen Textlänge. Auf Mobile zeigen die
- * Buttons nur ihr Icon (analog StatusDropdown, Issue #30) und sind dadurch
- * von sich aus schon gleich groß, ohne dass die Tabelle horizontal
- * gescrollt werden muss; ab 640px reicht die feste Mindestbreite anhand
- * des längeren Texts "Bearbeiten" (Issue #63).
- */
-@media (min-width: 640px) {
-  .btn-equal {
-    min-width: 6.5rem;
-  }
-}
-
 /* ---------------------------------------------------------------------- */
 /* Cards & Stat-Kacheln                                                   */
 /* ---------------------------------------------------------------------- */
@@ -856,7 +842,7 @@ select.input:focus {
 
   .table--vacation-types th:nth-child(4),
   .table--vacation-types td:nth-child(4) {
-    width: 6.75rem;
+    width: 3.25rem;
   }
 }
 

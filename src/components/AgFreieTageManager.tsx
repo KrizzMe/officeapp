@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { AgFreierTag, UserProfile } from '../types/models'
 import { saveUserProfile } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
   profile: UserProfile
@@ -87,6 +88,12 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /*
+   * Löschen ist nur noch im Bearbeitungsmodus erreichbar (analog
+   * VacationTypesManager, Issue #63-Folgeticket). Auf Mobile zeigen
+   * Bearbeiten/Speichern/Abbrechen/Löschen dort nur ihr Icon statt Text.
+   */
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const agFreieTage = profile.agFreieTage ?? []
   const sorted = [...agFreieTage].sort((a, b) => a.tag.localeCompare(b.tag))
@@ -179,11 +186,20 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
                         onChange={(e) => setEditForm({ ...editForm, bezeichnung: e.target.value })}
                         required
                       />
-                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                        Speichern
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                        {isMobile ? '💾' : 'Speichern'}
                       </button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit}>
-                        Abbrechen
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
+                        {isMobile ? '❌' : 'Abbrechen'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(type)}
+                        disabled={saving}
+                        aria-label="Löschen"
+                      >
+                        {isMobile ? '🗑️' : 'Löschen'}
                       </button>
                     </form>
                   </td>
@@ -193,19 +209,14 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
                   <td>{formatTag(type.tag)}</td>
                   <td>{type.bezeichnung}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <div className="form-row" style={{ justifyContent: 'flex-end' }}>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(type)}>
-                        Bearbeiten
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(type)}
-                        disabled={saving}
-                      >
-                        Löschen
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => startEdit(type)}
+                      aria-label="Bearbeiten"
+                    >
+                      {isMobile ? '✏️' : 'Bearbeiten'}
+                    </button>
                   </td>
                 </tr>
               ),

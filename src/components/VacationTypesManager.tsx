@@ -60,8 +60,12 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [blockedDelete, setBlockedDelete] = useState<{ id: string; name: string; count: number } | null>(null)
-  /* Bearbeiten/Löschen auf Mobile als gleich große Icon-Buttons statt Text, damit die Tabelle nicht
-     horizontal gescrollt werden muss (Issue #63); ab 640px weiterhin Text (analog StatusDropdown). */
+  /*
+   * Löschen ist nur noch im Bearbeitungsmodus erreichbar (nicht mehr direkt
+   * in der Zeile), damit in Ruhe nur der Bearbeiten-Button/das Icon steht.
+   * Auf Mobile zeigen Bearbeiten/Speichern/Abbrechen/Löschen dort nur ihr
+   * Icon statt Text (analog StatusDropdown), ab 640px weiterhin Text.
+   */
   const isMobile = useMediaQuery('(max-width: 639px)')
 
   const persist = async (vacationTypes: VacationType[]) => {
@@ -193,13 +197,28 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                           style={{ width: 60 }}
                         />
                       )}
-                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                        Speichern
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                        {isMobile ? '💾' : 'Speichern'}
                       </button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit}>
-                        Abbrechen
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
+                        {isMobile ? '❌' : 'Abbrechen'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(type)}
+                        disabled={saving}
+                        aria-label="Löschen"
+                      >
+                        {isMobile ? '🗑️' : 'Löschen'}
                       </button>
                     </form>
+                    {blockedDelete?.id === type.id && (
+                      <div className="form-warning" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
+                        Kann nicht gelöscht werden: {blockedDelete.count} Tageseintrag(e) mit dieser Urlaubsart
+                        vorhanden. Erst diese Einträge ändern oder entfernen.
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -208,31 +227,14 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                   <td>{type.totalDays}</td>
                   <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <div className="form-row" style={{ justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm btn-equal"
-                        onClick={() => startEdit(type)}
-                        aria-label="Bearbeiten"
-                      >
-                        {isMobile ? '✏️' : 'Bearbeiten'}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm btn-equal"
-                        onClick={() => handleDelete(type)}
-                        disabled={saving}
-                        aria-label="Löschen"
-                      >
-                        {isMobile ? '🗑️' : 'Löschen'}
-                      </button>
-                    </div>
-                    {blockedDelete?.id === type.id && (
-                      <div className="form-warning" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
-                        Kann nicht gelöscht werden: {blockedDelete.count} Tageseintrag(e) mit dieser Urlaubsart
-                        vorhanden. Erst diese Einträge ändern oder entfernen.
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => startEdit(type)}
+                      aria-label="Bearbeiten"
+                    >
+                      {isMobile ? '✏️' : 'Bearbeiten'}
+                    </button>
                   </td>
                 </tr>
               ),
