@@ -262,13 +262,28 @@ a {
 
 .app-header {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Obere Header-Zeile: Titel links, Nutzername/Profil/Abmelden rechts (Issue #63). */
+.app-header-top {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
-  padding-bottom: var(--space-4);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+}
+
+/* Untere Header-Zeile: Hauptnavigation (Dashboard/Monatsübersicht/Jahresübersicht), Issue #63. */
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -377,6 +392,20 @@ a {
   font-size: var(--font-size-xs);
 }
 
+/*
+ * "Bearbeiten"/"Löschen" (Urlaubsarten verwalten) gleich groß anzeigen,
+ * unabhängig von der unterschiedlichen Textlänge. Auf Mobile zeigen die
+ * Buttons nur ihr Icon (analog StatusDropdown, Issue #30) und sind dadurch
+ * von sich aus schon gleich groß, ohne dass die Tabelle horizontal
+ * gescrollt werden muss; ab 640px reicht die feste Mindestbreite anhand
+ * des längeren Texts "Bearbeiten" (Issue #63).
+ */
+@media (min-width: 640px) {
+  .btn-equal {
+    min-width: 6.5rem;
+  }
+}
+
 /* ---------------------------------------------------------------------- */
 /* Cards & Stat-Kacheln                                                   */
 /* ---------------------------------------------------------------------- */
@@ -400,6 +429,15 @@ a {
   .card-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
+}
+
+/*
+ * Dashboard: "Dein heutiger Status" soll genauso groß wirken wie die
+ * Anwesenheitsquote-Kachel, auch wenn ihr Inhalt (nur Label + Dropdown)
+ * von sich aus weniger Platz braucht (Issue #63).
+ */
+.dashboard-grid > .card {
+  min-height: 9.5rem;
 }
 
 .stat-tile {
@@ -740,6 +778,96 @@ select.input:focus {
 .table-centered-data th:not(:first-child),
 .table-centered-data td:not(:first-child) {
   text-align: center;
+}
+
+/*
+ * Zeitraum-Tabelle (Dienstreise/Krank/Kind-krank) in der Jahresübersicht:
+ * feste Spaltenbreiten, damit die Grund-Spalte nicht beliebig breit wird
+ * und ihr Text stattdessen umbricht statt horizontal gescrollt werden zu
+ * müssen (Issue #63).
+ */
+.table--status-ranges {
+  table-layout: fixed;
+}
+
+/*
+ * Schmale feste Spalten: Kopfzeilen ohne Großschreibung/Sperrung (spart
+ * Breite) und mit Umbruch statt Überlappung, falls es dennoch eng wird.
+ */
+.table--status-ranges th {
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/*
+ * Monat/Zeitraum/Tage bekommen feste, knapp bemessene Breiten; Grund (ohne
+ * eigene width) erhält automatisch den verbleibenden Platz (Issue #63).
+ */
+.table--status-ranges th:nth-child(1),
+.table--status-ranges td:nth-child(1) {
+  width: 3.75rem;
+}
+
+.table--status-ranges th:nth-child(2),
+.table--status-ranges td:nth-child(2) {
+  width: 5.1rem;
+}
+
+.table--status-ranges th:nth-child(3),
+.table--status-ranges td:nth-child(3) {
+  width: 3.1rem;
+}
+
+/*
+ * Urlaubsarten verwalten auf Mobile: feste, knapp bemessene Spaltenbreiten
+ * für Tage/Jahr, Rhythmus und die (dort Icon-großen) Aktionen; Name (ohne
+ * eigene width) erhält den verbleibenden Platz und darf bei langen Namen
+ * umbrechen, statt die Tabelle horizontal scrollbar zu machen. Ab 640px
+ * ist genug Platz für die Text-Buttons, dort bleibt die normale
+ * (automatische) Tabellenspaltenbreite (Issue #63).
+ */
+@media (max-width: 639px) {
+  .table--vacation-types {
+    table-layout: fixed;
+  }
+
+  .table--vacation-types th {
+    white-space: normal;
+    overflow-wrap: break-word;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .table--vacation-types td:first-child {
+    overflow-wrap: break-word;
+  }
+
+  .table--vacation-types th:nth-child(2),
+  .table--vacation-types td:nth-child(2) {
+    width: 3.25rem;
+  }
+
+  .table--vacation-types th:nth-child(3),
+  .table--vacation-types td:nth-child(3) {
+    width: 3.75rem;
+  }
+
+  .table--vacation-types th:nth-child(4),
+  .table--vacation-types td:nth-child(4) {
+    width: 6.75rem;
+  }
+}
+
+/* Grund-Freitextfeld: umbricht statt den Text abzuschneiden (Issue #63). */
+.textarea-wrap {
+  resize: vertical;
+  min-height: var(--tap-target);
+  line-height: 1.4;
+  font-family: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 /* Monatstabelle Jahresübersicht: Spaltenüberschriften auf Mobile als Icon mit

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { UserProfile, VacationType } from '../types/models'
 import { countDayEntriesWithStatus, saveUserProfile } from '../firebase/firestore'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
   profile: UserProfile
@@ -59,6 +60,9 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [blockedDelete, setBlockedDelete] = useState<{ id: string; name: string; count: number } | null>(null)
+  /* Bearbeiten/Löschen auf Mobile als gleich große Icon-Buttons statt Text, damit die Tabelle nicht
+     horizontal gescrollt werden muss (Issue #63); ab 640px weiterhin Text (analog StatusDropdown). */
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const persist = async (vacationTypes: VacationType[]) => {
     setSaving(true)
@@ -142,11 +146,11 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
       {error && <p className="form-error">{error}</p>}
 
       <div className="table-wrap">
-        <table className="table">
+        <table className="table table--vacation-types">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Kontingent/Jahr</th>
+              <th>Tage/Jahr</th>
               <th>Rhythmus</th>
               <th />
             </tr>
@@ -205,16 +209,22 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                   <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="form-row" style={{ justifyContent: 'flex-end' }}>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(type)}>
-                        Bearbeiten
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm btn-equal"
+                        onClick={() => startEdit(type)}
+                        aria-label="Bearbeiten"
+                      >
+                        {isMobile ? '✏️' : 'Bearbeiten'}
                       </button>
                       <button
                         type="button"
-                        className="btn btn-danger btn-sm"
+                        className="btn btn-danger btn-sm btn-equal"
                         onClick={() => handleDelete(type)}
                         disabled={saving}
+                        aria-label="Löschen"
                       >
-                        Löschen
+                        {isMobile ? '🗑️' : 'Löschen'}
                       </button>
                     </div>
                     {blockedDelete?.id === type.id && (

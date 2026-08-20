@@ -75,7 +75,7 @@ export function HomeDashboard({ user, profile }: Props) {
   }
 
   return (
-    <div className="card-grid">
+    <div className="card-grid dashboard-grid">
       {homeofficeErlaubt && <AttendanceQuotaTile quota={quota} periodLabel={monthLabel(year, month)} />}
 
       <div className="card stat-tile">

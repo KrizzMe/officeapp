@@ -45,7 +45,7 @@ export function StatusRangesTable({ uid, ranges, grundPlaceholder }: Props) {
 
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table table--status-ranges">
         <thead>
           <tr>
             <th>Monat</th>
@@ -64,8 +64,9 @@ export function StatusRangesTable({ uid, ranges, grundPlaceholder }: Props) {
                 <td>{formatZeitraum(range)}</td>
                 <td>{range.days}</td>
                 <td>
-                  <input
-                    className="input"
+                  <textarea
+                    className="input textarea-wrap"
+                    rows={3}
                     placeholder={grundPlaceholder}
                     value={value}
                     onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
