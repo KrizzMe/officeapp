@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 import type { UserProfile, Weekday } from '../types/models'
 import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE, DEFAULT_VACATION_TYPE_IDS } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
-import { DEFAULT_COLOR_THEME } from '../lib/colorThemes'
+import { DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
 
 interface Props {
@@ -66,6 +66,7 @@ export function ProfileSetup({ user, onDone }: Props) {
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
         bundesland: bundesland as UserProfile['bundesland'],
         colorTheme: DEFAULT_COLOR_THEME,
+        colorMode: DEFAULT_COLOR_MODE,
         arbeitstage,
         homeofficeErlaubt,
         homeofficeQuote: Number(homeofficeQuote) || 0,

@@ -10,7 +10,7 @@ import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
 import { useEffect, useState } from 'react'
-import { applyColorTheme, DEFAULT_COLOR_THEME } from './lib/colorThemes'
+import { applyColorMode, applyColorTheme, DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from './lib/colorThemes'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
@@ -22,7 +22,8 @@ function App() {
 
   useEffect(() => {
     applyColorTheme(profile?.colorTheme ?? DEFAULT_COLOR_THEME)
-  }, [profile?.colorTheme])
+    applyColorMode(profile?.colorMode ?? DEFAULT_COLOR_MODE)
+  }, [profile?.colorTheme, profile?.colorMode])
 
   const login = async () => {
     setLoginError(null)

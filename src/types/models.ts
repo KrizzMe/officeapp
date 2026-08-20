@@ -12,6 +12,9 @@ export type Bundesland =
 /** Vom Nutzer wählbares Farbdesign (Issue #21). */
 export type ColorTheme = 'lila' | 'rot-weiss' | 'gelb-gruen'
 
+/** Vom Nutzer wählbarer Hell-/Dunkelmodus, unabhängig vom Farbdesign (Issue #41). */
+export type ColorMode = 'hell' | 'dunkel' | 'automatisch'
+
 /** Wochentag, für konfigurierbare Arbeitstage (Issue #34). */
 export type Weekday = 'Mo' | 'Di' | 'Mi' | 'Do' | 'Fr' | 'Sa' | 'So'
 
@@ -74,6 +77,13 @@ export interface UserProfile {
    * Profilen aus der Zeit vor Issue #21 — beim Fehlen gilt 'lila' als Default.
    */
   colorTheme?: ColorTheme
+  /**
+   * Vom Nutzer gewählter Hell-/Dunkelmodus (Issue #41). 'automatisch' folgt
+   * der Betriebssystem-/Browser-Einstellung. Optional für Rückwärtskompatibilität
+   * mit Profilen von vor diesem Feature; beim Fehlen gilt 'automatisch' als
+   * Default (bisheriges Verhalten unverändert).
+   */
+  colorMode?: ColorMode
   /**
    * Ob der Status 'homeoffice' im Kalender überhaupt auswählbar ist (manche
    * Tätigkeiten erlauben kein Homeoffice). Optional für Rückwärtskompatibilität

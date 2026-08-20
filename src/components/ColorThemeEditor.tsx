@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ColorTheme, UserProfile } from '../types/models'
-import { applyColorTheme, COLOR_THEMES, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
+import type { ColorMode, ColorTheme, UserProfile } from '../types/models'
+import {
+  applyColorMode,
+  applyColorTheme,
+  COLOR_MODES,
+  COLOR_THEMES,
+  DEFAULT_COLOR_MODE,
+  DEFAULT_COLOR_THEME,
+} from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
 
 interface Props {
@@ -8,34 +15,43 @@ interface Props {
   onSaved: () => void
 }
 
-/** Eigene Sektion für das Farbdesign (Issue #21), bewusst unten im Profilbereich, unter den Urlaubsarten. */
+/**
+ * Eigene Sektion für Farbdesign (Issue #21) und Hell-/Dunkelmodus (Issue #41),
+ * bewusst unten im Profilbereich, unter den Urlaubsarten.
+ */
 export function ColorThemeEditor({ profile, onSaved }: Props) {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(profile.colorTheme ?? DEFAULT_COLOR_THEME)
+  const [colorMode, setColorMode] = useState<ColorMode>(profile.colorMode ?? DEFAULT_COLOR_MODE)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const themeCommitted = useRef(false)
+  const committed = useRef(false)
 
-  // Direktvorschau: gewähltes Design sofort anwenden, beim Verlassen ohne
-  // Speichern wieder auf das aktuell gespeicherte Design zurücksetzen.
+  // Direktvorschau: gewähltes Design/Modus sofort anwenden, beim Verlassen
+  // ohne Speichern wieder auf den zuletzt gespeicherten Stand zurücksetzen.
   useEffect(() => {
     applyColorTheme(colorTheme)
   }, [colorTheme])
 
+  useEffect(() => {
+    applyColorMode(colorMode)
+  }, [colorMode])
+
   useEffect(
     () => () => {
-      if (!themeCommitted.current) {
+      if (!committed.current) {
         applyColorTheme(profile.colorTheme ?? DEFAULT_COLOR_THEME)
+        applyColorMode(profile.colorMode ?? DEFAULT_COLOR_MODE)
       }
     },
-    [profile.colorTheme],
+    [profile.colorTheme, profile.colorMode],
   )
 
   const handleSave = async () => {
     setSaving(true)
     setError(null)
     try {
-      await saveUserProfile({ ...profile, colorTheme })
-      themeCommitted.current = true
+      await saveUserProfile({ ...profile, colorTheme, colorMode })
+      committed.current = true
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -71,6 +87,23 @@ export function ColorThemeEditor({ profile, onSaved }: Props) {
             </span>
           </label>
         ))}
+      </div>
+
+      <div className="field" style={{ marginTop: 'var(--space-4)' }}>
+        <span>Hell-/Dunkelmodus</span>
+        <div className="weekday-toggle-group">
+          {COLOR_MODES.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              className={`weekday-toggle${colorMode === mode.id ? ' weekday-toggle--active' : ''}`}
+              aria-pressed={colorMode === mode.id}
+              onClick={() => setColorMode(mode.id)}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <p className="form-error">{error}</p>}
