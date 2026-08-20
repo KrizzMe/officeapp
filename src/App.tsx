@@ -8,17 +8,19 @@ import { VacationTypesManager } from './components/VacationTypesManager'
 import { AgFreieTageManager } from './components/AgFreieTageManager'
 import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
+import { HomeDashboard } from './components/HomeDashboard'
 import { YearOverview } from './components/YearOverview'
 import { useEffect, useState } from 'react'
 import { applyColorMode, applyColorTheme, DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from './lib/colorThemes'
+
+type Panel = 'dashboard' | 'monthOverview' | 'yearOverview' | 'profile'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
   const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
   const [loginError, setLoginError] = useState<string | null>(null)
-  const [activePanel, setActivePanel] = useState<'profile' | 'yearOverview' | null>(null)
+  const [activePanel, setActivePanel] = useState<Panel>('dashboard')
   const editingProfile = activePanel === 'profile'
-  const showYearOverview = activePanel === 'yearOverview'
 
   useEffect(() => {
     applyColorTheme(profile?.colorTheme ?? DEFAULT_COLOR_THEME)
@@ -62,20 +64,32 @@ function App() {
         <div className="app-header-user">
           <span className="user-name">{user.displayName}</span>
           {profile && (
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setActivePanel((v) => (v === 'profile' ? null : 'profile'))}
-            >
-              {editingProfile ? 'Profil-Bearbeitung schließen' : 'Profil bearbeiten'}
-            </button>
-          )}
-          {profile && (
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setActivePanel((v) => (v === 'yearOverview' ? null : 'yearOverview'))}
-            >
-              {showYearOverview ? 'Jahresübersicht schließen' : 'Jahresübersicht'}
-            </button>
+            <>
+              <button
+                className={activePanel === 'dashboard' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                onClick={() => setActivePanel('dashboard')}
+              >
+                Dashboard
+              </button>
+              <button
+                className={activePanel === 'monthOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                onClick={() => setActivePanel('monthOverview')}
+              >
+                Monatsübersicht
+              </button>
+              <button
+                className={activePanel === 'yearOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                onClick={() => setActivePanel('yearOverview')}
+              >
+                Jahresübersicht
+              </button>
+              <button
+                className={activePanel === 'profile' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                onClick={() => setActivePanel('profile')}
+              >
+                Profil bearbeiten
+              </button>
+            </>
           )}
           <button className="btn btn-secondary btn-sm" onClick={() => signOut(auth)}>
             Abmelden
@@ -90,18 +104,19 @@ function App() {
               <ProfileEditor
                 profile={profile}
                 onSaved={() => {
-                  setActivePanel(null)
+                  setActivePanel('dashboard')
                   reload()
                 }}
-                onCancel={() => setActivePanel(null)}
+                onCancel={() => setActivePanel('dashboard')}
               />
               <VacationTypesManager profile={profile} onUpdated={reload} />
               <AgFreieTageManager profile={profile} onUpdated={reload} />
               <ColorThemeEditor profile={profile} onSaved={reload} />
             </>
           )}
-          {!editingProfile && showYearOverview && <YearOverview user={user} profile={profile} />}
-          {!editingProfile && !showYearOverview && <CalendarPage user={user} profile={profile} />}
+          {activePanel === 'yearOverview' && <YearOverview user={user} profile={profile} />}
+          {activePanel === 'monthOverview' && <CalendarPage user={user} profile={profile} />}
+          {activePanel === 'dashboard' && <HomeDashboard user={user} profile={profile} />}
         </>
       ) : (
         <ProfileSetup user={user} onDone={reload} />

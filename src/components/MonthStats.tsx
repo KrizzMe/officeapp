@@ -10,7 +10,7 @@ interface Props {
   homeofficeErlaubt: boolean
 }
 
-export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt }: Props) {
+export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt }: Props) {
   const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
   const colorOf = (id: string) => {
     const type = vacationTypes.find((v) => v.id === id)
