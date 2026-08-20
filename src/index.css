@@ -3,7 +3,8 @@
 /* ---------------------------------------------------------------------- */
 
 :root {
-  color-scheme: light dark;
+  /* color-scheme wird von applyColorMode() (colorThemes.ts) passend zum
+     gewählten Hell-/Dunkelmodus gesetzt (Issue #41), siehe dort. */
 
   /* Farben (Light) */
   --color-bg: #f6f5fb;
@@ -114,75 +115,77 @@
   --color-on-primary: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #14111f;
-    --color-surface: #1e1a2e;
-    --color-surface-alt: #262138;
-    --color-border: #362f4d;
-    --color-text: #f1eefb;
-    --color-text-muted: #a79fc2;
+/* Dunkle Farb-Tokens, gesteuert über [data-mode='dunkel'] auf <html>          */
+/* (Issue #41). Wird von applyColorMode() (colorThemes.ts) gesetzt — entweder  */
+/* durch feste Nutzerwahl "Dunkel" oder bei "Automatisch" abgeleitet aus der   */
+/* Systemeinstellung (prefers-color-scheme), inkl. Live-Nachführung.           */
+[data-mode='dunkel'] {
+  --color-bg: #14111f;
+  --color-surface: #1e1a2e;
+  --color-surface-alt: #262138;
+  --color-border: #362f4d;
+  --color-text: #f1eefb;
+  --color-text-muted: #a79fc2;
 
-    --color-primary: #a78bfa;
-    --color-primary-hover: #c4b5fd;
-    --color-primary-soft: #362a5c;
-    --color-on-primary: #1e1b2e;
+  --color-primary: #a78bfa;
+  --color-primary-hover: #c4b5fd;
+  --color-primary-soft: #362a5c;
+  --color-on-primary: #1e1b2e;
 
-    --color-success: #4ade80;
-    --color-success-soft: #14532d;
-    --color-danger: #f87171;
-    --color-danger-soft: #5b1414;
-    --color-warning: #fbbf24;
-    --color-warning-soft: #5c3d05;
+  --color-success: #4ade80;
+  --color-success-soft: #14532d;
+  --color-danger: #f87171;
+  --color-danger-soft: #5b1414;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #5c3d05;
 
-    --status-buero: #60a5fa;
-    --status-homeoffice: #94a3b8;
-    --status-dienstreise: #fb923c;
-    --status-krank: #f87171;
-    --status-kind-krank: #f472b6;
-    --status-weekend: #6b6580;
-    --status-holiday: #8a82a8;
-    --status-resturlaub: #4ade80;
+  --status-buero: #60a5fa;
+  --status-homeoffice: #94a3b8;
+  --status-dienstreise: #fb923c;
+  --status-krank: #f87171;
+  --status-kind-krank: #f472b6;
+  --status-weekend: #6b6580;
+  --status-holiday: #8a82a8;
+  --status-resturlaub: #4ade80;
 
-    --status-vacation-1: #a78bfa;
-    --status-vacation-2: #f472b6;
-    --status-vacation-3: #fbbf24;
-    --status-vacation-4: #22d3ee;
-    --status-vacation-5: #a3e635;
-    --status-vacation-6: #e879f9;
+  --status-vacation-1: #a78bfa;
+  --status-vacation-2: #f472b6;
+  --status-vacation-3: #fbbf24;
+  --status-vacation-4: #22d3ee;
+  --status-vacation-5: #a3e635;
+  --status-vacation-6: #e879f9;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-  }
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
 
-  [data-theme='rot-weiss'] {
-    --color-bg: #1f1516;
-    --color-surface: #2a1c1e;
-    --color-surface-alt: #342224;
-    --color-border: #4a2e31;
-    --color-text: #f5ece9;
-    --color-text-muted: #c2a9ac;
+[data-theme='rot-weiss'][data-mode='dunkel'] {
+  --color-bg: #1f1516;
+  --color-surface: #2a1c1e;
+  --color-surface-alt: #342224;
+  --color-border: #4a2e31;
+  --color-text: #f5ece9;
+  --color-text-muted: #c2a9ac;
 
-    --color-primary: #e2647a;
-    --color-primary-hover: #eb8398;
-    --color-primary-soft: #4a1f28;
-    --color-on-primary: #2a1015;
-  }
+  --color-primary: #e2647a;
+  --color-primary-hover: #eb8398;
+  --color-primary-soft: #4a1f28;
+  --color-on-primary: #2a1015;
+}
 
-  [data-theme='gelb-gruen'] {
-    --color-bg: #101a14;
-    --color-surface: #16241b;
-    --color-surface-alt: #1c2e22;
-    --color-border: #2c4534;
-    --color-text: #eef7f0;
-    --color-text-muted: #9fbfa9;
+[data-theme='gelb-gruen'][data-mode='dunkel'] {
+  --color-bg: #101a14;
+  --color-surface: #16241b;
+  --color-surface-alt: #1c2e22;
+  --color-border: #2c4534;
+  --color-text: #eef7f0;
+  --color-text-muted: #9fbfa9;
 
-    --color-primary: #34d17c;
-    --color-primary-hover: #5be08f;
-    --color-primary-soft: #1c3d29;
-    --color-on-primary: #0d2015;
-  }
+  --color-primary: #34d17c;
+  --color-primary-hover: #5be08f;
+  --color-primary-soft: #1c3d29;
+  --color-on-primary: #0d2015;
 }
 
 /* ---------------------------------------------------------------------- */
