@@ -31,6 +31,7 @@
 - Bei erfolgreichem Test: fragen, ob der Teststand auf PROD gemergt und deployed werden soll.
 - Vor dem Merge prüfen, dass der PR nur die vorgesehenen Tickets enthält (keine ungewollten Änderungen) — das eigentliche Schließen der Tickets übernimmt GitHub automatisch beim Merge (über "Fixes #Nummer" in der PR-Beschreibung).
 - Der Merge löst automatisch (über die bestehende CI-Pipeline `firebase-hosting-merge.yml`) den Deploy auf PROD aus.
+- Nach dem Merge den gemergten Branch aufräumen (löschen).
 
 ### 4. Abschluss und Archivierung
 
