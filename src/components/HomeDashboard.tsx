@@ -9,6 +9,7 @@ import { calculateAttendanceQuota, effectiveDayStatus, requiredOfficeRatio } fro
 import { checkRhythmViolation } from '../lib/vacation'
 import { statusVisual } from '../lib/statusColors'
 import { buildStatusOptions, statusLabel } from '../lib/statusOptions'
+import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusDropdown } from './Calendar/StatusDropdown'
 
 interface Props {
@@ -45,7 +46,6 @@ export function HomeDashboard({ user, profile }: Props) {
       ),
     [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays, agFreieTage],
   )
-  const quotaPercent = Math.min(100, quota.ratio * 100)
 
   const todayIso = toIsoDate(today)
   const todayStatus = effectiveDayStatus(today, profile.bundesland, agFreieTage, entries.get(todayIso), arbeitstage, homeofficeWeekdays)
@@ -76,23 +76,7 @@ export function HomeDashboard({ user, profile }: Props) {
 
   return (
     <div className="card-grid">
-      {homeofficeErlaubt && (
-        <div className="card stat-tile">
-          <span className="stat-label">Anwesenheitsquote ({monthLabel(year, month)})</span>
-          <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-            {(quota.ratio * 100).toFixed(1)}%
-          </span>
-          <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${quotaPercent}%`,
-                background: quota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {homeofficeErlaubt && <AttendanceQuotaTile quota={quota} periodLabel={monthLabel(year, month)} />}
 
       <div className="card stat-tile">
         <span className="stat-label">Heutiger Status</span>

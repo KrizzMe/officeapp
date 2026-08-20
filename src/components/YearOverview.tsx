@@ -8,6 +8,7 @@ import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from
 import { calculateVacationBalances } from '../lib/vacation'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
+import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusRangesTable } from './StatusRangesTable'
 import { VacationBalanceTile } from './VacationBalanceTile'
 
@@ -96,7 +97,6 @@ export function YearOverview({ user, profile }: Props) {
 
   const toggleDetail = (status: DetailStatus) => setActiveDetail((cur) => (cur === status ? null : status))
 
-  const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
   const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
 
   return (
@@ -113,23 +113,7 @@ export function YearOverview({ user, profile }: Props) {
         </div>
 
         <div className="card-grid">
-          {homeofficeErlaubt && (
-            <div className="card stat-tile">
-              <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
-              <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-                {(yearQuota.ratio * 100).toFixed(1)}%
-              </span>
-              <div className="progress-track">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${yearQuotaPercent}%`,
-                    background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-                  }}
-                />
-              </div>
-            </div>
-          )}
+          {homeofficeErlaubt && <AttendanceQuotaTile quota={yearQuota} periodLabel={`Durchschnitt Jahr ${year}`} />}
 
           {vacationBalances.map((b) => {
             const vacationType = profile.vacationTypes.find((v) => v.id === b.vacationTypeId)
