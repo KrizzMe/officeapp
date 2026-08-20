@@ -90,6 +90,7 @@ export function CalendarPage({ user, profile }: Props) {
         balances={balances}
         vacationTypes={profile.vacationTypes}
         homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
+        year={year}
       />
 
       {warning && <p className="form-warning">{warning}</p>}

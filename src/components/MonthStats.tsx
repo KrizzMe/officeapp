@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react'
 import type { AttendanceQuota, VacationBalance, VacationType } from '../types/models'
-import { statusVisual, vacationTypeColor } from '../lib/statusColors'
+import { AttendanceQuotaTile } from './AttendanceQuotaTile'
+import { VacationBalanceTile } from './VacationBalanceTile'
 
 interface Props {
   quota: AttendanceQuota
@@ -8,55 +8,19 @@ interface Props {
   balances: VacationBalance[]
   vacationTypes: VacationType[]
   homeofficeErlaubt: boolean
+  /** Jahr, auf das sich die Urlaubssalden beziehen (für den Hinweistext der Kacheln). */
+  year: number
 }
 
-export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt }: Props) {
-  const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
-  const colorOf = (id: string) => {
-    const type = vacationTypes.find((v) => v.id === id)
-    return type ? vacationTypeColor(type) : 'var(--color-primary)'
-  }
-  const quotaPercent = Math.min(100, quota.ratio * 100)
-
+export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt, year }: Props) {
   return (
     <div className="card-grid">
-      {homeofficeErlaubt && (
-        <div className="card stat-tile">
-          <span className="stat-label">Anwesenheitsquote ({quotaLabel})</span>
-          <span className={`stat-value ${quota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-            {(quota.ratio * 100).toFixed(1)}%
-          </span>
-          <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${quotaPercent}%`,
-                background: quota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {homeofficeErlaubt && <AttendanceQuotaTile quota={quota} periodLabel={quotaLabel} />}
 
       {balances.map((b) => {
-        const ratio = b.totalDays > 0 ? Math.min(100, (b.usedDays / b.totalDays) * 100) : 0
-        const hatched = statusVisual(b.vacationTypeId).hatched
-        const fillClass = hatched ? 'progress-fill progress-fill--hatched' : 'progress-fill'
-        const fillStyle: CSSProperties = hatched
-          ? { width: `${ratio}%` }
-          : { width: `${ratio}%`, background: colorOf(b.vacationTypeId) }
-        return (
-          <div key={b.vacationTypeId} className="card stat-tile">
-            <span className="stat-label">{nameOf(b.vacationTypeId)}</span>
-            <span className="stat-value">{b.remainingDays}</span>
-            <div className="progress-track">
-              <div className={fillClass} style={fillStyle} />
-            </div>
-            <span className="stat-sub">
-              {b.usedDays} von {b.totalDays} genommen
-            </span>
-          </div>
-        )
+        const vacationType = vacationTypes.find((v) => v.id === b.vacationTypeId)
+        if (!vacationType) return null
+        return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
       })}
     </div>
   )

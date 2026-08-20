@@ -5,9 +5,12 @@ import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/mod
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
+import { calculateVacationBalances } from '../lib/vacation'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
+import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusRangesTable } from './StatusRangesTable'
+import { VacationBalanceTile } from './VacationBalanceTile'
 
 interface Props {
   user: User
@@ -82,6 +85,11 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
+  const vacationBalances = useMemo(
+    () => calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage],
+  )
+
   const activeRanges = useMemo(() => {
     if (!activeDetail) return []
     return computeStatusRanges(year, activeDetail, profile.bundesland, agFreieTage, entries, arbeitstage)
@@ -89,7 +97,6 @@ export function YearOverview({ user, profile }: Props) {
 
   const toggleDetail = (status: DetailStatus) => setActiveDetail((cur) => (cur === status ? null : status))
 
-  const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)
   const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
 
   return (
@@ -105,24 +112,21 @@ export function YearOverview({ user, profile }: Props) {
           </button>
         </div>
 
-        {homeofficeErlaubt && (
-          <div className="card-grid">
-            <div className="card stat-tile">
-              <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
-              <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
-                {(yearQuota.ratio * 100).toFixed(1)}%
-              </span>
-              <div className="progress-track">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${yearQuotaPercent}%`,
-                    background: yearQuota.meetsThreshold ? 'var(--color-success)' : 'var(--color-danger)',
-                  }}
-                />
-              </div>
-            </div>
+        <div className="card-grid">
+          {homeofficeErlaubt && <AttendanceQuotaTile quota={yearQuota} periodLabel={`Durchschnitt Jahr ${year}`} />}
 
+          {vacationBalances.map((b) => {
+            const vacationType = profile.vacationTypes.find((v) => v.id === b.vacationTypeId)
+            if (!vacationType) return null
+            return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
+          })}
+        </div>
+      </div>
+
+      {homeofficeErlaubt && (
+        <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+          <h2 style={{ marginTop: 0 }}>Weitere Übersichten {year}</h2>
+          <div className="card-grid">
             {yearQuota.businessTripDays > 0 && (
               <button
                 type="button"
@@ -131,7 +135,7 @@ export function YearOverview({ user, profile }: Props) {
                 aria-pressed={activeDetail === 'dienstreise'}
               >
                 <span className="stat-label">
-                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title}
+                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title} {year}
                 </span>
                 <span className="stat-value">{yearQuota.businessTripDays}</span>
                 <span className="stat-sub">Tage im Jahr {year}</span>
@@ -145,7 +149,7 @@ export function YearOverview({ user, profile }: Props) {
               aria-pressed={activeDetail === 'krank'}
             >
               <span className="stat-label">
-                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title}
+                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title} {year}
               </span>
               <span className="stat-value">{yearSickDays.krankDays}</span>
               <span className="stat-sub">Tage im Jahr {year}</span>
@@ -159,37 +163,39 @@ export function YearOverview({ user, profile }: Props) {
                 aria-pressed={activeDetail === 'kind-krank'}
               >
                 <span className="stat-label">
-                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title}
+                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title} {year}
                 </span>
                 <span className="stat-value">{yearSickDays.kindKrankDays}</span>
                 <span className="stat-sub">Tage im Jahr {year}</span>
               </button>
             )}
           </div>
-        )}
 
-        {activeDetail && (
-          <>
-            <h3 style={{ marginBottom: 'var(--space-3)' }}>{DETAIL_LABELS[activeDetail].title}</h3>
-            <StatusRangesTable
-              uid={user.uid}
-              ranges={activeRanges}
-              grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
-            />
-          </>
-        )}
-      </div>
+          {activeDetail && (
+            <>
+              <h3 style={{ marginBottom: 'var(--space-3)' }}>
+                {DETAIL_LABELS[activeDetail].title} {year}
+              </h3>
+              <StatusRangesTable
+                uid={user.uid}
+                ranges={activeRanges}
+                grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Monatsübersicht {year}</h2>
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table-centered-data">
             <thead>
               <tr>
                 <th>Monat</th>
                 <th>Büro</th>
-                <th>Homeoffice</th>
                 <th>Dienstreise</th>
+                <th>Homeoffice</th>
                 <th>{statusVisual('krank').icon} Krank</th>
                 <th>{statusVisual('kind-krank').icon} Kind krank</th>
                 {homeofficeErlaubt && <th>Quote</th>}
@@ -200,8 +206,8 @@ export function YearOverview({ user, profile }: Props) {
                 <tr key={m}>
                   <td>{monthLabel(year, m)}</td>
                   <td>{q.officeDays}</td>
-                  <td>{q.homeofficeDays}</td>
                   <td>{q.businessTripDays}</td>
+                  <td>{q.homeofficeDays}</td>
                   <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
                   <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
                   {homeofficeErlaubt && (
