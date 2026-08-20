@@ -80,7 +80,7 @@ export function HomeDashboard({ user, profile }: Props) {
 
       <div className="card stat-tile">
         <span className="stat-label">Dein heutiger Status</span>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           {isEditableToday ? (
             <StatusDropdown
               value={todayStatusId}

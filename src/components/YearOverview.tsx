@@ -125,7 +125,7 @@ export function YearOverview({ user, profile }: Props) {
 
       {homeofficeErlaubt && (
         <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-          <h2 style={{ marginTop: 0 }}>Weitere Übersichten</h2>
+          <h2 style={{ marginTop: 0 }}>Weitere Übersichten {year}</h2>
           <div className="card-grid">
             {yearQuota.businessTripDays > 0 && (
               <button
@@ -135,7 +135,7 @@ export function YearOverview({ user, profile }: Props) {
                 aria-pressed={activeDetail === 'dienstreise'}
               >
                 <span className="stat-label">
-                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title}
+                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title} {year}
                 </span>
                 <span className="stat-value">{yearQuota.businessTripDays}</span>
                 <span className="stat-sub">Tage im Jahr {year}</span>
@@ -149,7 +149,7 @@ export function YearOverview({ user, profile }: Props) {
               aria-pressed={activeDetail === 'krank'}
             >
               <span className="stat-label">
-                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title}
+                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title} {year}
               </span>
               <span className="stat-value">{yearSickDays.krankDays}</span>
               <span className="stat-sub">Tage im Jahr {year}</span>
@@ -163,7 +163,7 @@ export function YearOverview({ user, profile }: Props) {
                 aria-pressed={activeDetail === 'kind-krank'}
               >
                 <span className="stat-label">
-                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title}
+                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title} {year}
                 </span>
                 <span className="stat-value">{yearSickDays.kindKrankDays}</span>
                 <span className="stat-sub">Tage im Jahr {year}</span>
