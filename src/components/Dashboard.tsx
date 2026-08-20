@@ -1,5 +1,6 @@
+import type { CSSProperties } from 'react'
 import type { AttendanceQuota, VacationBalance, VacationType } from '../types/models'
-import { vacationTypeColor } from '../lib/statusColors'
+import { statusVisual, vacationTypeColor } from '../lib/statusColors'
 
 interface Props {
   quota: AttendanceQuota
@@ -49,12 +50,17 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeoffi
 
       {balances.map((b) => {
         const ratio = b.totalDays > 0 ? Math.min(100, (b.usedDays / b.totalDays) * 100) : 0
+        const hatched = statusVisual(b.vacationTypeId).hatched
+        const fillClass = hatched ? 'progress-fill progress-fill--hatched' : 'progress-fill'
+        const fillStyle: CSSProperties = hatched
+          ? { width: `${ratio}%` }
+          : { width: `${ratio}%`, background: colorOf(b.vacationTypeId) }
         return (
           <div key={b.vacationTypeId} className="card stat-tile">
             <span className="stat-label">{nameOf(b.vacationTypeId)}</span>
             <span className="stat-value">{b.remainingDays}</span>
             <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${ratio}%`, background: colorOf(b.vacationTypeId) }} />
+              <div className={fillClass} style={fillStyle} />
             </div>
             <span className="stat-sub">
               {b.usedDays} von {b.totalDays} genommen

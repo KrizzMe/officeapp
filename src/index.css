@@ -34,6 +34,10 @@
   --status-weekend: #94a3b8;
   --status-holiday: #8b81a8;
 
+  /* Resturlaub aus dem Vorjahr wird grün schraffiert statt einfarbig
+     dargestellt, um ihn von regulärem Urlaub abzuheben (Issue #32). */
+  --status-resturlaub: #16a34a;
+
   /* Rotierende Palette fuer frei definierte Urlaubsarten */
   --status-vacation-1: #7c3aed;
   --status-vacation-2: #db2777;
@@ -138,6 +142,7 @@
     --status-kind-krank: #f472b6;
     --status-weekend: #6b6580;
     --status-holiday: #8a82a8;
+    --status-resturlaub: #4ade80;
 
     --status-vacation-1: #a78bfa;
     --status-vacation-2: #f472b6;
@@ -431,6 +436,18 @@ a {
   border-radius: var(--radius-full);
   background: var(--color-primary);
   transition: width 0.2s ease;
+}
+
+/* Grün schraffiertes Muster fuer Resturlaub statt Volltonfarbe (Issue #32). */
+.progress-fill--hatched {
+  background-color: color-mix(in srgb, var(--status-resturlaub) 25%, var(--color-surface-alt));
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--status-resturlaub) 0,
+    var(--status-resturlaub) 4px,
+    transparent 4px,
+    transparent 10px
+  );
 }
 
 /* ---------------------------------------------------------------------- */
@@ -789,7 +806,7 @@ select.input:focus {
 .day-status-select {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--status-color) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--status-color) 16%, var(--color-surface));
+  background-color: color-mix(in srgb, var(--status-color) 16%, var(--color-surface));
   color: color-mix(in srgb, var(--status-color) 70%, var(--color-text));
   border-radius: var(--radius-sm);
   padding: var(--space-1);
@@ -797,6 +814,17 @@ select.input:focus {
   font-weight: 600;
   font-family: inherit;
   min-height: 36px;
+}
+
+/* Grün schraffiertes Muster fuer Resturlaub-Tage statt einfarbiger Füllung (Issue #32). */
+.day-status-select--hatched {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--status-color) 60%, transparent) 0,
+    color-mix(in srgb, var(--status-color) 60%, transparent) 3px,
+    transparent 3px,
+    transparent 8px
+  );
 }
 
 .day-status-select:focus {
