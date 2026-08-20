@@ -19,12 +19,12 @@ interface Props {
  * langen Formular.
  */
 export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
-  const [homeStreet, setHomeStreet] = useState(profile.homeStreet)
-  const [homePostalCode, setHomePostalCode] = useState(profile.homePostalCode)
-  const [homeCity, setHomeCity] = useState(profile.homeCity)
-  const [workStreet, setWorkStreet] = useState(profile.workStreet)
-  const [workPostalCode, setWorkPostalCode] = useState(profile.workPostalCode)
-  const [workCity, setWorkCity] = useState(profile.workCity)
+  const [homeStreet, setHomeStreet] = useState(profile.homeStreet ?? '')
+  const [homePostalCode, setHomePostalCode] = useState(profile.homePostalCode ?? '')
+  const [homeCity, setHomeCity] = useState(profile.homeCity ?? '')
+  const [workStreet, setWorkStreet] = useState(profile.workStreet ?? '')
+  const [workPostalCode, setWorkPostalCode] = useState(profile.workPostalCode ?? '')
+  const [workCity, setWorkCity] = useState(profile.workCity ?? '')
   const [shortestDistanceKm, setShortestDistanceKm] = useState<number | null>(
     profile.shortestCommuteDistanceKm ?? null,
   )
