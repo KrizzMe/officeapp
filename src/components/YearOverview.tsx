@@ -125,7 +125,7 @@ export function YearOverview({ user, profile }: Props) {
 
       {homeofficeErlaubt && (
         <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-          <h2 style={{ marginTop: 0 }}>Dienstreise &amp; Krankheitstage</h2>
+          <h2 style={{ marginTop: 0 }}>Weitere Übersichten</h2>
           <div className="card-grid">
             {yearQuota.businessTripDays > 0 && (
               <button
@@ -187,13 +187,13 @@ export function YearOverview({ user, profile }: Props) {
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Monatsübersicht {year}</h2>
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table-centered-data">
             <thead>
               <tr>
                 <th>Monat</th>
                 <th>Büro</th>
-                <th>Homeoffice</th>
                 <th>Dienstreise</th>
+                <th>Homeoffice</th>
                 <th>{statusVisual('krank').icon} Krank</th>
                 <th>{statusVisual('kind-krank').icon} Kind krank</th>
                 {homeofficeErlaubt && <th>Quote</th>}
@@ -204,8 +204,8 @@ export function YearOverview({ user, profile }: Props) {
                 <tr key={m}>
                   <td>{monthLabel(year, m)}</td>
                   <td>{q.officeDays}</td>
-                  <td>{q.homeofficeDays}</td>
                   <td>{q.businessTripDays}</td>
+                  <td>{q.homeofficeDays}</td>
                   <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
                   <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
                   {homeofficeErlaubt && (

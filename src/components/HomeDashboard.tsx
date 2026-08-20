@@ -79,20 +79,22 @@ export function HomeDashboard({ user, profile }: Props) {
       {homeofficeErlaubt && <AttendanceQuotaTile quota={quota} periodLabel={monthLabel(year, month)} />}
 
       <div className="card stat-tile">
-        <span className="stat-label">Heutiger Status</span>
-        {isEditableToday ? (
-          <StatusDropdown
-            value={todayStatusId}
-            options={buildStatusOptions(profile.vacationTypes, homeofficeErlaubt, todayStatusId)}
-            onChange={handleStatusChange}
-            color={visual.color}
-            hatched={visual.hatched}
-            showLabelWhenClosed
-            ariaLabel={`Status für heute: ${statusLabel(todayStatusId, profile.vacationTypes)}`}
-          />
-        ) : (
-          <span className="stat-value">{todayStatus === 'wochenende' ? 'Wochenende' : 'Feiertag'}</span>
-        )}
+        <span className="stat-label">Dein heutiger Status</span>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          {isEditableToday ? (
+            <StatusDropdown
+              value={todayStatusId}
+              options={buildStatusOptions(profile.vacationTypes, homeofficeErlaubt, todayStatusId)}
+              onChange={handleStatusChange}
+              color={visual.color}
+              hatched={visual.hatched}
+              showLabelWhenClosed
+              ariaLabel={`Status für heute: ${statusLabel(todayStatusId, profile.vacationTypes)}`}
+            />
+          ) : (
+            <span className="stat-value">{todayStatus === 'wochenende' ? 'Wochenende' : 'Feiertag'}</span>
+          )}
+        </div>
         {warning && <p className="form-warning">{warning}</p>}
       </div>
     </div>

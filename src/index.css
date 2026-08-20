@@ -703,6 +703,12 @@ select.input:focus {
   border-bottom: none;
 }
 
+/* Monatstabelle Jahresübersicht: alle Spalten außer der ersten (Monat) zentriert. */
+.table-centered-data th:not(:first-child),
+.table-centered-data td:not(:first-child) {
+  text-align: center;
+}
+
 .inline-form {
   display: flex;
   gap: var(--space-2);
