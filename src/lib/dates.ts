@@ -18,7 +18,7 @@ export function parseIsoDate(iso: string): Date {
   return new Date(year, month - 1, day)
 }
 
-const MONTH_LABELS = [
+export const MONTH_LABELS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ]

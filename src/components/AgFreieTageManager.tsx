@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { AgFreierTag, UserProfile } from '../types/models'
 import { saveUserProfile } from '../firebase/firestore'
+import { MONTH_LABELS } from '../lib/dates'
 
 interface Props {
   profile: UserProfile
@@ -8,21 +9,25 @@ interface Props {
 }
 
 interface FormState {
-  /** ISO-Datum mit fixem (Schalt-)Jahr, nur für den <input type="date">-Wert — gespeichert wird nur Tag+Monat. */
-  datum: string
+  monat: number
+  tagDesMonats: number
   bezeichnung: string
 }
 
-/** Beliebiges Schaltjahr, damit auch der 29.02. wählbar ist; das Jahr selbst wird nie gespeichert. */
-const DUMMY_YEAR = 2024
-const EMPTY_FORM: FormState = { datum: `${DUMMY_YEAR}-12-24`, bezeichnung: '' }
+const EMPTY_FORM: FormState = { monat: 12, tagDesMonats: 24, bezeichnung: '' }
 
-function tagToFormDate(tag: string): string {
-  return `${DUMMY_YEAR}-${tag}`
+/** Anzahl Tage in `monat` (1-12), Schaltjahr als Referenz, damit auch der 29.02. wählbar ist. */
+function daysInMonth(monat: number): number {
+  return new Date(2024, monat, 0).getDate()
 }
 
-function formDateToTag(datum: string): string {
-  return datum.slice(5)
+function toTag(monat: number, tagDesMonats: number): string {
+  return `${String(monat).padStart(2, '0')}-${String(tagDesMonats).padStart(2, '0')}`
+}
+
+function parseTag(tag: string): { monat: number; tagDesMonats: number } {
+  const [monat, tagDesMonats] = tag.split('-').map(Number)
+  return { monat, tagDesMonats }
 }
 
 function formatTag(tag: string): string {
@@ -31,7 +36,48 @@ function formatTag(tag: string): string {
 }
 
 function typeToForm(type: AgFreierTag): FormState {
-  return { datum: tagToFormDate(type.tag), bezeichnung: type.bezeichnung }
+  return { ...parseTag(type.tag), bezeichnung: type.bezeichnung }
+}
+
+interface TagMonatFieldsProps {
+  form: FormState
+  onChange: (form: FormState) => void
+}
+
+/** Tag+Monat-Auswahl ohne Jahr (Issue #37) — natives type="date" erzwingt immer ein Jahr, daher zwei Dropdowns. */
+function TagMonatFields({ form, onChange }: TagMonatFieldsProps) {
+  const maxDay = daysInMonth(form.monat)
+
+  return (
+    <>
+      <select
+        className="input"
+        value={form.tagDesMonats}
+        onChange={(e) => onChange({ ...form, tagDesMonats: Number(e.target.value) })}
+        style={{ width: 70 }}
+      >
+        {Array.from({ length: maxDay }, (_, i) => i + 1).map((day) => (
+          <option key={day} value={day}>
+            {day}
+          </option>
+        ))}
+      </select>
+      <select
+        className="input"
+        value={form.monat}
+        onChange={(e) => {
+          const monat = Number(e.target.value)
+          onChange({ ...form, monat, tagDesMonats: Math.min(form.tagDesMonats, daysInMonth(monat)) })
+        }}
+      >
+        {MONTH_LABELS.map((label, i) => (
+          <option key={label} value={i + 1}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </>
+  )
 }
 
 /** Verwaltung zusätzlicher AG-freier Tage (Issue #37) — wiederkehrend jedes Jahr, analog zu VacationTypesManager. */
@@ -63,7 +109,7 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
     if (!addForm.bezeichnung.trim()) return
     const newTag: AgFreierTag = {
       id: crypto.randomUUID(),
-      tag: formDateToTag(addForm.datum),
+      tag: toTag(addForm.monat, addForm.tagDesMonats),
       bezeichnung: addForm.bezeichnung.trim(),
     }
     await persist([...agFreieTage, newTag])
@@ -85,7 +131,9 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
     e.preventDefault()
     if (!editingId || !editForm.bezeichnung.trim()) return
     const updated = agFreieTage.map((t): AgFreierTag =>
-      t.id === editingId ? { id: t.id, tag: formDateToTag(editForm.datum), bezeichnung: editForm.bezeichnung.trim() } : t,
+      t.id === editingId
+        ? { id: t.id, tag: toTag(editForm.monat, editForm.tagDesMonats), bezeichnung: editForm.bezeichnung.trim() }
+        : t,
     )
     await persist(updated)
     cancelEdit()
@@ -123,13 +171,7 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
                 <tr key={type.id}>
                   <td colSpan={3}>
                     <form onSubmit={handleSaveEdit} className="inline-form">
-                      <input
-                        className="input"
-                        type="date"
-                        value={editForm.datum}
-                        onChange={(e) => setEditForm({ ...editForm, datum: e.target.value })}
-                        required
-                      />
+                      <TagMonatFields form={editForm} onChange={setEditForm} />
                       <input
                         className="input"
                         placeholder="Bezeichnung (z. B. Heiligabend)"
@@ -173,13 +215,7 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
       </div>
 
       <form onSubmit={handleAdd} className="inline-form">
-        <input
-          className="input"
-          type="date"
-          value={addForm.datum}
-          onChange={(e) => setAddForm({ ...addForm, datum: e.target.value })}
-          required
-        />
+        <TagMonatFields form={addForm} onChange={setAddForm} />
         <input
           className="input"
           placeholder="Bezeichnung (z. B. Heiligabend)"
