@@ -82,11 +82,13 @@ export interface UserProfile {
   arbeitstage?: Weekday[]
   /**
    * An welchen Wochentagen der Nutzer in der Regel im Homeoffice ist (Issue
-   * #39), sofern homeofficeErlaubt = true. Dient als Vorbelegung für Tage in
-   * zukünftigen Monaten ohne expliziten Eintrag: effectiveDayStatus() liefert
-   * dafür 'homeoffice' statt 'buero' (Fallback, Abschnitt 5.2). Wirkt nie auf
-   * den aktuellen oder vergangene Monate, da die Berechnung strikt
-   * datumsbasiert ist — keine Firestore-Schreibvorgänge nötig. Optional; beim
+   * #39), sofern homeofficeErlaubt = true. Nur eine Teilmenge von arbeitstage
+   * sinnvoll auswählbar — an arbeitsfreien Tagen kann kein Homeoffice
+   * vorbelegt werden. Dient als Vorbelegung für Tage in zukünftigen Monaten
+   * ohne expliziten Eintrag: effectiveDayStatus() liefert dafür 'homeoffice'
+   * statt 'buero' (Fallback, Abschnitt 5.2). Wirkt nie auf den aktuellen oder
+   * vergangene Monate, da die Berechnung strikt datumsbasiert ist — keine
+   * Firestore-Schreibvorgänge nötig. Optional; beim
    * Fehlen gilt eine leere Auswahl (keine Vorbelegung, Fallback bleibt 'buero').
    */
   homeofficeWeekdays?: Weekday[]

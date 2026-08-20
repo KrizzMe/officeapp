@@ -25,17 +25,24 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [arbeitstage, setArbeitstage] = useState<Weekday[]>(profile.arbeitstage ?? [...DEFAULT_ARBEITSTAGE])
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(profile.homeofficeErlaubt ?? true)
   const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 60))
-  const [homeofficeWeekdays, setHomeofficeWeekdays] = useState<Weekday[]>(profile.homeofficeWeekdays ?? [])
+  const [homeofficeWeekdays, setHomeofficeWeekdays] = useState<Weekday[]>(
+    (profile.homeofficeWeekdays ?? []).filter((d) => arbeitstage.includes(d)),
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const toggleArbeitstag = (day: Weekday) => {
+    const wasArbeitstag = arbeitstage.includes(day)
     setArbeitstage((prev) => {
       const next = new Set(prev)
       if (next.has(day)) next.delete(day)
       else next.add(day)
       return ALL_WEEKDAYS.filter((d) => next.has(d))
     })
+    // Kein Arbeitstag mehr => auch kein wählbarer Homeoffice-Wochentag mehr.
+    if (wasArbeitstag) {
+      setHomeofficeWeekdays((prev) => prev.filter((d) => d !== day))
+    }
   }
 
   const toggleHomeofficeWeekday = (day: Weekday) => {
@@ -166,7 +173,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
           <span>Regelmäßige Homeoffice-Tage (Vorbelegung für zukünftige Monate)</span>
           <div className="weekday-toggle-group">
-            {ALL_WEEKDAYS.map((day) => (
+            {arbeitstage.map((day) => (
               <button
                 key={day}
                 type="button"

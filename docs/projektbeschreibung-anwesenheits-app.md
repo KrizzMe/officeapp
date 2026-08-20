@@ -37,7 +37,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Arbeitstage (Mo-So einzeln wählbar, Issue #34) — Default Mo-Fr; bestimmt, welche Wochentage arbeitsfrei sind statt fest Sa/So anzunehmen, z. B. für Teilzeitkräfte mit Arbeitstagen Do-So
 - Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
 - Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
-- Regelmäßige Homeoffice-Wochentage (Mo-So einzeln wählbar, Issue #39, nur relevant wenn Home Office erlaubt) — dient als Vorbelegung für zukünftige Monate ohne eigenen Eintrag (siehe 5.2); wirkt nie auf den aktuellen oder vergangene Monate
+- Regelmäßige Homeoffice-Wochentage (Teilmenge der Arbeitstage einzeln wählbar, Issue #39, nur relevant wenn Home Office erlaubt) — dient als Vorbelegung für zukünftige Monate ohne eigenen Eintrag (siehe 5.2); wirkt nie auf den aktuellen oder vergangene Monate. Arbeitsfreie Tage sind nicht auswählbar, da an ihnen kein Homeoffice vorbelegt werden kann.
 
 ### 4.2 Tagesstatus (ein Eintrag pro Tag im Kalender)
 
