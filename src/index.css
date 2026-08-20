@@ -262,13 +262,28 @@ a {
 
 .app-header {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Obere Header-Zeile: Titel links, Nutzername/Profil/Abmelden rechts (Issue #63). */
+.app-header-top {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
-  padding-bottom: var(--space-4);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+}
+
+/* Untere Header-Zeile: Hauptnavigation (Dashboard/Monatsübersicht/Jahresübersicht), Issue #63. */
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -402,6 +417,15 @@ a {
   }
 }
 
+/*
+ * Dashboard: "Dein heutiger Status" soll genauso groß wirken wie die
+ * Anwesenheitsquote-Kachel, auch wenn ihr Inhalt (nur Label + Dropdown)
+ * von sich aus weniger Platz braucht (Issue #63).
+ */
+.dashboard-grid > .card {
+  min-height: 9.5rem;
+}
+
 .stat-tile {
   display: flex;
   flex-direction: column;
@@ -486,11 +510,13 @@ a {
 /*
  * Breitere Variante für Formulare mit Zwei-Spalten-Layout auf Desktop
  * (z. B. ProfileEditor). Unter 640px bleibt es bei der schmalen,
- * einspaltigen form-card-Breite.
+ * einspaltigen form-card-Breite. Auf 960px angeglichen an die
+ * App-Shell-Breite, damit auf Desktop kein Leerraum rechts neben der
+ * Karte bleibt (Issue #63-Folgeticket).
  */
 @media (min-width: 640px) {
   .form-card--wide {
-    max-width: 720px;
+    max-width: 960px;
   }
 }
 
@@ -549,6 +575,13 @@ select.input:focus {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-4);
+}
+
+/* Speichern/Abbrechen auf Desktop rechtsbündig in einer Reihe (Issue #63-Folgeticket). */
+@media (min-width: 640px) {
+  .form-actions {
+    justify-content: flex-end;
+  }
 }
 
 .form-hint {
@@ -742,6 +775,96 @@ select.input:focus {
   text-align: center;
 }
 
+/*
+ * Zeitraum-Tabelle (Dienstreise/Krank/Kind-krank) in der Jahresübersicht:
+ * feste Spaltenbreiten, damit die Grund-Spalte nicht beliebig breit wird
+ * und ihr Text stattdessen umbricht statt horizontal gescrollt werden zu
+ * müssen (Issue #63).
+ */
+.table--status-ranges {
+  table-layout: fixed;
+}
+
+/*
+ * Schmale feste Spalten: Kopfzeilen ohne Großschreibung/Sperrung (spart
+ * Breite) und mit Umbruch statt Überlappung, falls es dennoch eng wird.
+ */
+.table--status-ranges th {
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/*
+ * Monat/Zeitraum/Tage bekommen feste, knapp bemessene Breiten; Grund (ohne
+ * eigene width) erhält automatisch den verbleibenden Platz (Issue #63).
+ */
+.table--status-ranges th:nth-child(1),
+.table--status-ranges td:nth-child(1) {
+  width: 3.75rem;
+}
+
+.table--status-ranges th:nth-child(2),
+.table--status-ranges td:nth-child(2) {
+  width: 5.1rem;
+}
+
+.table--status-ranges th:nth-child(3),
+.table--status-ranges td:nth-child(3) {
+  width: 3.1rem;
+}
+
+/*
+ * Urlaubsarten verwalten auf Mobile: feste, knapp bemessene Spaltenbreiten
+ * für Tage/Jahr, Rhythmus und die (dort Icon-großen) Aktionen; Name (ohne
+ * eigene width) erhält den verbleibenden Platz und darf bei langen Namen
+ * umbrechen, statt die Tabelle horizontal scrollbar zu machen. Ab 640px
+ * ist genug Platz für die Text-Buttons, dort bleibt die normale
+ * (automatische) Tabellenspaltenbreite (Issue #63).
+ */
+@media (max-width: 639px) {
+  .table--vacation-types {
+    table-layout: fixed;
+  }
+
+  .table--vacation-types th {
+    white-space: normal;
+    overflow-wrap: break-word;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .table--vacation-types td:first-child {
+    overflow-wrap: break-word;
+  }
+
+  .table--vacation-types th:nth-child(2),
+  .table--vacation-types td:nth-child(2) {
+    width: 3.25rem;
+  }
+
+  .table--vacation-types th:nth-child(3),
+  .table--vacation-types td:nth-child(3) {
+    width: 3.75rem;
+  }
+
+  .table--vacation-types th:nth-child(4),
+  .table--vacation-types td:nth-child(4) {
+    width: 3.25rem;
+  }
+}
+
+/* Grund-Freitextfeld: umbricht statt den Text abzuschneiden (Issue #63). */
+.textarea-wrap {
+  resize: vertical;
+  min-height: var(--tap-target);
+  line-height: 1.4;
+  font-family: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
 /* Monatstabelle Jahresübersicht: Spaltenüberschriften auf Mobile als Icon mit
    Klick-Tooltip statt Text, damit die Tabelle ohne horizontales Wischen passt
    (Issue #57). */
@@ -797,6 +920,28 @@ select.input:focus {
 .inline-form .input {
   width: auto;
   min-height: 40px;
+}
+
+/*
+ * Speichern/Abbrechen/Löschen einer Zeile (Urlaubsarten/AG-freie Tage
+ * verwalten) stehen in einer eigenen, rechtsbündigen Reihe statt direkt und
+ * ohne Abstand nach den Eingabefeldern zu folgen — auf Mobile als eigene
+ * Zeile unter den Feldern, auf Desktop rechtsbündig in der Formularzeile
+ * (Issue #63-Folgeticket).
+ */
+.inline-form-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  justify-content: flex-end;
+}
+
+@media (min-width: 640px) {
+  .inline-form-actions {
+    flex-basis: auto;
+    margin-left: auto;
+  }
 }
 
 /* ---------------------------------------------------------------------- */

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { UserProfile, VacationType } from '../types/models'
 import { countDayEntriesWithStatus, saveUserProfile } from '../firebase/firestore'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
   profile: UserProfile
@@ -54,11 +55,19 @@ function formToRhythm(form: FormState): VacationType['rhythm'] {
 
 export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM)
+  const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [blockedDelete, setBlockedDelete] = useState<{ id: string; name: string; count: number } | null>(null)
+  /*
+   * Löschen ist nur noch im Bearbeitungsmodus erreichbar (nicht mehr direkt
+   * in der Zeile), damit in Ruhe nur der Bearbeiten-Button/das Icon steht.
+   * Auf Mobile zeigen Bearbeiten/Speichern/Abbrechen/Löschen dort nur ihr
+   * Icon statt Text (analog StatusDropdown), ab 640px weiterhin Text.
+   */
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const persist = async (vacationTypes: VacationType[]) => {
     setSaving(true)
@@ -85,6 +94,12 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     }
     await persist([...profile.vacationTypes, newType])
     setAddForm(EMPTY_FORM)
+    setIsAdding(false)
+  }
+
+  const cancelAdd = () => {
+    setAddForm(EMPTY_FORM)
+    setIsAdding(false)
   }
 
   const startEdit = (type: VacationType) => {
@@ -142,13 +157,19 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
       {error && <p className="form-error">{error}</p>}
 
       <div className="table-wrap">
-        <table className="table">
+        <table className="table table--vacation-types">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Kontingent/Jahr</th>
-              <th>Rhythmus</th>
-              <th />
+              <th>Tage/Jahr</th>
+              <th>Takt</th>
+              <th style={{ textAlign: 'right' }}>
+                {!isAdding && (
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setIsAdding(true)} aria-label="Hinzufügen">
+                    {isMobile ? '+' : 'Hinzufügen'}
+                  </button>
+                )}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -189,34 +210,24 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                           style={{ width: 60 }}
                         />
                       )}
-                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                        Speichern
-                      </button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit}>
-                        Abbrechen
-                      </button>
+                      <div className="inline-form-actions">
+                        <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                          {isMobile ? '💾' : 'Speichern'}
+                        </button>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
+                          {isMobile ? '❌' : 'Abbrechen'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(type)}
+                          disabled={saving}
+                          aria-label="Löschen"
+                        >
+                          {isMobile ? '🗑️' : 'Löschen'}
+                        </button>
+                      </div>
                     </form>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={type.id}>
-                  <td>{type.name}</td>
-                  <td>{type.totalDays}</td>
-                  <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="form-row" style={{ justifyContent: 'flex-end' }}>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(type)}>
-                        Bearbeiten
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(type)}
-                        disabled={saving}
-                      >
-                        Löschen
-                      </button>
-                    </div>
                     {blockedDelete?.id === type.id && (
                       <div className="form-warning" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
                         Kann nicht gelöscht werden: {blockedDelete.count} Tageseintrag(e) mit dieser Urlaubsart
@@ -225,51 +236,77 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                     )}
                   </td>
                 </tr>
+              ) : (
+                <tr key={type.id}>
+                  <td>{type.name}</td>
+                  <td>{type.totalDays}</td>
+                  <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => startEdit(type)}
+                      aria-label="Bearbeiten"
+                    >
+                      {isMobile ? '✏️' : 'Bearbeiten'}
+                    </button>
+                  </td>
+                </tr>
               ),
+            )}
+            {isAdding && (
+              <tr>
+                <td colSpan={4}>
+                  <form onSubmit={handleAdd} className="inline-form">
+                    <input
+                      className="input"
+                      placeholder="Name (z. B. Dispositionstag)"
+                      value={addForm.name}
+                      onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                      required
+                    />
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      placeholder="Tage/Jahr"
+                      value={addForm.totalDays}
+                      onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
+                      style={{ width: 100 }}
+                    />
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={addForm.rhythmEnabled}
+                        onChange={(e) => setAddForm({ ...addForm, rhythmEnabled: e.target.checked })}
+                      />
+                      max. pro Quartal
+                    </label>
+                    {addForm.rhythmEnabled && (
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={addForm.maxPerPeriod}
+                        onChange={(e) => setAddForm({ ...addForm, maxPerPeriod: e.target.value })}
+                        style={{ width: 60 }}
+                      />
+                    )}
+                    <div className="inline-form-actions">
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                        {isMobile ? '💾' : 'Speichern'}
+                      </button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelAdd} aria-label="Abbrechen">
+                        {isMobile ? '❌' : 'Abbrechen'}
+                      </button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
-
-      <form onSubmit={handleAdd} className="inline-form">
-        <input
-          className="input"
-          placeholder="Name (z. B. Dispositionstag)"
-          value={addForm.name}
-          onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-          required
-        />
-        <input
-          className="input"
-          type="number"
-          min="0"
-          placeholder="Tage/Jahr"
-          value={addForm.totalDays}
-          onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
-          style={{ width: 100 }}
-        />
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={addForm.rhythmEnabled}
-            onChange={(e) => setAddForm({ ...addForm, rhythmEnabled: e.target.checked })}
-          />
-          max. pro Quartal
-        </label>
-        {addForm.rhythmEnabled && (
-          <input
-            className="input"
-            type="number"
-            min="1"
-            value={addForm.maxPerPeriod}
-            onChange={(e) => setAddForm({ ...addForm, maxPerPeriod: e.target.value })}
-            style={{ width: 60 }}
-          />
-        )}
-        <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-          Hinzufügen
-        </button>
-      </form>
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { saveUserProfile } from '../firebase/firestore'
 import { CommuteCheck } from './CommuteCheck'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
   profile: UserProfile
@@ -38,6 +39,8 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /* Speichern/Abbrechen auf Mobile als Icons statt Text (Issue #63-Folgeticket). */
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const toggleArbeitstag = (day: Weekday) => {
     const wasArbeitstag = arbeitstage.includes(day)
@@ -261,11 +264,11 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
       {error && <p className="form-error">{error}</p>}
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Speichern…' : 'Speichern'}
+        <button type="submit" className="btn btn-primary" disabled={saving} aria-label="Speichern">
+          {isMobile ? '💾' : saving ? 'Speichern…' : 'Speichern'}
         </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={saving}>
-          Abbrechen
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={saving} aria-label="Abbrechen">
+          {isMobile ? '❌' : 'Abbrechen'}
         </button>
       </div>
     </form>

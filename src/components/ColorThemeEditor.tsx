@@ -9,6 +9,7 @@ import {
   DEFAULT_COLOR_THEME,
 } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
   profile: UserProfile
@@ -25,6 +26,8 @@ export function ColorThemeEditor({ profile, onSaved }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const committed = useRef(false)
+  /* Speichern auf Mobile als Icon statt Text (Issue #63-Folgeticket). */
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   // Direktvorschau: gewähltes Design/Modus sofort anwenden, beim Verlassen
   // ohne Speichern wieder auf den zuletzt gespeicherten Stand zurücksetzen.
@@ -109,8 +112,8 @@ export function ColorThemeEditor({ profile, onSaved }: Props) {
       {error && <p className="form-error">{error}</p>}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? 'Speichern…' : 'Speichern'}
+        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving} aria-label="Speichern">
+          {isMobile ? '💾' : saving ? 'Speichern…' : 'Speichern'}
         </button>
       </div>
     </div>

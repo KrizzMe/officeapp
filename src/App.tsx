@@ -57,44 +57,48 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="brand">
-          <span className="brand-mark">📅</span>
-          <h1>Office App</h1>
-        </div>
-        <div className="app-header-user">
-          <span className="user-name">{user.displayName}</span>
-          {profile && (
-            <>
-              <button
-                className={activePanel === 'dashboard' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-                onClick={() => setActivePanel('dashboard')}
-              >
-                Dashboard
-              </button>
-              <button
-                className={activePanel === 'monthOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-                onClick={() => setActivePanel('monthOverview')}
-              >
-                Monatsübersicht
-              </button>
-              <button
-                className={activePanel === 'yearOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-                onClick={() => setActivePanel('yearOverview')}
-              >
-                Jahresübersicht
-              </button>
+        <div className="app-header-top">
+          <div className="brand">
+            <span className="brand-mark">📅</span>
+            <h1>Office App</h1>
+          </div>
+          <div className="app-header-user">
+            <span className="user-name">{user.displayName}</span>
+            {profile && (
               <button
                 className={activePanel === 'profile' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
                 onClick={() => setActivePanel('profile')}
               >
                 Profil bearbeiten
               </button>
-            </>
-          )}
-          <button className="btn btn-secondary btn-sm" onClick={() => signOut(auth)}>
-            Abmelden
-          </button>
+            )}
+            <button className="btn btn-secondary btn-sm" onClick={() => signOut(auth)}>
+              Abmelden
+            </button>
+          </div>
         </div>
+        {profile && (
+          <nav className="app-header-nav">
+            <button
+              className={activePanel === 'dashboard' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => setActivePanel('dashboard')}
+            >
+              Dashboard
+            </button>
+            <button
+              className={activePanel === 'monthOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => setActivePanel('monthOverview')}
+            >
+              Monatsübersicht
+            </button>
+            <button
+              className={activePanel === 'yearOverview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => setActivePanel('yearOverview')}
+            >
+              Jahresübersicht
+            </button>
+          </nav>
+        )}
       </header>
 
       {profileLoading ? null : profile ? (
