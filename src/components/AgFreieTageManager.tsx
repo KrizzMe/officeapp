@@ -84,6 +84,7 @@ function TagMonatFields({ form, onChange }: TagMonatFieldsProps) {
 /** Verwaltung zusätzlicher AG-freier Tage (Issue #37) — wiederkehrend jedes Jahr, analog zu VacationTypesManager. */
 export function AgFreieTageManager({ profile, onUpdated }: Props) {
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM)
+  const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -121,6 +122,12 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
     }
     await persist([...agFreieTage, newTag])
     setAddForm(EMPTY_FORM)
+    setIsAdding(false)
+  }
+
+  const cancelAdd = () => {
+    setAddForm(EMPTY_FORM)
+    setIsAdding(false)
   }
 
   const startEdit = (type: AgFreierTag) => {
@@ -169,7 +176,13 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
             <tr>
               <th>Datum</th>
               <th>Bezeichnung</th>
-              <th />
+              <th style={{ textAlign: 'right' }}>
+                {!isAdding && (
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setIsAdding(true)} aria-label="Hinzufügen">
+                    {isMobile ? '+' : 'Hinzufügen'}
+                  </button>
+                )}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -221,23 +234,31 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
                 </tr>
               ),
             )}
+            {isAdding && (
+              <tr>
+                <td colSpan={3}>
+                  <form onSubmit={handleAdd} className="inline-form">
+                    <TagMonatFields form={addForm} onChange={setAddForm} />
+                    <input
+                      className="input"
+                      placeholder="Bezeichnung (z. B. Heiligabend)"
+                      value={addForm.bezeichnung}
+                      onChange={(e) => setAddForm({ ...addForm, bezeichnung: e.target.value })}
+                      required
+                    />
+                    <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                      {isMobile ? '💾' : 'Speichern'}
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={cancelAdd} aria-label="Abbrechen">
+                      {isMobile ? '❌' : 'Abbrechen'}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-
-      <form onSubmit={handleAdd} className="inline-form">
-        <TagMonatFields form={addForm} onChange={setAddForm} />
-        <input
-          className="input"
-          placeholder="Bezeichnung (z. B. Heiligabend)"
-          value={addForm.bezeichnung}
-          onChange={(e) => setAddForm({ ...addForm, bezeichnung: e.target.value })}
-          required
-        />
-        <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-          Hinzufügen
-        </button>
-      </form>
     </div>
   )
 }
