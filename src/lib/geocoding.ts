@@ -57,21 +57,10 @@ function toGeocodedAddress(result: NominatimResult): GeocodedAddress | null {
   }
 }
 
-/**
- * Sucht Adresskandidaten für eine strukturierte Adresse (Straße+Hausnummer,
- * PLZ, Ort). Mehrere Kandidaten mit identischer Straße/PLZ/Ort (z. B.
- * mehrere Gebäudeeinträge derselben Anschrift) werden zu einem
- * zusammengefasst — als "mehrdeutig" gilt nur eine wirklich abweichende
- * Adresse.
- */
-export async function searchAddressCandidates(
-  street: string,
-  postalCode: string,
-  city: string,
-): Promise<GeocodedAddress[]> {
+async function searchNominatim(street: string, postalCode: string, city: string): Promise<GeocodedAddress[]> {
   const url = new URL(NOMINATIM_SEARCH_URL)
   url.searchParams.set('street', street)
-  url.searchParams.set('postalcode', postalCode)
+  if (postalCode) url.searchParams.set('postalcode', postalCode)
   url.searchParams.set('city', city)
   url.searchParams.set('country', 'Deutschland')
   url.searchParams.set('format', 'json')
@@ -88,4 +77,25 @@ export async function searchAddressCandidates(
 
   const uniqueByAddress = new Map(candidates.map((c) => [`${c.street}|${c.postalCode}|${c.city}`, c]))
   return [...uniqueByAddress.values()]
+}
+
+/**
+ * Sucht Adresskandidaten für eine Adresse (Straße+Hausnummer, Ort, PLZ
+ * optional). Die PLZ ist bei Nominatim ein harter Filter — ein Tippfehler
+ * oder eine nicht exakt indexierte PLZ liefert sonst null Treffer, obwohl
+ * Straße+Ort eindeutig wären. Deshalb: mit PLZ suchen, bei null Treffern
+ * automatisch ohne PLZ erneut versuchen.
+ *
+ * Mehrere Kandidaten mit identischer Straße/PLZ/Ort (z. B. mehrere
+ * Gebäudeeinträge derselben Anschrift) werden zu einem zusammengefasst —
+ * als "mehrdeutig" gilt nur eine wirklich abweichende Adresse.
+ */
+export async function searchAddressCandidates(
+  street: string,
+  postalCode: string,
+  city: string,
+): Promise<GeocodedAddress[]> {
+  const results = await searchNominatim(street, postalCode, city)
+  if (results.length > 0 || !postalCode) return results
+  return searchNominatim(street, '', city)
 }

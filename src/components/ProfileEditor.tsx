@@ -108,8 +108,8 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           <input className="input" value={homeStreet} onChange={(e) => setHomeStreet(e.target.value)} required />
         </label>
         <label className="field">
-          <span>PLZ</span>
-          <input className="input" value={homePostalCode} onChange={(e) => setHomePostalCode(e.target.value)} required />
+          <span>PLZ (optional)</span>
+          <input className="input" value={homePostalCode} onChange={(e) => setHomePostalCode(e.target.value)} />
         </label>
         <label className="field">
           <span>Ort</span>
@@ -124,8 +124,8 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           <input className="input" value={workStreet} onChange={(e) => setWorkStreet(e.target.value)} required />
         </label>
         <label className="field">
-          <span>PLZ</span>
-          <input className="input" value={workPostalCode} onChange={(e) => setWorkPostalCode(e.target.value)} required />
+          <span>PLZ (optional)</span>
+          <input className="input" value={workPostalCode} onChange={(e) => setWorkPostalCode(e.target.value)} />
         </label>
         <label className="field">
           <span>Ort</span>

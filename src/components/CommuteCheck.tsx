@@ -119,8 +119,7 @@ export function CommuteCheck({
   }
 
   const disabled =
-    state.status === 'checking' ||
-    ![homeStreet, homePostalCode, homeCity, workStreet, workPostalCode, workCity].every((v) => v.trim())
+    state.status === 'checking' || ![homeStreet, homeCity, workStreet, workCity].every((v) => v.trim())
 
   return (
     <div className="commute-check">
