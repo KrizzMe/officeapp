@@ -510,11 +510,13 @@ a {
 /*
  * Breitere Variante für Formulare mit Zwei-Spalten-Layout auf Desktop
  * (z. B. ProfileEditor). Unter 640px bleibt es bei der schmalen,
- * einspaltigen form-card-Breite.
+ * einspaltigen form-card-Breite. Auf 960px angeglichen an die
+ * App-Shell-Breite, damit auf Desktop kein Leerraum rechts neben der
+ * Karte bleibt (Issue #63-Folgeticket).
  */
 @media (min-width: 640px) {
   .form-card--wide {
-    max-width: 720px;
+    max-width: 960px;
   }
 }
 
@@ -573,6 +575,13 @@ select.input:focus {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-4);
+}
+
+/* Speichern/Abbrechen auf Desktop rechtsbündig in einer Reihe (Issue #63-Folgeticket). */
+@media (min-width: 640px) {
+  .form-actions {
+    justify-content: flex-end;
+  }
 }
 
 .form-hint {
