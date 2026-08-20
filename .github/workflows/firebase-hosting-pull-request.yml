@@ -28,3 +28,8 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_OFFICEAPP_KRIZZME }}'
           projectId: officeapp-krizzme
+          # Fester Channel statt eines pro PR generierten: ergibt immer dieselbe
+          # Vorschau-URL, damit sie nur einmal in Firebase Auth freigeschaltet
+          # werden muss (statt bei jedem PR erneut).
+          channelId: review
+          expires: 30d
