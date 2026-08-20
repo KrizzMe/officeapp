@@ -231,6 +231,12 @@ h3 {
   font-size: var(--font-size-lg);
 }
 
+h4 {
+  margin: 0 0 var(--space-2);
+  line-height: 1.25;
+  font-size: var(--font-size-base);
+}
+
 p {
   margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
@@ -479,8 +485,8 @@ a {
 
 /*
  * Breitere Variante für Formulare mit Zwei-Spalten-Layout auf Desktop
- * (z. B. ProfileEditor: Adresse links, Bundesland/Wegstrecke rechts).
- * Unter 640px bleibt es bei der schmalen, einspaltigen form-card-Breite.
+ * (z. B. ProfileEditor). Unter 640px bleibt es bei der schmalen,
+ * einspaltigen form-card-Breite.
  */
 @media (min-width: 640px) {
   .form-card--wide {
@@ -488,13 +494,16 @@ a {
   }
 }
 
+/* Adresse/PLZ/Ort einer Wohn-/Arbeitsadresse (Issue #61), Adresse breiter als PLZ/Ort. */
+.address-fields-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--space-4);
+}
+
 @media (min-width: 640px) {
-  .profile-address-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, auto);
-    grid-auto-flow: column;
-    column-gap: var(--space-4);
+  .address-fields-row {
+    grid-template-columns: 2fr 1fr 1.5fr;
   }
 }
 
@@ -565,6 +574,30 @@ select.input:focus {
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-sm);
   margin-bottom: var(--space-3);
+}
+
+.commute-check {
+  margin-bottom: var(--space-3);
+}
+
+.commute-check-result {
+  background: var(--color-success-soft);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.commute-check-candidates {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .theme-picker {

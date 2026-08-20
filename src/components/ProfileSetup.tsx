@@ -5,6 +5,7 @@ import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE, DEFAULT_VACATION_TYPE_IDS } from '..
 import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
+import { CommuteCheck } from './CommuteCheck'
 
 interface Props {
   user: User
@@ -12,10 +13,15 @@ interface Props {
 }
 
 export function ProfileSetup({ user, onDone }: Props) {
-  const [homeAddress, setHomeAddress] = useState('')
-  const [workAddress, setWorkAddress] = useState('')
+  const [homeStreet, setHomeStreet] = useState('')
+  const [homePostalCode, setHomePostalCode] = useState('')
+  const [homeCity, setHomeCity] = useState('')
+  const [workStreet, setWorkStreet] = useState('')
+  const [workPostalCode, setWorkPostalCode] = useState('')
+  const [workCity, setWorkCity] = useState('')
+  const [shortestDistanceKm, setShortestDistanceKm] = useState<number | null>(null)
   const [distanceKm, setDistanceKm] = useState('')
-  const [bundesland, setBundesland] = useState('BY')
+  const [bundesland, setBundesland] = useState<UserProfile['bundesland']>('BY')
   const [urlaubTage, setUrlaubTage] = useState('30')
   const [resturlaubTage, setResturlaubTage] = useState('0')
   const [arbeitstage, setArbeitstage] = useState<Weekday[]>([...DEFAULT_ARBEITSTAGE])
@@ -61,10 +67,15 @@ export function ProfileSetup({ user, onDone }: Props) {
       const profile: UserProfile = {
         uid: user.uid,
         displayName: user.displayName ?? user.email ?? 'Nutzer',
-        homeAddress,
-        workAddress,
+        homeStreet,
+        homePostalCode,
+        homeCity,
+        workStreet,
+        workPostalCode,
+        workCity,
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
-        bundesland: bundesland as UserProfile['bundesland'],
+        ...(shortestDistanceKm !== null ? { shortestCommuteDistanceKm: shortestDistanceKm } : {}),
+        bundesland,
         colorTheme: DEFAULT_COLOR_THEME,
         colorMode: DEFAULT_COLOR_MODE,
         arbeitstage,
@@ -90,18 +101,77 @@ export function ProfileSetup({ user, onDone }: Props) {
       <h2>Profil einrichten</h2>
       <p>Einmalige Grundeinstellungen, später jederzeit änderbar.</p>
 
-      <label className="field">
-        <span>Wohnadresse</span>
-        <input className="input" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
-      </label>
+      <h4>Wohnadresse</h4>
+      <div className="address-fields-row">
+        <label className="field">
+          <span>Adresse (Straße Hausnummer)</span>
+          <input className="input" value={homeStreet} onChange={(e) => setHomeStreet(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span>PLZ (optional)</span>
+          <input className="input" value={homePostalCode} onChange={(e) => setHomePostalCode(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Ort</span>
+          <input className="input" value={homeCity} onChange={(e) => setHomeCity(e.target.value)} required />
+        </label>
+      </div>
+
+      <h4>Arbeitsadresse</h4>
+      <div className="address-fields-row">
+        <label className="field">
+          <span>Adresse (Straße Hausnummer)</span>
+          <input className="input" value={workStreet} onChange={(e) => setWorkStreet(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span>PLZ (optional)</span>
+          <input className="input" value={workPostalCode} onChange={(e) => setWorkPostalCode(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Ort</span>
+          <input className="input" value={workCity} onChange={(e) => setWorkCity(e.target.value)} required />
+        </label>
+      </div>
+
+      <CommuteCheck
+        homeStreet={homeStreet}
+        homePostalCode={homePostalCode}
+        homeCity={homeCity}
+        workStreet={workStreet}
+        workPostalCode={workPostalCode}
+        workCity={workCity}
+        onApplyHome={(address, erkanntesBundesland) => {
+          setHomeStreet(address.street)
+          setHomePostalCode(address.postalCode)
+          setHomeCity(address.city)
+          if (erkanntesBundesland) setBundesland(erkanntesBundesland)
+        }}
+        onApplyWork={(address) => {
+          setWorkStreet(address.street)
+          setWorkPostalCode(address.postalCode)
+          setWorkCity(address.city)
+        }}
+        onShortestDistance={setShortestDistanceKm}
+      />
+
+      {shortestDistanceKm !== null && (
+        <div className="field">
+          <span>Kürzeste Wegstrecke (km, einfache Fahrt)</span>
+          <div className="form-row">
+            <input className="input" value={shortestDistanceKm.toFixed(1)} readOnly />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setDistanceKm(String(Math.round(shortestDistanceKm * 10) / 10))}
+            >
+              Als Arbeitswegstrecke übernehmen
+            </button>
+          </div>
+        </div>
+      )}
 
       <label className="field">
-        <span>Arbeitsadresse</span>
-        <input className="input" value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
-      </label>
-
-      <label className="field">
-        <span>Standard-Wegstrecke (km, einfache Fahrt)</span>
+        <span>Arbeitswegstrecke (km, einfache Fahrt)</span>
         <input
           className="input"
           type="number"
@@ -115,7 +185,11 @@ export function ProfileSetup({ user, onDone }: Props) {
 
       <label className="field">
         <span>Bundesland</span>
-        <select className="input" value={bundesland} onChange={(e) => setBundesland(e.target.value)}>
+        <select
+          className="input"
+          value={bundesland}
+          onChange={(e) => setBundesland(e.target.value as UserProfile['bundesland'])}
+        >
           {BUNDESLAENDER.map((b) => (
             <option key={b.code} value={b.code}>
               {b.name}
