@@ -18,6 +18,8 @@ interface Props {
   homeofficeErlaubt: boolean
   /** An welchen Wochentagen der Nutzer arbeitet (UserProfile.arbeitstage, Issue #34). */
   arbeitstage: readonly Weekday[]
+  /** An welchen Wochentagen der Nutzer i. d. R. im Homeoffice ist (UserProfile.homeofficeWeekdays, Issue #39). */
+  homeofficeWeekdays: readonly Weekday[]
   onStatusChange: (date: Date, status: string) => void
   onClearStatus: (date: Date) => void
 }
@@ -38,6 +40,7 @@ export function MonthGrid({
   vacationTypes,
   homeofficeErlaubt,
   arbeitstage,
+  homeofficeWeekdays,
   onStatusChange,
   onClearStatus,
 }: Props) {
@@ -68,8 +71,14 @@ export function MonthGrid({
     return options
   }
 
-  const handleSelect = (date: Date, value: string) => {
-    if (value === 'buero') {
+  /**
+   * Ein gewählter Status, der dem berechneten Default entspricht (i. d. R.
+   * `buero`, für zukünftige Homeoffice-Wochentage aber `homeoffice`, Issue
+   * #39), wird nicht als Eintrag geschrieben, sondern der Tag bleibt/wird
+   * wieder eine Ausnahme-freie Fallback-Zelle.
+   */
+  const handleSelect = (date: Date, value: string, defaultStatus: string) => {
+    if (value === defaultStatus) {
       onClearStatus(date)
     } else {
       onStatusChange(date, value)
@@ -92,8 +101,10 @@ export function MonthGrid({
           const holiday = getHolidayName(date, bundesland)
           const workday = isArbeitstag(date, arbeitstage)
           const entry = entries.get(iso)
-          const status = effectiveDayStatus(date, bundesland, entry, arbeitstage)
+          const status = effectiveDayStatus(date, bundesland, entry, arbeitstage, homeofficeWeekdays)
           const statusId = typeof status === 'string' ? status : 'buero'
+          const defaultStatus = effectiveDayStatus(date, bundesland, undefined, arbeitstage, homeofficeWeekdays)
+          const defaultStatusId = typeof defaultStatus === 'string' ? defaultStatus : 'buero'
           const visual = statusVisual(statusId)
           const muted = !workday || !!holiday
 
@@ -122,7 +133,7 @@ export function MonthGrid({
                 <StatusDropdown
                   value={statusId}
                   options={buildOptions(statusId)}
-                  onChange={(v) => handleSelect(date, v)}
+                  onChange={(v) => handleSelect(date, v, defaultStatusId)}
                   color={visual.color}
                   hatched={visual.hatched}
                   showLabelWhenClosed={!isMobile}

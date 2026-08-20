@@ -1,23 +1,30 @@
 import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
-import { isArbeitstag, toIsoDate } from './dates'
+import { isArbeitstag, isFutureMonth, toIsoDate, weekdayLabel } from './dates'
 import { getHolidayName } from './holidays'
 
 /**
  * Effektiver Status eines Tages inkl. Fallback-Logik (Abschnitt 5.2):
  * arbeitsfreie Tage (UserProfile.arbeitstage, Issue #34) und Feiertage sind
  * nie editierbar und zählen nie mit; ein Arbeitstag ohne Eintrag gilt
- * automatisch als `buero`.
+ * automatisch als `buero` — außer für einen strikt zukünftigen Monat
+ * (Issue #39): fällt der Tag auf einen der gewählten Homeoffice-Wochentage,
+ * gilt er als `homeoffice`. Im aktuellen und in vergangenen Monaten greift
+ * diese Vorbelegung nie, unabhängig von `today`.
  */
 export function effectiveDayStatus(
   date: Date,
   bundesland: Bundesland,
   entry: DayEntry | undefined,
   arbeitstage: readonly Weekday[],
+  homeofficeWeekdays: readonly Weekday[] = [],
+  today: Date = new Date(),
 ): BaseDayStatus | string | 'wochenende' | 'feiertag' {
   if (!isArbeitstag(date, arbeitstage)) return 'wochenende'
   const holiday = getHolidayName(date, bundesland)
   if (holiday) return 'feiertag'
-  return entry?.status ?? 'buero'
+  if (entry?.status) return entry.status
+  if (isFutureMonth(date, today) && homeofficeWeekdays.includes(weekdayLabel(date))) return 'homeoffice'
+  return 'buero'
 }
 
 const BASE_STATUSES: readonly BaseDayStatus[] = ['buero', 'homeoffice', 'dienstreise']
@@ -42,13 +49,14 @@ export function calculateAttendanceQuota(
   entries: Map<string, DayEntry>,
   requiredRatio: number,
   arbeitstage: readonly Weekday[],
+  homeofficeWeekdays: readonly Weekday[] = [],
 ): AttendanceQuota {
   let officeDays = 0
   let homeofficeDays = 0
   let businessTripDays = 0
 
   for (const date of days) {
-    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage)
+    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage, homeofficeWeekdays)
     if (status === 'buero') officeDays++
     else if (status === 'homeoffice') homeofficeDays++
     else if (status === 'dienstreise') businessTripDays++

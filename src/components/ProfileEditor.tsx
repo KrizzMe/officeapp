@@ -25,11 +25,21 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [arbeitstage, setArbeitstage] = useState<Weekday[]>(profile.arbeitstage ?? [...DEFAULT_ARBEITSTAGE])
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(profile.homeofficeErlaubt ?? true)
   const [homeofficeQuote, setHomeofficeQuote] = useState(String(profile.homeofficeQuote ?? 60))
+  const [homeofficeWeekdays, setHomeofficeWeekdays] = useState<Weekday[]>(profile.homeofficeWeekdays ?? [])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const toggleArbeitstag = (day: Weekday) => {
     setArbeitstage((prev) => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return ALL_WEEKDAYS.filter((d) => next.has(d))
+    })
+  }
+
+  const toggleHomeofficeWeekday = (day: Weekday) => {
+    setHomeofficeWeekdays((prev) => {
       const next = new Set(prev)
       if (next.has(day)) next.delete(day)
       else next.add(day)
@@ -56,6 +66,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         arbeitstage,
         homeofficeErlaubt,
         homeofficeQuote: Number(homeofficeQuote) || 0,
+        homeofficeWeekdays: homeofficeErlaubt ? homeofficeWeekdays : [],
       }
       await saveUserProfile(updated)
       onSaved()
@@ -149,6 +160,28 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
             required
           />
         </label>
+      )}
+
+      {homeofficeErlaubt && (
+        <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
+          <span>Regelmäßige Homeoffice-Tage (Vorbelegung für zukünftige Monate)</span>
+          <div className="weekday-toggle-group">
+            {ALL_WEEKDAYS.map((day) => (
+              <button
+                key={day}
+                type="button"
+                className={`weekday-toggle${homeofficeWeekdays.includes(day) ? ' weekday-toggle--active' : ''}`}
+                aria-pressed={homeofficeWeekdays.includes(day)}
+                onClick={() => toggleHomeofficeWeekday(day)}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+          <p className="form-hint">
+            Gilt nur für kommende Monate ohne manuelle Änderung — der aktuelle und vergangene Monate bleiben unverändert.
+          </p>
+        </div>
       )}
 
       {error && <p className="form-error">{error}</p>}

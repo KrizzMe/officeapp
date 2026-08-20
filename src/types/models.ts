@@ -21,6 +21,13 @@ export const ALL_WEEKDAYS: readonly Weekday[] = ['Mo', 'Di', 'Mi', 'Do', 'Fr', '
 /** Default-Arbeitstage für Profile ohne explizite Angabe (Rückwärtskompatibilität, Issue #34). */
 export const DEFAULT_ARBEITSTAGE: readonly Weekday[] = ['Mo', 'Di', 'Mi', 'Do', 'Fr']
 
+/**
+ * Stabile leere Wochentagsliste für Profile ohne Homeoffice-Wochentage
+ * (Issue #39) — referenzgleich über Re-Renders hinweg, damit `profile.homeofficeWeekdays ?? NO_WEEKDAYS`
+ * keine useMemo-Abhängigkeiten unnötig invalidiert.
+ */
+export const NO_WEEKDAYS: readonly Weekday[] = []
+
 /** Rhythmus-Regel für Urlaubsarten mit Kontingent-Einschränkung (z. B. Dispositionstage). */
 export interface VacationTypeRhythm {
   /** z. B. "quarterly" für "1 Tag pro Quartal". Weitere Rhythmen bei Bedarf ergänzen. */
@@ -73,6 +80,16 @@ export interface UserProfile {
    * Fehlen gilt Mo-Fr (DEFAULT_ARBEITSTAGE).
    */
   arbeitstage?: Weekday[]
+  /**
+   * An welchen Wochentagen der Nutzer in der Regel im Homeoffice ist (Issue
+   * #39), sofern homeofficeErlaubt = true. Dient als Vorbelegung für Tage in
+   * zukünftigen Monaten ohne expliziten Eintrag: effectiveDayStatus() liefert
+   * dafür 'homeoffice' statt 'buero' (Fallback, Abschnitt 5.2). Wirkt nie auf
+   * den aktuellen oder vergangene Monate, da die Berechnung strikt
+   * datumsbasiert ist — keine Firestore-Schreibvorgänge nötig. Optional; beim
+   * Fehlen gilt eine leere Auswahl (keine Vorbelegung, Fallback bleibt 'buero').
+   */
+  homeofficeWeekdays?: Weekday[]
   /**
    * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
    * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein

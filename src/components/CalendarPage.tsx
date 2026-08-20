@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
-import { DEFAULT_ARBEITSTAGE } from '../types/models'
+import { DEFAULT_ARBEITSTAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
@@ -25,6 +25,7 @@ export function CalendarPage({ user, profile }: Props) {
 
   const yearDays = useMemo(() => getYearDays(year), [year])
   const arbeitstage = profile.arbeitstage ?? DEFAULT_ARBEITSTAGE
+  const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
 
   // Anwesenheitsquote bezieht sich auf den gerade angezeigten Monat, nicht
   // aufs ganze Jahr — sonst würden unbelegte Zukunftsmonate (Fallback auf
@@ -40,8 +41,9 @@ export function CalendarPage({ user, profile }: Props) {
         entries,
         requiredOfficeRatio(profile),
         arbeitstage,
+        homeofficeWeekdays,
       ),
-    [currentMonthDays, profile, entries, arbeitstage],
+    [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays],
   )
 
   const balances = useMemo(
@@ -108,6 +110,7 @@ export function CalendarPage({ user, profile }: Props) {
           vacationTypes={profile.vacationTypes}
           homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
           arbeitstage={arbeitstage}
+          homeofficeWeekdays={homeofficeWeekdays}
           onStatusChange={handleStatusChange}
           onClearStatus={handleClearStatus}
         />

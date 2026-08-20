@@ -32,6 +32,17 @@ export function isArbeitstag(date: Date, arbeitstage: readonly Weekday[]): boole
   return arbeitstage.includes(weekdayLabel(date))
 }
 
+/**
+ * Ob `date` in einem strikt zukünftigen Monat liegt (nicht im Monat von
+ * `today`, nicht davor). Grenze für die Homeoffice-Wochentage-Vorbelegung
+ * (Issue #39) — stellt sicher, dass sich Änderungen daran nie auf den
+ * aktuellen oder vergangene Monate auswirken.
+ */
+export function isFutureMonth(date: Date, today: Date = new Date()): boolean {
+  if (date.getFullYear() !== today.getFullYear()) return date.getFullYear() > today.getFullYear()
+  return date.getMonth() > today.getMonth()
+}
+
 export function monthLabel(year: number, month: number): string {
   return `${MONTH_LABELS[month]} ${year}`
 }
