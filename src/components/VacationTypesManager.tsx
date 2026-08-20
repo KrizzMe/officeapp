@@ -210,21 +210,23 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                           style={{ width: 60 }}
                         />
                       )}
-                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
-                        {isMobile ? '💾' : 'Speichern'}
-                      </button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
-                        {isMobile ? '❌' : 'Abbrechen'}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(type)}
-                        disabled={saving}
-                        aria-label="Löschen"
-                      >
-                        {isMobile ? '🗑️' : 'Löschen'}
-                      </button>
+                      <div className="inline-form-actions">
+                        <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                          {isMobile ? '💾' : 'Speichern'}
+                        </button>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
+                          {isMobile ? '❌' : 'Abbrechen'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(type)}
+                          disabled={saving}
+                          aria-label="Löschen"
+                        >
+                          {isMobile ? '🗑️' : 'Löschen'}
+                        </button>
+                      </div>
                     </form>
                     {blockedDelete?.id === type.id && (
                       <div className="form-warning" style={{ marginTop: 'var(--space-2)', marginBottom: 0 }}>
@@ -290,12 +292,14 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                         style={{ width: 60 }}
                       />
                     )}
-                    <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
-                      {isMobile ? '💾' : 'Speichern'}
-                    </button>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={cancelAdd} aria-label="Abbrechen">
-                      {isMobile ? '❌' : 'Abbrechen'}
-                    </button>
+                    <div className="inline-form-actions">
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={saving} aria-label="Speichern">
+                        {isMobile ? '💾' : 'Speichern'}
+                      </button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={cancelAdd} aria-label="Abbrechen">
+                        {isMobile ? '❌' : 'Abbrechen'}
+                      </button>
+                    </div>
                   </form>
                 </td>
               </tr>

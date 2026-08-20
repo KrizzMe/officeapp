@@ -922,6 +922,28 @@ select.input:focus {
   min-height: 40px;
 }
 
+/*
+ * Speichern/Abbrechen/Löschen einer Zeile (Urlaubsarten/AG-freie Tage
+ * verwalten) stehen in einer eigenen, rechtsbündigen Reihe statt direkt und
+ * ohne Abstand nach den Eingabefeldern zu folgen — auf Mobile als eigene
+ * Zeile unter den Feldern, auf Desktop rechtsbündig in der Formularzeile
+ * (Issue #63-Folgeticket).
+ */
+.inline-form-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  justify-content: flex-end;
+}
+
+@media (min-width: 640px) {
+  .inline-form-actions {
+    flex-basis: auto;
+    margin-left: auto;
+  }
+}
+
 /* ---------------------------------------------------------------------- */
 /* Kalender                                                               */
 /* ---------------------------------------------------------------------- */
