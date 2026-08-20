@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { BaseDayStatus, UserProfile } from '../types/models'
 import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances } from '../lib/vacation'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
+import { statusLabel } from '../lib/statusOptions'
 import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusRangesTable } from './StatusRangesTable'
 import { VacationBalanceTile } from './VacationBalanceTile'
@@ -26,6 +28,49 @@ const DETAIL_LABELS: Record<DetailStatus, { title: string; grundPlaceholder: str
   'kind-krank': { title: 'Kind-krank-Tage', grundPlaceholder: 'Grund / Kind (optional)' },
 }
 
+/** Monatstabellen-Spalten, die auf Mobile statt Text nur ihr Emoji zeigen (Issue #57). */
+const TABLE_COLUMNS: BaseDayStatus[] = ['buero', 'dienstreise', 'homeoffice', 'krank', 'kind-krank']
+
+/**
+ * Spaltenüberschrift der Monatstabelle: auf Desktop Text (ggf. mit Icon),
+ * auf Mobile nur das Icon, da sonst horizontal gewischt werden muss. Ein Klick
+ * aufs Icon zeigt die Beschreibung als Tooltip (Issue #57).
+ */
+function TableHeaderCell({ status }: { status: BaseDayStatus }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const { icon } = statusVisual(status)
+  const label = statusLabel(status, [])
+
+  useEffect(() => {
+    if (!open) return
+    const handlePointerDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [open])
+
+  return (
+    <div className="table-header-info" ref={rootRef}>
+      <button
+        type="button"
+        className="table-header-info-trigger"
+        aria-expanded={open}
+        aria-label={label}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {icon}
+      </button>
+      {open && (
+        <span className="table-header-info-tooltip" role="tooltip">
+          {label}
+        </span>
+      )}
+    </div>
+  )
+}
+
 /**
  * Jahresweite Anwesenheitsquote (Abschnitt 5.1, Issue #7) — bewusst
  * getrennt von CalendarPage, damit die dortige Monatslogik (Quote bezieht
@@ -36,6 +81,7 @@ export function YearOverview({ user, profile }: Props) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [activeDetail, setActiveDetail] = useState<DetailStatus | null>(null)
   const entries = useYearEntries(user.uid, year)
+  const isMobile = useMediaQuery('(max-width: 639px)')
 
   const yearDays = useMemo(() => getYearDays(year), [year])
   const requiredRatio = useMemo(() => requiredOfficeRatio(profile), [profile])
@@ -193,11 +239,9 @@ export function YearOverview({ user, profile }: Props) {
             <thead>
               <tr>
                 <th>Monat</th>
-                <th>Büro</th>
-                <th>Dienstreise</th>
-                <th>Homeoffice</th>
-                <th>{statusVisual('krank').icon} Krank</th>
-                <th>{statusVisual('kind-krank').icon} Kind krank</th>
+                {TABLE_COLUMNS.map((status) => (
+                  <th key={status}>{isMobile ? <TableHeaderCell status={status} /> : statusLabel(status, [])}</th>
+                ))}
                 {homeofficeErlaubt && <th>Quote</th>}
               </tr>
             </thead>
