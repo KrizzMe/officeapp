@@ -169,68 +169,66 @@ export function YearOverview({ user, profile }: Props) {
         </div>
       </div>
 
-      {homeofficeErlaubt && (
-        <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-          <h2 style={{ marginTop: 0 }}>Weitere Übersichten {year}</h2>
-          <div className="card-grid">
-            {yearQuota.businessTripDays > 0 && (
-              <button
-                type="button"
-                className={`card stat-tile stat-tile-button ${activeDetail === 'dienstreise' ? 'is-active' : ''}`}
-                onClick={() => toggleDetail('dienstreise')}
-                aria-pressed={activeDetail === 'dienstreise'}
-              >
-                <span className="stat-label">
-                  {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title} {year}
-                </span>
-                <span className="stat-value">{yearQuota.businessTripDays}</span>
-                <span className="stat-sub">Tage im Jahr {year}</span>
-              </button>
-            )}
-
+      <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+        <h2 style={{ marginTop: 0 }}>Weitere Übersichten {year}</h2>
+        <div className="card-grid">
+          {yearQuota.businessTripDays > 0 && (
             <button
               type="button"
-              className={`card stat-tile stat-tile-button ${activeDetail === 'krank' ? 'is-active' : ''}`}
-              onClick={() => toggleDetail('krank')}
-              aria-pressed={activeDetail === 'krank'}
+              className={`card stat-tile stat-tile-button ${activeDetail === 'dienstreise' ? 'is-active' : ''}`}
+              onClick={() => toggleDetail('dienstreise')}
+              aria-pressed={activeDetail === 'dienstreise'}
             >
               <span className="stat-label">
-                {statusVisual('krank').icon} {DETAIL_LABELS.krank.title} {year}
+                {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title} {year}
               </span>
-              <span className="stat-value">{yearSickDays.krankDays}</span>
+              <span className="stat-value">{yearQuota.businessTripDays}</span>
               <span className="stat-sub">Tage im Jahr {year}</span>
             </button>
+          )}
 
-            {yearSickDays.kindKrankDays > 0 && (
-              <button
-                type="button"
-                className={`card stat-tile stat-tile-button ${activeDetail === 'kind-krank' ? 'is-active' : ''}`}
-                onClick={() => toggleDetail('kind-krank')}
-                aria-pressed={activeDetail === 'kind-krank'}
-              >
-                <span className="stat-label">
-                  {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title} {year}
-                </span>
-                <span className="stat-value">{yearSickDays.kindKrankDays}</span>
-                <span className="stat-sub">Tage im Jahr {year}</span>
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            className={`card stat-tile stat-tile-button ${activeDetail === 'krank' ? 'is-active' : ''}`}
+            onClick={() => toggleDetail('krank')}
+            aria-pressed={activeDetail === 'krank'}
+          >
+            <span className="stat-label">
+              {statusVisual('krank').icon} {DETAIL_LABELS.krank.title} {year}
+            </span>
+            <span className="stat-value">{yearSickDays.krankDays}</span>
+            <span className="stat-sub">Tage im Jahr {year}</span>
+          </button>
 
-          {activeDetail && (
-            <>
-              <h3 style={{ marginBottom: 'var(--space-3)' }}>
-                {DETAIL_LABELS[activeDetail].title} {year}
-              </h3>
-              <StatusRangesTable
-                uid={user.uid}
-                ranges={activeRanges}
-                grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
-              />
-            </>
+          {yearSickDays.kindKrankDays > 0 && (
+            <button
+              type="button"
+              className={`card stat-tile stat-tile-button ${activeDetail === 'kind-krank' ? 'is-active' : ''}`}
+              onClick={() => toggleDetail('kind-krank')}
+              aria-pressed={activeDetail === 'kind-krank'}
+            >
+              <span className="stat-label">
+                {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title} {year}
+              </span>
+              <span className="stat-value">{yearSickDays.kindKrankDays}</span>
+              <span className="stat-sub">Tage im Jahr {year}</span>
+            </button>
           )}
         </div>
-      )}
+
+        {activeDetail && (
+          <>
+            <h3 style={{ marginBottom: 'var(--space-3)' }}>
+              {DETAIL_LABELS[activeDetail].title} {year}
+            </h3>
+            <StatusRangesTable
+              uid={user.uid}
+              ranges={activeRanges}
+              grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
+            />
+          </>
+        )}
+      </div>
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Monatsübersicht {year}</h2>
