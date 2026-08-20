@@ -106,7 +106,7 @@ export function MonthGrid({
                 <div className="day-note">{holiday}</div>
               ) : inMonth ? (
                 <select
-                  className="day-status-select"
+                  className={visual.hatched ? 'day-status-select day-status-select--hatched' : 'day-status-select'}
                   style={{ '--status-color': visual.color } as CSSProperties}
                   value={statusId}
                   onChange={(e) => handleSelect(date, e.target.value)}

@@ -1,8 +1,10 @@
-import type { DayStatus, VacationType } from '../types/models'
+import { DEFAULT_VACATION_TYPE_IDS, type DayStatus, type VacationType } from '../types/models'
 
 interface StatusVisual {
   color: string
   icon: string
+  /** Grün schraffiert statt einfarbig darstellen, um Resturlaub von anderen Urlaubsarten abzuheben (Issue #32). */
+  hatched?: boolean
 }
 
 const BASE_VISUALS: Record<string, StatusVisual> = {
@@ -33,6 +35,9 @@ function paletteIndex(id: string): number {
 export function statusVisual(status: DayStatus): StatusVisual {
   const base = BASE_VISUALS[status]
   if (base) return base
+  if (status === DEFAULT_VACATION_TYPE_IDS.resturlaub) {
+    return { color: 'var(--status-resturlaub)', icon: '🌴', hatched: true }
+  }
   return { color: VACATION_PALETTE[paletteIndex(status)], icon: '🌴' }
 }
 
