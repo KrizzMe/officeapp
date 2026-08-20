@@ -162,7 +162,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
             <tr>
               <th>Name</th>
               <th>Tage/Jahr</th>
-              <th>Rhythmus</th>
+              <th>Takt</th>
               <th style={{ textAlign: 'right' }}>
                 {!isAdding && (
                   <button type="button" className="btn btn-primary btn-sm" onClick={() => setIsAdding(true)} aria-label="Hinzufügen">
@@ -184,14 +184,17 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                         required
                       />
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        value={editForm.totalDays}
-                        onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
-                        style={{ width: 80 }}
-                      />
+                      <label className="field" style={{ marginBottom: 0 }}>
+                        <span>Tage/Jahr</span>
+                        <input
+                          className="input"
+                          type="number"
+                          min="0"
+                          value={editForm.totalDays}
+                          onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
+                          style={{ width: 80 }}
+                        />
+                      </label>
                       <label className="checkbox-label">
                         <input
                           type="checkbox"
@@ -265,15 +268,17 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                       onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                       required
                     />
-                    <input
-                      className="input"
-                      type="number"
-                      min="0"
-                      placeholder="Tage/Jahr"
-                      value={addForm.totalDays}
-                      onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
-                      style={{ width: 100 }}
-                    />
+                    <label className="field" style={{ marginBottom: 0 }}>
+                      <span>Tage/Jahr</span>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        value={addForm.totalDays}
+                        onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
+                        style={{ width: 100 }}
+                      />
+                    </label>
                     <label className="checkbox-label">
                       <input
                         type="checkbox"
