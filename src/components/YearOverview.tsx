@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
-import { DEFAULT_ARBEITSTAGE } from '../types/models'
+import { DEFAULT_ARBEITSTAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
@@ -25,17 +25,26 @@ export function YearOverview({ user, profile }: Props) {
   const yearDays = useMemo(() => getYearDays(year), [year])
   const requiredRatio = useMemo(() => requiredOfficeRatio(profile), [profile])
   const arbeitstage = profile.arbeitstage ?? DEFAULT_ARBEITSTAGE
+  const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
   const yearQuota = useMemo(
-    () => calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio, arbeitstage),
-    [yearDays, profile.bundesland, entries, requiredRatio, arbeitstage],
+    () =>
+      calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays),
+    [yearDays, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
   )
 
   const monthlyQuotas = useMemo(
     () =>
       Array.from({ length: 12 }, (_, m) =>
-        calculateAttendanceQuota(getMonthDays(year, m), profile.bundesland, entries, requiredRatio, arbeitstage),
+        calculateAttendanceQuota(
+          getMonthDays(year, m),
+          profile.bundesland,
+          entries,
+          requiredRatio,
+          arbeitstage,
+          homeofficeWeekdays,
+        ),
       ),
-    [year, profile.bundesland, entries, requiredRatio, arbeitstage],
+    [year, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
   )
 
   const monthlySickDays = useMemo(

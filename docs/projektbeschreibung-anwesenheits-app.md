@@ -37,6 +37,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Arbeitstage (Mo-So einzeln wählbar, Issue #34) — Default Mo-Fr; bestimmt, welche Wochentage arbeitsfrei sind statt fest Sa/So anzunehmen, z. B. für Teilzeitkräfte mit Arbeitstagen Do-So
 - Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
 - Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
+- Regelmäßige Homeoffice-Wochentage (Teilmenge der Arbeitstage einzeln wählbar, Issue #39, nur relevant wenn Home Office erlaubt) — dient als Vorbelegung für zukünftige Monate ohne eigenen Eintrag (siehe 5.2); wirkt nie auf den aktuellen oder vergangene Monate. Arbeitsfreie Tage sind nicht auswählbar, da an ihnen kein Homeoffice vorbelegt werden kann.
 
 ### 4.2 Tagesstatus (ein Eintrag pro Tag im Kalender)
 
@@ -78,6 +79,8 @@ Anwesenheitsquote = (Büro-Tage + Dienstreise-Tage) / Mögliche Arbeitstage
 ### 5.2 Standard-Fallback-Logik für Bürotage
 
 Jeder Werktag (Mo–Fr, kein Feiertag) ohne anderen gesetzten Status gilt automatisch als `Büro` mit der Standard-Wegstrecke. Der Nutzer markiert nur die Ausnahmen (Homeoffice, Urlaub, Dienstreise, Krank, …). Das minimiert die Klicks im Alltag und entspricht der bisherigen Excel-Logik.
+
+Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt zukünftigen** Monat (nicht der aktuelle Monat, auch nicht ein vergangener) und auf einen im Profil gewählten Homeoffice-Wochentag, gilt er stattdessen als `Homeoffice`. Das ist reine Berechnungslogik ohne eigene Firestore-Einträge — Änderungen an den Homeoffice-Wochentagen wirken sich dadurch automatisch nie auf den aktuellen oder vergangene Monate aus. Einzelne Tage bleiben weiterhin manuell überschreibbar.
 
 ### 5.3 Arbeitsweg / Pendlerpauschale
 

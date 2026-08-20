@@ -21,11 +21,26 @@ export function ProfileSetup({ user, onDone }: Props) {
   const [arbeitstage, setArbeitstage] = useState<Weekday[]>([...DEFAULT_ARBEITSTAGE])
   const [homeofficeErlaubt, setHomeofficeErlaubt] = useState(true)
   const [homeofficeQuote, setHomeofficeQuote] = useState('60')
+  const [homeofficeWeekdays, setHomeofficeWeekdays] = useState<Weekday[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const toggleArbeitstag = (day: Weekday) => {
+    const wasArbeitstag = arbeitstage.includes(day)
     setArbeitstage((prev) => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return ALL_WEEKDAYS.filter((d) => next.has(d))
+    })
+    // Kein Arbeitstag mehr => auch kein wählbarer Homeoffice-Wochentag mehr.
+    if (wasArbeitstag) {
+      setHomeofficeWeekdays((prev) => prev.filter((d) => d !== day))
+    }
+  }
+
+  const toggleHomeofficeWeekday = (day: Weekday) => {
+    setHomeofficeWeekdays((prev) => {
       const next = new Set(prev)
       if (next.has(day)) next.delete(day)
       else next.add(day)
@@ -54,6 +69,7 @@ export function ProfileSetup({ user, onDone }: Props) {
         arbeitstage,
         homeofficeErlaubt,
         homeofficeQuote: Number(homeofficeQuote) || 0,
+        homeofficeWeekdays: homeofficeErlaubt ? homeofficeWeekdays : [],
         vacationTypes: [
           { id: DEFAULT_VACATION_TYPE_IDS.urlaub, name: 'Urlaub', totalDays: Number(urlaubTage) || 0 },
           { id: DEFAULT_VACATION_TYPE_IDS.resturlaub, name: 'Resturlaub', totalDays: Number(resturlaubTage) || 0 },
@@ -170,6 +186,25 @@ export function ProfileSetup({ user, onDone }: Props) {
             required
           />
         </label>
+      )}
+
+      {homeofficeErlaubt && (
+        <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
+          <span>Regelmäßige Homeoffice-Tage (Vorbelegung für zukünftige Monate)</span>
+          <div className="weekday-toggle-group">
+            {arbeitstage.map((day) => (
+              <button
+                key={day}
+                type="button"
+                className={`weekday-toggle${homeofficeWeekdays.includes(day) ? ' weekday-toggle--active' : ''}`}
+                aria-pressed={homeofficeWeekdays.includes(day)}
+                onClick={() => toggleHomeofficeWeekday(day)}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {error && <p className="form-error">{error}</p>}
