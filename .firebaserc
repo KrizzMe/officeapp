@@ -1,13 +1,5 @@
 {
   "projects": {
     "default": "officeapp-krizzme"
-  },
-  "targets": {
-    "officeapp-krizzme": {
-      "hosting": {
-        "prod": ["officeapp-krizzme"],
-        "test": ["officeapp-krizzme-test"]
-      }
-    }
   }
 }
