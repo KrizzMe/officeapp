@@ -178,9 +178,6 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
               </button>
             ))}
           </div>
-          <p className="form-hint">
-            Gilt nur für kommende Monate ohne manuelle Änderung — der aktuelle und vergangene Monate bleiben unverändert.
-          </p>
         </div>
       )}
 

@@ -199,9 +199,6 @@ export function ProfileSetup({ user, onDone }: Props) {
               </button>
             ))}
           </div>
-          <p className="form-hint">
-            Gilt nur für kommende Monate ohne manuelle Änderung — der aktuelle und vergangene Monate bleiben unverändert.
-          </p>
         </div>
       )}
 
