@@ -16,7 +16,6 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeoffi
     const type = vacationTypes.find((v) => v.id === id)
     return type ? vacationTypeColor(type) : 'var(--color-primary)'
   }
-  const totalRemaining = balances.reduce((sum, b) => sum + b.remainingDays, 0)
   const quotaPercent = Math.min(100, quota.ratio * 100)
 
   return (
@@ -42,11 +41,6 @@ export function Dashboard({ quota, quotaLabel, balances, vacationTypes, homeoffi
           </span>
         </div>
       )}
-
-      <div className="card stat-tile">
-        <span className="stat-label">Urlaub gesamt verbleibend</span>
-        <span className="stat-value">{totalRemaining} Tage</span>
-      </div>
 
       {balances.map((b) => {
         const ratio = b.totalDays > 0 ? Math.min(100, (b.usedDays / b.totalDays) * 100) : 0
