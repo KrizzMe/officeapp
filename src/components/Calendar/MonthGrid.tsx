@@ -6,6 +6,7 @@ import { effectiveDayStatus } from '../../lib/attendance'
 import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { statusVisual } from '../../lib/statusColors'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { StatusDropdown, type StatusOption } from './StatusDropdown'
 
 interface Props {
   year: number
@@ -42,17 +43,30 @@ export function MonthGrid({
 }: Props) {
   const days = getMonthGrid(year, month)
   const todayIso = toIsoDate(new Date())
-  // Unter 640px ist die Tageszelle zu schmal für Icon + Text — der Browser
-  // schneidet den Options-Text im geschlossenen Select sonst auf ein
-  // einzelnes Zeichen ab ("B", "H", ...). Dort zeigt jede Option nur noch
-  // ihr Icon; beim Öffnen der Auswahl (nativer Picker) bleibt der Text
-  // ohnehin sichtbar.
+  // Unter 640px ist die Tageszelle zu schmal, um im geschlossenen Zustand
+  // Icon + Text zu zeigen. Beim Öffnen der Auswahl (eigene Dropdown-Liste,
+  // s. StatusDropdown) bleibt der Text unabhängig davon immer sichtbar
+  // (Issue #36).
   const isMobile = useMediaQuery('(max-width: 639px)')
 
   const statusLabel = (id: string) =>
     STATUS_LABELS[id] ?? vacationTypes.find((v) => v.id === id)?.name ?? id
 
-  const optionLabel = (icon: string, id: string) => (isMobile ? icon : `${icon} ${statusLabel(id)}`)
+  const buildOptions = (statusId: string): StatusOption[] => {
+    const options: StatusOption[] = [{ value: 'buero', icon: '🏢', label: statusLabel('buero') }]
+    if (homeofficeErlaubt || statusId === 'homeoffice') {
+      options.push({ value: 'homeoffice', icon: '🏠', label: statusLabel('homeoffice') })
+    }
+    options.push(
+      { value: 'dienstreise', icon: '✈️', label: statusLabel('dienstreise') },
+      { value: 'krank', icon: '🤒', label: statusLabel('krank') },
+      { value: 'kind-krank', icon: '🤧', label: statusLabel('kind-krank') },
+    )
+    for (const v of vacationTypes) {
+      options.push({ value: v.id, icon: '🌴', label: statusLabel(v.id) })
+    }
+    return options
+  }
 
   const handleSelect = (date: Date, value: string) => {
     if (value === 'buero') {
@@ -105,25 +119,15 @@ export function MonthGrid({
               ) : holiday ? (
                 <div className="day-note">{holiday}</div>
               ) : inMonth ? (
-                <select
-                  className={visual.hatched ? 'day-status-select day-status-select--hatched' : 'day-status-select'}
-                  style={{ '--status-color': visual.color } as CSSProperties}
+                <StatusDropdown
                   value={statusId}
-                  onChange={(e) => handleSelect(date, e.target.value)}
-                >
-                  <option value="buero">{optionLabel('🏢', 'buero')}</option>
-                  {(homeofficeErlaubt || statusId === 'homeoffice') && (
-                    <option value="homeoffice">{optionLabel('🏠', 'homeoffice')}</option>
-                  )}
-                  <option value="dienstreise">{optionLabel('✈️', 'dienstreise')}</option>
-                  <option value="krank">{optionLabel('🤒', 'krank')}</option>
-                  <option value="kind-krank">{optionLabel('🤧', 'kind-krank')}</option>
-                  {vacationTypes.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {optionLabel('🌴', v.id)}
-                    </option>
-                  ))}
-                </select>
+                  options={buildOptions(statusId)}
+                  onChange={(v) => handleSelect(date, v)}
+                  color={visual.color}
+                  hatched={visual.hatched}
+                  showLabelWhenClosed={!isMobile}
+                  ariaLabel={`Status für ${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}: ${statusLabel(statusId)}`}
+                />
               ) : null}
             </div>
           )
