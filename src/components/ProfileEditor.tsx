@@ -19,8 +19,15 @@ interface Props {
  * langen Formular.
  */
 export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
-  const [homeAddress, setHomeAddress] = useState(profile.homeAddress)
-  const [workAddress, setWorkAddress] = useState(profile.workAddress)
+  const [homeStreet, setHomeStreet] = useState(profile.homeStreet)
+  const [homePostalCode, setHomePostalCode] = useState(profile.homePostalCode)
+  const [homeCity, setHomeCity] = useState(profile.homeCity)
+  const [workStreet, setWorkStreet] = useState(profile.workStreet)
+  const [workPostalCode, setWorkPostalCode] = useState(profile.workPostalCode)
+  const [workCity, setWorkCity] = useState(profile.workCity)
+  const [shortestDistanceKm, setShortestDistanceKm] = useState<number | null>(
+    profile.shortestCommuteDistanceKm ?? null,
+  )
   const [distanceKm, setDistanceKm] = useState(String(profile.defaultCommuteDistanceKm))
   const [bundesland, setBundesland] = useState<UserProfile['bundesland']>(profile.bundesland)
   const [arbeitstage, setArbeitstage] = useState<Weekday[]>(profile.arbeitstage ?? [...DEFAULT_ARBEITSTAGE])
@@ -67,9 +74,14 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
     try {
       const updated: UserProfile = {
         ...profile,
-        homeAddress,
-        workAddress,
+        homeStreet,
+        homePostalCode,
+        homeCity,
+        workStreet,
+        workPostalCode,
+        workCity,
         defaultCommuteDistanceKm: Number(distanceKm) || 0,
+        ...(shortestDistanceKm !== null ? { shortestCommuteDistanceKm: shortestDistanceKm } : {}),
         bundesland,
         arbeitstage,
         homeofficeErlaubt,
@@ -89,51 +101,102 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
     <form onSubmit={handleSubmit} className="card form-card form-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
       <h3 style={{ marginTop: 0 }}>Profil bearbeiten</h3>
 
-      <div className="profile-address-grid">
+      <h4>Wohnadresse</h4>
+      <div className="address-fields-row">
         <label className="field">
-          <span>Wohnadresse</span>
-          <input className="input" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required />
+          <span>Adresse (Straße Hausnummer)</span>
+          <input className="input" value={homeStreet} onChange={(e) => setHomeStreet(e.target.value)} required />
         </label>
-
         <label className="field">
-          <span>Bundesland</span>
-          <select
-            className="input"
-            value={bundesland}
-            onChange={(e) => setBundesland(e.target.value as UserProfile['bundesland'])}
-          >
-            {BUNDESLAENDER.map((b) => (
-              <option key={b.code} value={b.code}>
-                {b.name}
-              </option>
-            ))}
-          </select>
+          <span>PLZ</span>
+          <input className="input" value={homePostalCode} onChange={(e) => setHomePostalCode(e.target.value)} required />
         </label>
-
         <label className="field">
-          <span>Arbeitsadresse</span>
-          <input className="input" value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
+          <span>Ort</span>
+          <input className="input" value={homeCity} onChange={(e) => setHomeCity(e.target.value)} required />
         </label>
+      </div>
 
+      <h4>Arbeitsadresse</h4>
+      <div className="address-fields-row">
         <label className="field">
-          <span>Standard-Wegstrecke (km, einfache Fahrt)</span>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.1"
-            value={distanceKm}
-            onChange={(e) => setDistanceKm(e.target.value)}
-            required
-          />
+          <span>Adresse (Straße Hausnummer)</span>
+          <input className="input" value={workStreet} onChange={(e) => setWorkStreet(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span>PLZ</span>
+          <input className="input" value={workPostalCode} onChange={(e) => setWorkPostalCode(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span>Ort</span>
+          <input className="input" value={workCity} onChange={(e) => setWorkCity(e.target.value)} required />
         </label>
       </div>
 
       <CommuteCheck
-        homeAddress={homeAddress}
-        workAddress={workAddress}
-        onApplyDistance={(km) => setDistanceKm(String(km))}
+        homeStreet={homeStreet}
+        homePostalCode={homePostalCode}
+        homeCity={homeCity}
+        workStreet={workStreet}
+        workPostalCode={workPostalCode}
+        workCity={workCity}
+        onApplyHome={(address, erkanntesBundesland) => {
+          setHomeStreet(address.street)
+          setHomePostalCode(address.postalCode)
+          setHomeCity(address.city)
+          if (erkanntesBundesland) setBundesland(erkanntesBundesland)
+        }}
+        onApplyWork={(address) => {
+          setWorkStreet(address.street)
+          setWorkPostalCode(address.postalCode)
+          setWorkCity(address.city)
+        }}
+        onShortestDistance={setShortestDistanceKm}
       />
+
+      {shortestDistanceKm !== null && (
+        <div className="field">
+          <span>Kürzeste Wegstrecke (km, einfache Fahrt)</span>
+          <div className="form-row">
+            <input className="input" value={shortestDistanceKm.toFixed(1)} readOnly />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setDistanceKm(String(Math.round(shortestDistanceKm * 10) / 10))}
+            >
+              Als Arbeitswegstrecke übernehmen
+            </button>
+          </div>
+        </div>
+      )}
+
+      <label className="field">
+        <span>Arbeitswegstrecke (km, einfache Fahrt)</span>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          step="0.1"
+          value={distanceKm}
+          onChange={(e) => setDistanceKm(e.target.value)}
+          required
+        />
+      </label>
+
+      <label className="field">
+        <span>Bundesland</span>
+        <select
+          className="input"
+          value={bundesland}
+          onChange={(e) => setBundesland(e.target.value as UserProfile['bundesland'])}
+        >
+          {BUNDESLAENDER.map((b) => (
+            <option key={b.code} value={b.code}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
         <span>Arbeitstage</span>

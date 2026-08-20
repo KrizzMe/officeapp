@@ -67,10 +67,23 @@ export interface VacationType {
 export interface UserProfile {
   uid: string
   displayName: string
-  homeAddress: string
-  workAddress: string
-  /** Standard-Wegstrecke Wohnadresse -> Arbeitsadresse in km. Pro Tag überschreibbar (DayEntry.distanceKm). */
+  /** Straße + Hausnummer der Wohnadresse, z. B. "Musterstraße 1" (Issue #61). */
+  homeStreet: string
+  homePostalCode: string
+  homeCity: string
+  /** Straße + Hausnummer der Arbeitsadresse (Issue #61). */
+  workStreet: string
+  workPostalCode: string
+  workCity: string
+  /** Arbeitswegstrecke Wohnadresse -> Arbeitsadresse in km. Pro Tag überschreibbar (DayEntry.distanceKm). */
   defaultCommuteDistanceKm: number
+  /**
+   * Von der Adressprüfung (Issue #61) berechnete kürzeste Straßenverbindung
+   * zwischen Wohn- und Arbeitsadresse in km — reiner Referenzwert, unabhängig
+   * von defaultCommuteDistanceKm, die weiterhin frei abweichend pflegbar
+   * bleibt. Optional, da nur gesetzt wird, sobald einmal geprüft wurde.
+   */
+  shortestCommuteDistanceKm?: number
   bundesland: Bundesland
   /**
    * Vom Nutzer gewähltes Farbdesign. Optional für Rückwärtskompatibilität mit
