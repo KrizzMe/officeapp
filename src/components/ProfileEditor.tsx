@@ -3,6 +3,7 @@ import type { UserProfile, Weekday } from '../types/models'
 import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { saveUserProfile } from '../firebase/firestore'
+import { CommuteCheck } from './CommuteCheck'
 
 interface Props {
   profile: UserProfile
@@ -127,6 +128,12 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           />
         </label>
       </div>
+
+      <CommuteCheck
+        homeAddress={homeAddress}
+        workAddress={workAddress}
+        onApplyDistance={(km) => setDistanceKm(String(km))}
+      />
 
       <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
         <span>Arbeitstage</span>

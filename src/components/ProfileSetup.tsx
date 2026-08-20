@@ -5,6 +5,7 @@ import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE, DEFAULT_VACATION_TYPE_IDS } from '..
 import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from '../lib/colorThemes'
 import { saveUserProfile } from '../firebase/firestore'
+import { CommuteCheck } from './CommuteCheck'
 
 interface Props {
   user: User
@@ -99,6 +100,12 @@ export function ProfileSetup({ user, onDone }: Props) {
         <span>Arbeitsadresse</span>
         <input className="input" value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} required />
       </label>
+
+      <CommuteCheck
+        homeAddress={homeAddress}
+        workAddress={workAddress}
+        onApplyDistance={(km) => setDistanceKm(String(km))}
+      />
 
       <label className="field">
         <span>Standard-Wegstrecke (km, einfache Fahrt)</span>

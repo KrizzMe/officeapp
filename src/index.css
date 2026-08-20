@@ -567,6 +567,18 @@ select.input:focus {
   margin-bottom: var(--space-3);
 }
 
+.commute-check {
+  margin-bottom: var(--space-3);
+}
+
+.commute-check-result {
+  background: var(--color-success-soft);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+}
+
 .theme-picker {
   display: flex;
   flex-direction: column;
