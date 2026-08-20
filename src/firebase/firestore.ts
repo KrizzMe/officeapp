@@ -34,6 +34,23 @@ export async function setDayEntry(uid: string, entry: DayEntry): Promise<void> {
   await setDoc(dayDoc(uid, entry.date), entry)
 }
 
+/**
+ * Setzt den Freitext-Grund für alle übergebenen Tageseinträge gleichzeitig
+ * (Issue #33, ein Grund pro zusammenhängendem Zeitraum in der Jahresübersicht).
+ * Ein leerer Text entfernt das Feld wieder, statt eine leere Zeichenkette zu speichern.
+ */
+export async function setDayEntryGrund(uid: string, entries: DayEntry[], grund: string): Promise<void> {
+  const trimmed = grund.trim()
+  await Promise.all(
+    entries.map((entry) => {
+      const payload: DayEntry = { date: entry.date, status: entry.status }
+      if (entry.distanceKm !== undefined) payload.distanceKm = entry.distanceKm
+      if (trimmed) payload.grund = trimmed
+      return setDayEntry(uid, payload)
+    }),
+  )
+}
+
 /** Löscht einen Tageseintrag, sodass der Tag wieder auf die Fallback-Logik zurückfällt. */
 export async function clearDayEntry(uid: string, date: string): Promise<void> {
   await deleteDoc(dayDoc(uid, date))

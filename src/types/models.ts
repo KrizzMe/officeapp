@@ -166,6 +166,12 @@ export interface DayEntry {
    * 'dienstreise'. Überschreibt UserProfile.defaultCommuteDistanceKm, falls gesetzt.
    */
   distanceKm?: number
+  /**
+   * Optionaler Freitext-Grund bei 'dienstreise'/'krank'/'kind-krank' (Issue #33),
+   * editierbar in der Jahresübersicht. Wird beim Speichern für alle Tage eines
+   * zusammenhängenden Zeitraums gleichgesetzt.
+   */
+  grund?: string
 }
 
 /** Ergebnis der 40/60-Anwesenheitsquoten-Berechnung (Abschnitt 5.1) für einen Zeitraum. */
