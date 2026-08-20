@@ -173,7 +173,9 @@ export function YearOverview({ user, profile }: Props) {
 
           {activeDetail && (
             <>
-              <h3 style={{ marginBottom: 'var(--space-3)' }}>{DETAIL_LABELS[activeDetail].title}</h3>
+              <h3 style={{ marginBottom: 'var(--space-3)' }}>
+                {DETAIL_LABELS[activeDetail].title} {year}
+              </h3>
               <StatusRangesTable
                 uid={user.uid}
                 ranges={activeRanges}
