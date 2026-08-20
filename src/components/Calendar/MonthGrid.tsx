@@ -6,8 +6,9 @@ import { effectiveDayStatus } from '../../lib/attendance'
 import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { getAgFreierTagName } from '../../lib/agFreieTage'
 import { statusVisual } from '../../lib/statusColors'
+import { buildStatusOptions, statusLabel } from '../../lib/statusOptions'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
-import { StatusDropdown, type StatusOption } from './StatusDropdown'
+import { StatusDropdown } from './StatusDropdown'
 
 interface Props {
   year: number
@@ -25,14 +26,6 @@ interface Props {
   homeofficeWeekdays: readonly Weekday[]
   onStatusChange: (date: Date, status: string) => void
   onClearStatus: (date: Date) => void
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  buero: 'Büro',
-  homeoffice: 'Homeoffice',
-  dienstreise: 'Dienstreise',
-  krank: 'Krank',
-  'kind-krank': 'Kind krank',
 }
 
 export function MonthGrid({
@@ -55,25 +48,6 @@ export function MonthGrid({
   // s. StatusDropdown) bleibt der Text unabhängig davon immer sichtbar
   // (Issue #36).
   const isMobile = useMediaQuery('(max-width: 639px)')
-
-  const statusLabel = (id: string) =>
-    STATUS_LABELS[id] ?? vacationTypes.find((v) => v.id === id)?.name ?? id
-
-  const buildOptions = (statusId: string): StatusOption[] => {
-    const options: StatusOption[] = [{ value: 'buero', icon: '🏢', label: statusLabel('buero') }]
-    if (homeofficeErlaubt || statusId === 'homeoffice') {
-      options.push({ value: 'homeoffice', icon: '🏠', label: statusLabel('homeoffice') })
-    }
-    options.push(
-      { value: 'dienstreise', icon: '✈️', label: statusLabel('dienstreise') },
-      { value: 'krank', icon: '🤒', label: statusLabel('krank') },
-      { value: 'kind-krank', icon: '🤧', label: statusLabel('kind-krank') },
-    )
-    for (const v of vacationTypes) {
-      options.push({ value: v.id, icon: '🌴', label: statusLabel(v.id) })
-    }
-    return options
-  }
 
   /**
    * Ein gewählter Status, der dem berechneten Default entspricht (i. d. R.
@@ -143,12 +117,12 @@ export function MonthGrid({
               ) : inMonth ? (
                 <StatusDropdown
                   value={statusId}
-                  options={buildOptions(statusId)}
+                  options={buildStatusOptions(vacationTypes, homeofficeErlaubt, statusId)}
                   onChange={(v) => handleSelect(date, v, defaultStatusId)}
                   color={visual.color}
                   hatched={visual.hatched}
                   showLabelWhenClosed={!isMobile}
-                  ariaLabel={`Status für ${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}: ${statusLabel(statusId)}`}
+                  ariaLabel={`Status für ${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}: ${statusLabel(statusId, vacationTypes)}`}
                 />
               ) : null}
             </div>

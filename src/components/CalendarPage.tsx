@@ -8,7 +8,7 @@ import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { MonthGrid } from './Calendar/MonthGrid'
-import { Dashboard } from './Dashboard'
+import { MonthStats } from './MonthStats'
 
 interface Props {
   user: User
@@ -84,7 +84,7 @@ export function CalendarPage({ user, profile }: Props) {
 
   return (
     <div>
-      <Dashboard
+      <MonthStats
         quota={quota}
         quotaLabel={monthLabel(year, month)}
         balances={balances}
