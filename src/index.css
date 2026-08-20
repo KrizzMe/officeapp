@@ -803,8 +803,20 @@ select.input:focus {
   color: var(--color-text-muted);
 }
 
-.day-status-select {
+/* Eigene Dropdown-Komponente statt natives <select> (Issue #36): geschlossen
+   und geöffnet lassen sich damit unabhängig gestalten, u.a. damit auf Mobile
+   geschlossen nur das Icon, geöffnet aber Icon + Text gezeigt wird. */
+.status-dropdown {
+  position: relative;
   width: 100%;
+}
+
+.status-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
   border: 1px solid color-mix(in srgb, var(--status-color) 45%, var(--color-border));
   background-color: color-mix(in srgb, var(--status-color) 16%, var(--color-surface));
   color: color-mix(in srgb, var(--status-color) 70%, var(--color-text));
@@ -814,10 +826,10 @@ select.input:focus {
   font-weight: 600;
   font-family: inherit;
   min-height: 36px;
+  cursor: pointer;
 }
 
-/* Grün schraffiertes Muster fuer Resturlaub-Tage statt einfarbiger Füllung (Issue #32). */
-.day-status-select--hatched {
+.status-dropdown-trigger--hatched {
   background-image: repeating-linear-gradient(
     45deg,
     color-mix(in srgb, var(--status-color) 60%, transparent) 0,
@@ -827,9 +839,58 @@ select.input:focus {
   );
 }
 
-.day-status-select:focus {
+.status-dropdown-trigger:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
+}
+
+.status-dropdown-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-dropdown-caret {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+}
+
+.status-dropdown-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  min-width: max-content;
+  max-width: 70vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.status-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.status-dropdown-option--active {
+  background: var(--color-surface-alt);
+}
+
+.status-dropdown-option[aria-selected='true'] {
+  font-weight: 600;
 }
 
 @media (min-width: 640px) {
@@ -855,7 +916,7 @@ select.input:focus {
     display: flex;
   }
 
-  .day-status-select {
+  .status-dropdown-trigger {
     font-size: var(--font-size-sm);
     min-height: 40px;
   }
