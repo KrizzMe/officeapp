@@ -5,6 +5,7 @@ import { useUserProfile } from './hooks/useUserProfile'
 import { ProfileSetup } from './components/ProfileSetup'
 import { ProfileEditor } from './components/ProfileEditor'
 import { VacationTypesManager } from './components/VacationTypesManager'
+import { AgFreieTageManager } from './components/AgFreieTageManager'
 import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
 import { YearOverview } from './components/YearOverview'
@@ -94,6 +95,7 @@ function App() {
                 onCancel={() => setActivePanel(null)}
               />
               <VacationTypesManager profile={profile} onUpdated={reload} />
+              <AgFreieTageManager profile={profile} onUpdated={reload} />
               <ColorThemeEditor profile={profile} onSaved={reload} />
             </>
           )}

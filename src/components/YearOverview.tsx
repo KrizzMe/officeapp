@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
-import { DEFAULT_ARBEITSTAGE, NO_WEEKDAYS } from '../types/models'
+import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
@@ -26,10 +26,19 @@ export function YearOverview({ user, profile }: Props) {
   const requiredRatio = useMemo(() => requiredOfficeRatio(profile), [profile])
   const arbeitstage = profile.arbeitstage ?? DEFAULT_ARBEITSTAGE
   const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
+  const agFreieTage = profile.agFreieTage ?? NO_AG_FREIE_TAGE
   const yearQuota = useMemo(
     () =>
-      calculateAttendanceQuota(yearDays, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays),
-    [yearDays, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
+      calculateAttendanceQuota(
+        yearDays,
+        profile.bundesland,
+        agFreieTage,
+        entries,
+        requiredRatio,
+        arbeitstage,
+        homeofficeWeekdays,
+      ),
+    [yearDays, profile.bundesland, agFreieTage, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
   )
 
   const monthlyQuotas = useMemo(
@@ -38,21 +47,22 @@ export function YearOverview({ user, profile }: Props) {
         calculateAttendanceQuota(
           getMonthDays(year, m),
           profile.bundesland,
+          agFreieTage,
           entries,
           requiredRatio,
           arbeitstage,
           homeofficeWeekdays,
         ),
       ),
-    [year, profile.bundesland, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
+    [year, profile.bundesland, agFreieTage, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
   )
 
   const monthlySickDays = useMemo(
     () =>
       Array.from({ length: 12 }, (_, m) =>
-        calculateSickDays(getMonthDays(year, m), profile.bundesland, entries, arbeitstage),
+        calculateSickDays(getMonthDays(year, m), profile.bundesland, agFreieTage, entries, arbeitstage),
       ),
-    [year, profile.bundesland, entries, arbeitstage],
+    [year, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
   const yearQuotaPercent = Math.min(100, yearQuota.ratio * 100)

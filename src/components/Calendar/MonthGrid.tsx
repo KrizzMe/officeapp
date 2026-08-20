@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react'
-import type { Bundesland, DayEntry, VacationType, Weekday } from '../../types/models'
+import type { AgFreierTag, Bundesland, DayEntry, VacationType, Weekday } from '../../types/models'
 import { ALL_WEEKDAYS } from '../../types/models'
 import { getMonthGrid, isArbeitstag, toIsoDate, weekdayLabel } from '../../lib/dates'
 import { effectiveDayStatus } from '../../lib/attendance'
 import { getHolidayName, isWeekend } from '../../lib/holidays'
+import { getAgFreierTagName } from '../../lib/agFreieTage'
 import { statusVisual } from '../../lib/statusColors'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { StatusDropdown, type StatusOption } from './StatusDropdown'
@@ -12,6 +13,8 @@ interface Props {
   year: number
   month: number
   bundesland: Bundesland
+  /** Zusätzliche AG-freie Tage (UserProfile.agFreieTage, Issue #37). */
+  agFreieTage: readonly AgFreierTag[]
   entries: Map<string, DayEntry>
   vacationTypes: VacationType[]
   /** Ob der Status 'homeoffice' im Dropdown auswählbar ist (UserProfile.homeofficeErlaubt). */
@@ -36,6 +39,7 @@ export function MonthGrid({
   year,
   month,
   bundesland,
+  agFreieTage,
   entries,
   vacationTypes,
   homeofficeErlaubt,
@@ -98,12 +102,19 @@ export function MonthGrid({
         {days.map((date) => {
           const inMonth = date.getMonth() === month
           const iso = toIsoDate(date)
-          const holiday = getHolidayName(date, bundesland)
+          const holiday = getHolidayName(date, bundesland) ?? getAgFreierTagName(date, agFreieTage)
           const workday = isArbeitstag(date, arbeitstage)
           const entry = entries.get(iso)
-          const status = effectiveDayStatus(date, bundesland, entry, arbeitstage, homeofficeWeekdays)
+          const status = effectiveDayStatus(date, bundesland, agFreieTage, entry, arbeitstage, homeofficeWeekdays)
           const statusId = typeof status === 'string' ? status : 'buero'
-          const defaultStatus = effectiveDayStatus(date, bundesland, undefined, arbeitstage, homeofficeWeekdays)
+          const defaultStatus = effectiveDayStatus(
+            date,
+            bundesland,
+            agFreieTage,
+            undefined,
+            arbeitstage,
+            homeofficeWeekdays,
+          )
           const defaultStatusId = typeof defaultStatus === 'string' ? defaultStatus : 'buero'
           const visual = statusVisual(statusId)
           const muted = !workday || !!holiday

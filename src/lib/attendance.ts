@@ -1,11 +1,13 @@
-import type { AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
+import type { AgFreierTag, AttendanceQuota, BaseDayStatus, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
 import { isArbeitstag, isFutureMonth, toIsoDate, weekdayLabel } from './dates'
 import { getHolidayName } from './holidays'
+import { getAgFreierTagName } from './agFreieTage'
 
 /**
  * Effektiver Status eines Tages inkl. Fallback-Logik (Abschnitt 5.2):
- * arbeitsfreie Tage (UserProfile.arbeitstage, Issue #34) und Feiertage sind
- * nie editierbar und zählen nie mit; ein Arbeitstag ohne Eintrag gilt
+ * arbeitsfreie Tage (UserProfile.arbeitstage, Issue #34), Feiertage und
+ * zusätzliche AG-freie Tage (UserProfile.agFreieTage, Issue #37) sind nie
+ * editierbar und zählen nie mit; ein Arbeitstag ohne Eintrag gilt
  * automatisch als `buero` — außer für einen strikt zukünftigen Monat
  * (Issue #39): fällt der Tag auf einen der gewählten Homeoffice-Wochentage,
  * gilt er als `homeoffice`. Im aktuellen und in vergangenen Monaten greift
@@ -14,13 +16,14 @@ import { getHolidayName } from './holidays'
 export function effectiveDayStatus(
   date: Date,
   bundesland: Bundesland,
+  agFreieTage: readonly AgFreierTag[],
   entry: DayEntry | undefined,
   arbeitstage: readonly Weekday[],
   homeofficeWeekdays: readonly Weekday[] = [],
   today: Date = new Date(),
 ): BaseDayStatus | string | 'wochenende' | 'feiertag' {
   if (!isArbeitstag(date, arbeitstage)) return 'wochenende'
-  const holiday = getHolidayName(date, bundesland)
+  const holiday = getHolidayName(date, bundesland) ?? getAgFreierTagName(date, agFreieTage)
   if (holiday) return 'feiertag'
   if (entry?.status) return entry.status
   if (isFutureMonth(date, today) && homeofficeWeekdays.includes(weekdayLabel(date))) return 'homeoffice'
@@ -46,6 +49,7 @@ export function requiredOfficeRatio(profile: Pick<UserProfile, 'homeofficeErlaub
 export function calculateAttendanceQuota(
   days: Date[],
   bundesland: Bundesland,
+  agFreieTage: readonly AgFreierTag[],
   entries: Map<string, DayEntry>,
   requiredRatio: number,
   arbeitstage: readonly Weekday[],
@@ -56,7 +60,14 @@ export function calculateAttendanceQuota(
   let businessTripDays = 0
 
   for (const date of days) {
-    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage, homeofficeWeekdays)
+    const status = effectiveDayStatus(
+      date,
+      bundesland,
+      agFreieTage,
+      entries.get(toIsoDate(date)),
+      arbeitstage,
+      homeofficeWeekdays,
+    )
     if (status === 'buero') officeDays++
     else if (status === 'homeoffice') homeofficeDays++
     else if (status === 'dienstreise') businessTripDays++
@@ -80,6 +91,7 @@ export function calculateAttendanceQuota(
 export function calculateSickDays(
   days: Date[],
   bundesland: Bundesland,
+  agFreieTage: readonly AgFreierTag[],
   entries: Map<string, DayEntry>,
   arbeitstage: readonly Weekday[],
 ): { krankDays: number; kindKrankDays: number } {
@@ -87,7 +99,7 @@ export function calculateSickDays(
   let kindKrankDays = 0
 
   for (const date of days) {
-    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage)
+    const status = effectiveDayStatus(date, bundesland, agFreieTage, entries.get(toIsoDate(date)), arbeitstage)
     if (status === 'krank') krankDays++
     else if (status === 'kind-krank') kindKrankDays++
   }
