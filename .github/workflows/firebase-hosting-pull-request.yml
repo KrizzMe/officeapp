@@ -28,8 +28,10 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_OFFICEAPP_KRIZZME }}'
           projectId: officeapp-krizzme
-          # Fester Channel statt eines pro PR generierten: ergibt immer dieselbe
-          # Vorschau-URL, damit sie nur einmal in Firebase Auth freigeschaltet
-          # werden muss (statt bei jedem PR erneut).
-          channelId: review
-          expires: 30d
+          # Eigene Hosting-Site ("test") statt eines Preview-Channels auf der
+          # Produktions-Site: ergibt eine feste, saubere URL ohne Zufalls-Suffix
+          # (officeapp-krizzme-test.web.app), die nur einmalig in Firebase Auth
+          # freigeschaltet werden muss (statt bei jedem PR erneut). Die Site
+          # muss vorher einmalig in der Firebase Console angelegt werden.
+          target: test
+          channelId: live
