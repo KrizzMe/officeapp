@@ -184,17 +184,14 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                         required
                       />
-                      <label className="field" style={{ marginBottom: 0 }}>
-                        <span>Tage/Jahr</span>
-                        <input
-                          className="input"
-                          type="number"
-                          min="0"
-                          value={editForm.totalDays}
-                          onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
-                          style={{ width: 80 }}
-                        />
-                      </label>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        value={editForm.totalDays}
+                        onChange={(e) => setEditForm({ ...editForm, totalDays: e.target.value })}
+                        style={{ width: 80 }}
+                      />
                       <label className="checkbox-label">
                         <input
                           type="checkbox"
@@ -268,17 +265,15 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                       onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                       required
                     />
-                    <label className="field" style={{ marginBottom: 0 }}>
-                      <span>Tage/Jahr</span>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        value={addForm.totalDays}
-                        onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
-                        style={{ width: 100 }}
-                      />
-                    </label>
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      placeholder="Tage/Jahr"
+                      value={addForm.totalDays}
+                      onChange={(e) => setAddForm({ ...addForm, totalDays: e.target.value })}
+                      style={{ width: 100 }}
+                    />
                     <label className="checkbox-label">
                       <input
                         type="checkbox"
