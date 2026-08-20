@@ -121,11 +121,6 @@ export function YearOverview({ user, profile }: Props) {
                   }}
                 />
               </div>
-              <span className="stat-sub">
-                Büro {yearQuota.officeDays} + Dienstreise {yearQuota.businessTripDays} von{' '}
-                {yearQuota.possibleWorkDays} möglichen Arbeitstagen · Ziel ≥{' '}
-                {(yearQuota.requiredOfficeRatio * 100).toFixed(0)}%
-              </span>
             </div>
 
             {yearQuota.businessTripDays > 0 && (
