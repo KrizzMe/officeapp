@@ -1,6 +1,5 @@
-import type { CSSProperties } from 'react'
 import type { AttendanceQuota, VacationBalance, VacationType } from '../types/models'
-import { statusVisual, vacationTypeColor } from '../lib/statusColors'
+import { VacationBalanceTile } from './VacationBalanceTile'
 
 interface Props {
   quota: AttendanceQuota
@@ -8,14 +7,11 @@ interface Props {
   balances: VacationBalance[]
   vacationTypes: VacationType[]
   homeofficeErlaubt: boolean
+  /** Jahr, auf das sich die Urlaubssalden beziehen (für den Hinweistext der Kacheln). */
+  year: number
 }
 
-export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt }: Props) {
-  const nameOf = (id: string) => vacationTypes.find((v) => v.id === id)?.name ?? id
-  const colorOf = (id: string) => {
-    const type = vacationTypes.find((v) => v.id === id)
-    return type ? vacationTypeColor(type) : 'var(--color-primary)'
-  }
+export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeofficeErlaubt, year }: Props) {
   const quotaPercent = Math.min(100, quota.ratio * 100)
 
   return (
@@ -39,24 +35,9 @@ export function MonthStats({ quota, quotaLabel, balances, vacationTypes, homeoff
       )}
 
       {balances.map((b) => {
-        const ratio = b.totalDays > 0 ? Math.min(100, (b.usedDays / b.totalDays) * 100) : 0
-        const hatched = statusVisual(b.vacationTypeId).hatched
-        const fillClass = hatched ? 'progress-fill progress-fill--hatched' : 'progress-fill'
-        const fillStyle: CSSProperties = hatched
-          ? { width: `${ratio}%` }
-          : { width: `${ratio}%`, background: colorOf(b.vacationTypeId) }
-        return (
-          <div key={b.vacationTypeId} className="card stat-tile">
-            <span className="stat-label">{nameOf(b.vacationTypeId)}</span>
-            <span className="stat-value">{b.remainingDays}</span>
-            <div className="progress-track">
-              <div className={fillClass} style={fillStyle} />
-            </div>
-            <span className="stat-sub">
-              {b.usedDays} von {b.totalDays} genommen
-            </span>
-          </div>
-        )
+        const vacationType = vacationTypes.find((v) => v.id === b.vacationTypeId)
+        if (!vacationType) return null
+        return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
       })}
     </div>
   )

@@ -5,9 +5,11 @@ import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/mod
 import { useYearEntries } from '../hooks/useYearEntries'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
+import { calculateVacationBalances } from '../lib/vacation'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
 import { StatusRangesTable } from './StatusRangesTable'
+import { VacationBalanceTile } from './VacationBalanceTile'
 
 interface Props {
   user: User
@@ -82,6 +84,11 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
+  const vacationBalances = useMemo(
+    () => calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage],
+  )
+
   const activeRanges = useMemo(() => {
     if (!activeDetail) return []
     return computeStatusRanges(year, activeDetail, profile.bundesland, agFreieTage, entries, arbeitstage)
@@ -105,8 +112,8 @@ export function YearOverview({ user, profile }: Props) {
           </button>
         </div>
 
-        {homeofficeErlaubt && (
-          <div className="card-grid">
+        <div className="card-grid">
+          {homeofficeErlaubt && (
             <div className="card stat-tile">
               <span className="stat-label">Anwesenheitsquote (Jahr {year})</span>
               <span className={`stat-value ${yearQuota.meetsThreshold ? 'is-positive' : 'is-negative'}`}>
@@ -122,7 +129,20 @@ export function YearOverview({ user, profile }: Props) {
                 />
               </div>
             </div>
+          )}
 
+          {vacationBalances.map((b) => {
+            const vacationType = profile.vacationTypes.find((v) => v.id === b.vacationTypeId)
+            if (!vacationType) return null
+            return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
+          })}
+        </div>
+      </div>
+
+      {homeofficeErlaubt && (
+        <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+          <h2 style={{ marginTop: 0 }}>Dienstreise &amp; Krankheitstage</h2>
+          <div className="card-grid">
             {yearQuota.businessTripDays > 0 && (
               <button
                 type="button"
@@ -166,19 +186,19 @@ export function YearOverview({ user, profile }: Props) {
               </button>
             )}
           </div>
-        )}
 
-        {activeDetail && (
-          <>
-            <h3 style={{ marginBottom: 'var(--space-3)' }}>{DETAIL_LABELS[activeDetail].title}</h3>
-            <StatusRangesTable
-              uid={user.uid}
-              ranges={activeRanges}
-              grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
-            />
-          </>
-        )}
-      </div>
+          {activeDetail && (
+            <>
+              <h3 style={{ marginBottom: 'var(--space-3)' }}>{DETAIL_LABELS[activeDetail].title}</h3>
+              <StatusRangesTable
+                uid={user.uid}
+                ranges={activeRanges}
+                grundPlaceholder={DETAIL_LABELS[activeDetail].grundPlaceholder}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Monatsübersicht {year}</h2>
