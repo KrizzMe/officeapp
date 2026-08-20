@@ -3,7 +3,7 @@
 - Vor größeren/weitreichenden Aktionen (z. B. mergen, pushen, löschen) erst per Rückfrage bestätigen lassen, statt direkt zu handeln.
 - Nach einem erfolgreich gemergten Pull Request immer fragen, ob die Session/der Chat archiviert werden soll.
 - Immer wenn ein Pull Request erstellt wurde, fragen wie es weitergehen soll, statt von sich aus weitere Schritte (z. B. Ready for review, Review anfordern) zu unternehmen.
-- Rückfragen an den Nutzer (überall in diesem Workflow, wo "fragen" steht) immer mit klickbaren Antwortoptionen stellen (AskUserQuestion-Tool), nicht als reiner Fließtext.
+- WICHTIG: Jede Rückfrage an den Nutzer — ausnahmslos, überall in diesem Workflow und in diesem Repo, wo "fragen"/"Rückfrage" steht — immer über das AskUserQuestion-Tool mit klickbaren Antwortoptionen stellen. Niemals eine Frage als reiner Fließtext am Ende einer Nachricht stellen, auch nicht beiläufig oder als Nebensatz.
 
 ## Standard-Workflow für neue Anforderungen
 
@@ -31,7 +31,7 @@
 - Bei erfolgreichem Test: fragen, ob der Teststand auf PROD gemergt und deployed werden soll.
 - Vor dem Merge prüfen, dass der PR nur die vorgesehenen Tickets enthält (keine ungewollten Änderungen) — das eigentliche Schließen der Tickets übernimmt GitHub automatisch beim Merge (über "Fixes #Nummer" in der PR-Beschreibung).
 - Der Merge löst automatisch (über die bestehende CI-Pipeline `firebase-hosting-merge.yml`) den Deploy auf PROD aus.
-- Nach dem Merge den gemergten Branch aufräumen (löschen).
+- Nach dem Merge den gemergten Branch aufräumen (löschen). Hinweis: Claude hat aktuell keine Berechtigung, Branches in diesem Repo selbst zu löschen (GitHub lehnt das mit 403 ab, vermutlich Repo-Ruleset "Restrict deletions") — bis das behoben ist, aktiv daran erinnern, dass der Nutzer den Branch manuell löscht.
 
 ### 4. Abschluss und Archivierung
 
