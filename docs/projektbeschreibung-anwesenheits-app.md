@@ -38,6 +38,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
 - Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
 - Regelmäßige Homeoffice-Wochentage (Teilmenge der Arbeitstage einzeln wählbar, Issue #39, nur relevant wenn Home Office erlaubt) — dient als Vorbelegung für zukünftige Monate ohne eigenen Eintrag (siehe 5.2); wirkt nie auf den aktuellen oder vergangene Monate. Arbeitsfreie Tage sind nicht auswählbar, da an ihnen kein Homeoffice vorbelegt werden kann.
+- Zusätzliche AG-freie Tage (Issue #37, z. B. 24.12./31.12. durch Betriebsvereinbarung) — frei definierbare Liste aus Datum (Tag+Monat, wiederkehrend jedes Jahr) und Bezeichnung, zentral im Profil gepflegt statt pro Jahr neu einzutragen. Werden wie gesetzliche Feiertage behandelt (siehe 4.2, 5.2).
 
 ### 4.2 Tagesstatus (ein Eintrag pro Tag im Kalender)
 
@@ -50,7 +51,7 @@ Statt der bisherigen zwei getrennten Excel-Felder (Homeoffice-Flag + Abwesenheit
 - `Kind krank`
 - plus die vom Nutzer im Profil definierten Urlaubsarten (z. B. `Urlaub`, `Resturlaub`, `Dispositionstag`, `Sonderurlaub`, `Umwandlungstag`, `Gleitzeit`, `Regeneration`, …) — kein Jahres-Kontingent wie bei den Urlaubsarten, da Krankheitstage nicht begrenzt sind (Issue #23)
 
-Arbeitsfreie Tage (laut den im Profil gewählten Arbeitstagen) und Feiertage werden automatisch erkannt, nicht manuell gesetzt.
+Arbeitsfreie Tage (laut den im Profil gewählten Arbeitstagen), Feiertage und AG-freie Tage (Issue #37) werden automatisch erkannt, nicht manuell gesetzt.
 
 Für Tage mit Status `Büro` oder `Dienstreise`: Wegstrecke (km) wird automatisch aus der hinterlegten Standardstrecke übernommen, ist aber **pro Tag überschreibbar** (z. B. Ausweichroute, abweichendes Ziel bei Dienstreise).
 
@@ -68,7 +69,7 @@ Jede Urlaubsart hat:
 
 ```
 Mögliche Arbeitstage = Tage mit Status Büro + Homeoffice + Dienstreise
-                        (Urlaub/Krank/Feiertage/Wochenende zählen nicht mit)
+                        (Urlaub/Krank/Feiertage/AG-freie Tage/Wochenende zählen nicht mit)
 
 Anwesenheitsquote = (Büro-Tage + Dienstreise-Tage) / Mögliche Arbeitstage
 ```
@@ -78,7 +79,7 @@ Anwesenheitsquote = (Büro-Tage + Dienstreise-Tage) / Mögliche Arbeitstage
 
 ### 5.2 Standard-Fallback-Logik für Bürotage
 
-Jeder Werktag (Mo–Fr, kein Feiertag) ohne anderen gesetzten Status gilt automatisch als `Büro` mit der Standard-Wegstrecke. Der Nutzer markiert nur die Ausnahmen (Homeoffice, Urlaub, Dienstreise, Krank, …). Das minimiert die Klicks im Alltag und entspricht der bisherigen Excel-Logik.
+Jeder Werktag (Mo–Fr, kein Feiertag, kein AG-freier Tag) ohne anderen gesetzten Status gilt automatisch als `Büro` mit der Standard-Wegstrecke. Der Nutzer markiert nur die Ausnahmen (Homeoffice, Urlaub, Dienstreise, Krank, …). Das minimiert die Klicks im Alltag und entspricht der bisherigen Excel-Logik.
 
 Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt zukünftigen** Monat (nicht der aktuelle Monat, auch nicht ein vergangener) und auf einen im Profil gewählten Homeoffice-Wochentag, gilt er stattdessen als `Homeoffice`. Das ist reine Berechnungslogik ohne eigene Firestore-Einträge — Änderungen an den Homeoffice-Wochentagen wirken sich dadurch automatisch nie auf den aktuellen oder vergangene Monate aus. Einzelne Tage bleiben weiterhin manuell überschreibbar.
 

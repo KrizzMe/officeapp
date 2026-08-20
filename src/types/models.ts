@@ -28,6 +28,22 @@ export const DEFAULT_ARBEITSTAGE: readonly Weekday[] = ['Mo', 'Di', 'Mi', 'Do', 
  */
 export const NO_WEEKDAYS: readonly Weekday[] = []
 
+/**
+ * Zusätzlicher, arbeitgeberseitig arbeitsfreier Tag (z. B. durch
+ * Betriebsvereinbarung, Issue #37) — wiederkehrend jedes Jahr am selben
+ * Tag+Monat, wie gesetzliche Feiertage. `tag` im Format "MM-DD" (z. B.
+ * "12-24" für 24.12.), abgleichbar mit dem entsprechenden Suffix eines
+ * ISO-Datums (toIsoDate(date).slice(5)).
+ */
+export interface AgFreierTag {
+  id: string
+  tag: string
+  bezeichnung: string
+}
+
+/** Stabile leere Liste für Profile ohne AG-freie Tage (Issue #37), analog zu NO_WEEKDAYS. */
+export const NO_AG_FREIE_TAGE: readonly AgFreierTag[] = []
+
 /** Rhythmus-Regel für Urlaubsarten mit Kontingent-Einschränkung (z. B. Dispositionstage). */
 export interface VacationTypeRhythm {
   /** z. B. "quarterly" für "1 Tag pro Quartal". Weitere Rhythmen bei Bedarf ergänzen. */
@@ -92,6 +108,14 @@ export interface UserProfile {
    * Fehlen gilt eine leere Auswahl (keine Vorbelegung, Fallback bleibt 'buero').
    */
   homeofficeWeekdays?: Weekday[]
+  /**
+   * Zusätzliche, arbeitgeberseitig arbeitsfreie Tage (Issue #37, z. B. durch
+   * Betriebsvereinbarung wie 24.12./31.12.), zentral im Profil gepflegt statt
+   * pro Jahr neu einzutragen. Werden wie gesetzliche Feiertage behandelt:
+   * nicht manuell überschreibbar, zählen nicht zur Anwesenheitsquote (siehe
+   * effectiveDayStatus()). Optional; beim Fehlen gilt eine leere Liste.
+   */
+  agFreieTage?: AgFreierTag[]
   /**
    * Urlaubsarten inkl. Regelurlaub und Resturlaub aus dem Vorjahr — beides
    * sind laut Abschnitt 4.2 selbst Beispiele für Urlaubsarten, kein

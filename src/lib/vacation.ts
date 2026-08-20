@@ -1,4 +1,4 @@
-import type { Bundesland, DayEntry, VacationBalance, VacationType, Weekday } from '../types/models'
+import type { AgFreierTag, Bundesland, DayEntry, VacationBalance, VacationType, Weekday } from '../types/models'
 import { parseIsoDate, toIsoDate } from './dates'
 import { effectiveDayStatus } from './attendance'
 
@@ -6,6 +6,7 @@ import { effectiveDayStatus } from './attendance'
 export function calculateVacationBalances(
   days: Date[],
   bundesland: Bundesland,
+  agFreieTage: readonly AgFreierTag[],
   entries: Map<string, DayEntry>,
   vacationTypes: VacationType[],
   arbeitstage: readonly Weekday[],
@@ -13,7 +14,7 @@ export function calculateVacationBalances(
   const usedByType = new Map<string, number>()
 
   for (const date of days) {
-    const status = effectiveDayStatus(date, bundesland, entries.get(toIsoDate(date)), arbeitstage)
+    const status = effectiveDayStatus(date, bundesland, agFreieTage, entries.get(toIsoDate(date)), arbeitstage)
     if (typeof status !== 'string') continue
     if (status === 'buero' || status === 'homeoffice' || status === 'dienstreise') continue
     if (status === 'krank' || status === 'kind-krank') continue

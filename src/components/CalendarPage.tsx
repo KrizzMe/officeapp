@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '../types/models'
-import { DEFAULT_ARBEITSTAGE, NO_WEEKDAYS } from '../types/models'
+import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
@@ -26,6 +26,7 @@ export function CalendarPage({ user, profile }: Props) {
   const yearDays = useMemo(() => getYearDays(year), [year])
   const arbeitstage = profile.arbeitstage ?? DEFAULT_ARBEITSTAGE
   const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
+  const agFreieTage = profile.agFreieTage ?? NO_AG_FREIE_TAGE
 
   // Anwesenheitsquote bezieht sich auf den gerade angezeigten Monat, nicht
   // aufs ganze Jahr — sonst würden unbelegte Zukunftsmonate (Fallback auf
@@ -38,17 +39,19 @@ export function CalendarPage({ user, profile }: Props) {
       calculateAttendanceQuota(
         currentMonthDays,
         profile.bundesland,
+        agFreieTage,
         entries,
         requiredOfficeRatio(profile),
         arbeitstage,
         homeofficeWeekdays,
       ),
-    [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays],
+    [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays, agFreieTage],
   )
 
   const balances = useMemo(
-    () => calculateVacationBalances(yearDays, profile.bundesland, entries, profile.vacationTypes, arbeitstage),
-    [yearDays, profile.bundesland, entries, profile.vacationTypes, arbeitstage],
+    () =>
+      calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage],
   )
 
   const changeMonth = (delta: number) => {
@@ -106,6 +109,7 @@ export function CalendarPage({ user, profile }: Props) {
           year={year}
           month={month}
           bundesland={profile.bundesland}
+          agFreieTage={agFreieTage}
           entries={entries}
           vacationTypes={profile.vacationTypes}
           homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
