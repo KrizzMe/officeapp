@@ -57,6 +57,13 @@ function formToRhythm(form: FormState): VacationType['rhythm'] {
 export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [year, setYear] = useState(() => new Date().getFullYear())
   const vacationTypes = vacationTypesForYear(profile, year)
+  // Vorjahr bis drei Jahre voraus plus alle Jahre mit gespeicherter Liste.
+  const yearOptions = (() => {
+    const now = new Date().getFullYear()
+    const years = new Set<number>([year, ...Object.keys(profile.vacationTypesByYear ?? {}).map(Number)])
+    for (let y = now - 1; y <= now + 3; y++) years.add(y)
+    return [...years].sort((a, b) => a - b)
+  })()
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM)
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -87,12 +94,12 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     }
   }
 
-  const changeYear = (delta: number) => {
+  const changeYear = (newYear: number) => {
     cancelAdd()
     cancelEdit()
     setError(null)
     setBlockedDelete(null)
-    setYear((y) => y + delta)
+    setYear(newYear)
   }
 
   const handleAdd = async (e: FormEvent) => {
@@ -165,16 +172,21 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
 
   return (
     <div className="card form-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
-      <h3 style={{ marginTop: 0 }}>Urlaubsarten verwalten</h3>
-
-      <div className="month-nav" style={{ marginBottom: 'var(--space-3)' }}>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeYear(-1)} aria-label="Vorheriges Jahr">
-          ←
-        </button>
-        <strong>{year}</strong>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeYear(1)} aria-label="Nächstes Jahr">
-          →
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
+        <h3 style={{ margin: 0 }}>Urlaubsarten verwalten</h3>
+        <select
+          className="input"
+          style={{ width: 'auto' }}
+          value={year}
+          onChange={(e) => changeYear(Number(e.target.value))}
+          aria-label="Jahr"
+        >
+          {yearOptions.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && <p className="form-error">{error}</p>}
