@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { AgFreierTag, UserProfile } from '../types/models'
-import { saveUserProfile } from '../firebase/firestore'
+import { updateUserProfile } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
@@ -103,7 +103,7 @@ export function AgFreieTageManager({ profile, onUpdated }: Props) {
     setSaving(true)
     setError(null)
     try {
-      await saveUserProfile({ ...profile, agFreieTage: updated })
+      await updateUserProfile(profile.uid, { agFreieTage: updated })
       onUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

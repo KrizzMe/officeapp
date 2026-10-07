@@ -17,7 +17,7 @@ type Panel = 'dashboard' | 'monthOverview' | 'yearOverview' | 'profile'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
-  const { profile, loading: profileLoading, reload } = useUserProfile(user?.uid)
+  const { profile, loading: profileLoading, error: profileError, reload } = useUserProfile(user?.uid)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<Panel>('dashboard')
   const editingProfile = activePanel === 'profile'
@@ -101,7 +101,18 @@ function App() {
         )}
       </header>
 
-      {profileLoading ? null : profile ? (
+      {profileLoading ? null : profileError ? (
+        /*
+         * Eigener Fehlerzweig statt Durchfallen auf ProfileSetup (Issue #65):
+         * ein Ladefehler ist nicht dasselbe wie "kein Profil vorhanden".
+         */
+        <div className="card">
+          <p className="form-error">Profil konnte nicht geladen werden: {profileError}</p>
+          <button className="btn btn-secondary" onClick={reload}>
+            Erneut versuchen
+          </button>
+        </div>
+      ) : profile ? (
         <>
           {editingProfile && (
             <>

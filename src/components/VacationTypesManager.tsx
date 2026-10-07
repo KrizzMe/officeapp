@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { UserProfile, VacationType } from '../types/models'
-import { countDayEntriesWithStatus, saveUserProfile } from '../firebase/firestore'
+import { countDayEntriesWithStatus, updateUserProfile } from '../firebase/firestore'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
@@ -73,7 +73,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     setSaving(true)
     setError(null)
     try {
-      await saveUserProfile({ ...profile, vacationTypes })
+      await updateUserProfile(profile.uid, { vacationTypes })
       onUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

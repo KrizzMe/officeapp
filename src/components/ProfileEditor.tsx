@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { UserProfile, Weekday } from '../types/models'
 import { ALL_WEEKDAYS, DEFAULT_ARBEITSTAGE } from '../types/models'
 import { BUNDESLAENDER } from '../lib/bundeslaender'
-import { saveUserProfile } from '../firebase/firestore'
+import { updateUserProfile } from '../firebase/firestore'
 import { CommuteCheck } from './CommuteCheck'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
@@ -75,8 +75,13 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
       return
     }
     try {
-      const updated: UserProfile = {
-        ...profile,
+      /*
+       * Nur die Felder dieses Formulars schreiben (Issue #65) — bewusst kein
+       * `...profile`: Urlaubsarten, AG-freie Tage und Farbdesign werden von
+       * eigenen, gleichzeitig sichtbaren Sektionen gepflegt und dürfen hier
+       * nicht aus einem evtl. veralteten `profile`-Prop zurückgeschrieben werden.
+       */
+      const patch: Partial<UserProfile> = {
         homeStreet,
         homePostalCode,
         homeCity,
@@ -91,7 +96,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         homeofficeQuote: Number(homeofficeQuote) || 0,
         homeofficeWeekdays: homeofficeErlaubt ? homeofficeWeekdays : [],
       }
-      await saveUserProfile(updated)
+      await updateUserProfile(profile.uid, patch)
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
