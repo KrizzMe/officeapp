@@ -19,16 +19,16 @@
 
 - Auf Zustimmung/Anfrage hin die Anforderung (das Ticket) umsetzen.
 - Prüfen, ob für das Ticket bereits ein Branch existiert, und fragen, ob dieser weiterverwendet oder neu aufgesetzt werden soll.
-- Vor Beginn prüfen, ob der aktuelle Teststand (officeapp-krizzme-test.web.app) dem PROD-Stand (officeapp-krizzme.web.app) entspricht — sauberer Ausgangspunkt für die neue Umsetzung.
+- Vor Beginn sicherstellen, dass der Ausgangspunkt dem aktuellen `origin/main` (= PROD) entspricht.
 - Während der Umsetzung bei Änderungen/Unklarheiten nachfragen, statt eigenständig zu entscheiden.
-- Nach der Umsetzung fragen, ob ein Pull Request erstellt/aktualisiert werden soll. Ein offener bzw. aktualisierter PR löst automatisch (über die bestehende CI-Pipeline `firebase-hosting-pull-request.yml`) einen Deploy auf die Testumgebung aus — kein zusätzlicher manueller Merge-Schritt auf Test nötig.
-- Tickets werden sequenziell (nicht parallel) abgearbeitet, da die Testumgebung eine einzelne feste Adresse ist und ein neuerer PR-Deploy den vorherigen Teststand überschreibt.
+- Nach der Umsetzung fragen, ob ein Pull Request erstellt/aktualisiert werden soll. Es gibt keinen Test-Deploy mehr; `firebase-hosting-pull-request.yml` prüft nur noch, dass der Build durchläuft.
+- Nach der Umsetzung immer den lokalen Dev-Server starten (preview_start), damit der Nutzer lokal testen kann. Voraussetzung ist eine `.env.local` mit den `VITE_FIREBASE_*`-Werten (siehe `.env.example`).
 
 ### 3. Testbereitstellung und Merge auf PROD
 
-- Alle Anforderungen werden auf der Testumgebung (https://officeapp-krizzme-test.web.app/) geprüft.
+- Alle Anforderungen werden lokal (Dev-Server) vom Nutzer geprüft.
 - Bei fehlgeschlagenem Test: Fehler analysieren, Kommentar im zugehörigen Ticket hinterlassen, zurück in den Umsetzungs-Loop (Schritt 2) — so lange, bis der Test erfolgreich ist.
-- Bei erfolgreichem Test: fragen, ob der Teststand auf PROD gemergt und deployed werden soll.
+- Bei erfolgreichem Test: fragen, ob der PR auf PROD gemergt und deployed werden soll.
 - Vor dem Merge prüfen, dass der PR nur die vorgesehenen Tickets enthält (keine ungewollten Änderungen) — das eigentliche Schließen der Tickets übernimmt GitHub automatisch beim Merge (über "Fixes #Nummer" in der PR-Beschreibung).
 - Der Merge löst automatisch (über die bestehende CI-Pipeline `firebase-hosting-merge.yml`) den Deploy auf PROD aus.
 - Nach dem Merge den gemergten Branch aufräumen (löschen). Hinweis: Claude hat aktuell keine Berechtigung, Branches in diesem Repo selbst zu löschen (GitHub lehnt das mit 403 ab, vermutlich Repo-Ruleset "Restrict deletions") — bis das behoben ist, aktiv daran erinnern, dass der Nutzer den Branch manuell löscht.

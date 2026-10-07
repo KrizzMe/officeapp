@@ -80,10 +80,12 @@ export async function clearDayEntry(uid: string, date: string): Promise<void> {
  * als Löschschutz für Urlaubsarten (Abschnitt 4.3) — solange Tage mit dieser
  * Urlaubsart erfasst sind, würde ihre id sonst als verwaister Status übrig bleiben.
  */
-export async function countDayEntriesWithStatus(uid: string, status: string): Promise<number> {
+export async function countDayEntriesWithStatus(uid: string, status: string, year?: number): Promise<number> {
   const daysRef = collection(db, 'users', uid, 'days')
   const snapshot = await getDocs(query(daysRef, where('status', '==', status)))
-  return snapshot.size
+  if (year === undefined) return snapshot.size
+  // Urlaubsarten sind jahresweise (Issue #72): nur Einträge des betroffenen Jahres zählen (Dokument-id = YYYY-MM-DD).
+  return snapshot.docs.filter((d) => d.id.startsWith(`${year}-`)).length
 }
 
 /**

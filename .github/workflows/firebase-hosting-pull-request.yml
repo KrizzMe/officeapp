@@ -1,14 +1,13 @@
-name: Deploy PR preview to Firebase Hosting
+name: PR build check
+# Kein Test-Deploy mehr: getestet wird lokal. Der Workflow prüft nur noch,
+# dass der Build (tsc + vite) durchläuft.
 on:
   pull_request:
 jobs:
-  build_and_preview:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      checks: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,22 +15,3 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_OFFICEAPP_KRIZZME }}'
-          projectId: officeapp-krizzme
-          # Eigene Hosting-Site ("test") statt eines Preview-Channels auf der
-          # Produktions-Site: ergibt eine feste, saubere URL ohne Zufalls-Suffix
-          # (officeapp-krizzme-test.web.app), die nur einmalig in Firebase Auth
-          # freigeschaltet werden muss (statt bei jedem PR erneut). Die Site
-          # muss vorher einmalig in der Firebase Console angelegt werden.
-          target: test
-          channelId: live

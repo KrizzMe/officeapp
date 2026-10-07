@@ -7,6 +7,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances } from '../lib/vacation'
+import { vacationTypesForYear } from '../lib/vacationTypes'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
 import { statusLabel } from '../lib/statusOptions'
@@ -131,9 +132,11 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
+  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
+
   const vacationBalances = useMemo(
-    () => calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage),
-    [yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage],
+    () => calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage],
   )
 
   const activeRanges = useMemo(() => {
@@ -162,7 +165,7 @@ export function YearOverview({ user, profile }: Props) {
           {homeofficeErlaubt && <AttendanceQuotaTile quota={yearQuota} periodLabel={`Durchschnitt Jahr ${year}`} />}
 
           {vacationBalances.map((b) => {
-            const vacationType = profile.vacationTypes.find((v) => v.id === b.vacationTypeId)
+            const vacationType = vacationTypes.find((v) => v.id === b.vacationTypeId)
             if (!vacationType) return null
             return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
           })}

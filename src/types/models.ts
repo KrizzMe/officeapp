@@ -146,6 +146,13 @@ export interface UserProfile {
    * 'resturlaub', danach frei um weitere Arten ergänzbar (Abschnitt 4.3).
    */
   vacationTypes: VacationType[]
+  /**
+   * Urlaubsarten je Jahr (Issue #72), Schlüssel = Jahreszahl als String. Jahre
+   * ohne Eintrag werden von vacationTypesForYear() aus dem Vorjahr abgeleitet.
+   * Optional für Rückwärtskompatibilität: Profile von vor diesem Feature haben
+   * nur die globale `vacationTypes`-Liste.
+   */
+  vacationTypesByYear?: Record<string, VacationType[]>
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */

@@ -7,6 +7,7 @@ import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota, effectiveDayStatus, requiredOfficeRatio } from '../lib/attendance'
 import { checkRhythmViolation } from '../lib/vacation'
+import { vacationTypesForYear } from '../lib/vacationTypes'
 import { statusVisual } from '../lib/statusColors'
 import { buildStatusOptions, statusLabel } from '../lib/statusOptions'
 import { AttendanceQuotaTile } from './AttendanceQuotaTile'
@@ -30,6 +31,7 @@ export function HomeDashboard({ user, profile }: Props) {
   const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
   const agFreieTage = profile.agFreieTage ?? NO_AG_FREIE_TAGE
   const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
+  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
 
   const currentMonthDays = useMemo(() => getMonthDays(year, month), [year, month])
 
@@ -58,7 +60,7 @@ export function HomeDashboard({ user, profile }: Props) {
 
   const handleStatusChange = async (value: string) => {
     setWarning(null)
-    const vacationType = profile.vacationTypes.find((v) => v.id === value)
+    const vacationType = vacationTypes.find((v) => v.id === value)
     if (vacationType) {
       const { violated, usedInPeriod } = checkRhythmViolation(today, vacationType, entries)
       if (violated) {
@@ -84,12 +86,12 @@ export function HomeDashboard({ user, profile }: Props) {
           {isEditableToday ? (
             <StatusDropdown
               value={todayStatusId}
-              options={buildStatusOptions(profile.vacationTypes, homeofficeErlaubt, todayStatusId)}
+              options={buildStatusOptions(vacationTypes, homeofficeErlaubt, todayStatusId)}
               onChange={handleStatusChange}
               color={visual.color}
               hatched={visual.hatched}
               showLabelWhenClosed
-              ariaLabel={`Status für heute: ${statusLabel(todayStatusId, profile.vacationTypes)}`}
+              ariaLabel={`Status für heute: ${statusLabel(todayStatusId, vacationTypes)}`}
             />
           ) : (
             <span className="stat-value">{todayStatus === 'wochenende' ? 'Wochenende' : 'Feiertag'}</span>
