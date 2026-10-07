@@ -8,6 +8,7 @@ import {
   onSnapshot,
   query,
   setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore'
 import { db } from './config'
@@ -26,8 +27,26 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   return snap.exists() ? (snap.data() as UserProfile) : null
 }
 
+/**
+ * Legt das Profildokument komplett neu an (Ersteinrichtung, ProfileSetup).
+ * Für Änderungen an einem bestehenden Profil stattdessen updateUserProfile()
+ * benutzen — eine Vollschreibung würde dort parallel geänderte Felder anderer
+ * Profilsektionen überschreiben (siehe dort).
+ */
 export async function saveUserProfile(profile: UserProfile): Promise<void> {
   await setDoc(userDoc(profile.uid), profile)
+}
+
+/**
+ * Schreibt nur die übergebenen Profilfelder (Issue #65). Der Profilbereich
+ * zeigt vier Sektionen gleichzeitig (Profilformular, Urlaubsarten, AG-freie
+ * Tage, Farbdesign), die alle dasselbe `profile`-Objekt als Ausgangsbasis
+ * haben. Schrieb jede davon das ganze Dokument, machte ein Speichern in der
+ * einen Sektion eine noch nicht nachgeladene Änderung einer anderen still
+ * zunichte. Mit einem Teilupdate bleiben nicht übergebene Felder unberührt.
+ */
+export async function updateUserProfile(uid: string, patch: Partial<UserProfile>): Promise<void> {
+  await updateDoc(userDoc(uid), patch)
 }
 
 export async function setDayEntry(uid: string, entry: DayEntry): Promise<void> {

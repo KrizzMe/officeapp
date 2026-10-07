@@ -8,7 +8,7 @@ import {
   DEFAULT_COLOR_MODE,
   DEFAULT_COLOR_THEME,
 } from '../lib/colorThemes'
-import { saveUserProfile } from '../firebase/firestore'
+import { updateUserProfile } from '../firebase/firestore'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
@@ -53,7 +53,7 @@ export function ColorThemeEditor({ profile, onSaved }: Props) {
     setSaving(true)
     setError(null)
     try {
-      await saveUserProfile({ ...profile, colorTheme, colorMode })
+      await updateUserProfile(profile.uid, { colorTheme, colorMode })
       committed.current = true
       onSaved()
     } catch (err) {
