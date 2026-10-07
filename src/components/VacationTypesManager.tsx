@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { UserProfile, VacationType } from '../types/models'
 import { countDayEntriesWithStatus, updateUserProfile } from '../firebase/firestore'
+import { vacationTypesForYear } from '../lib/vacationTypes'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
@@ -54,6 +55,8 @@ function formToRhythm(form: FormState): VacationType['rhythm'] {
 }
 
 export function VacationTypesManager({ profile, onUpdated }: Props) {
+  const [year, setYear] = useState(() => new Date().getFullYear())
+  const vacationTypes = vacationTypesForYear(profile, year)
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM)
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -69,11 +72,13 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
    */
   const isMobile = useMediaQuery('(max-width: 639px)')
 
-  const persist = async (vacationTypes: VacationType[]) => {
+  const persist = async (types: VacationType[]) => {
     setSaving(true)
     setError(null)
     try {
-      await updateUserProfile(profile.uid, { vacationTypes })
+      await updateUserProfile(profile.uid, {
+        vacationTypesByYear: { ...profile.vacationTypesByYear, [String(year)]: types },
+      })
       onUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -82,17 +87,25 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     }
   }
 
+  const changeYear = (delta: number) => {
+    cancelAdd()
+    cancelEdit()
+    setError(null)
+    setBlockedDelete(null)
+    setYear((y) => y + delta)
+  }
+
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault()
     if (!addForm.name.trim()) return
     const rhythm = formToRhythm(addForm)
     const newType: VacationType = {
-      id: uniqueId(addForm.name, profile.vacationTypes),
+      id: uniqueId(addForm.name, vacationTypes),
       name: addForm.name.trim(),
       totalDays: Number(addForm.totalDays) || 0,
       ...(rhythm ? { rhythm } : {}),
     }
-    await persist([...profile.vacationTypes, newType])
+    await persist([...vacationTypes, newType])
     setAddForm(EMPTY_FORM)
     setIsAdding(false)
   }
@@ -118,7 +131,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     e.preventDefault()
     if (!editingId || !editForm.name.trim()) return
     const rhythm = formToRhythm(editForm)
-    const updated = profile.vacationTypes.map((t): VacationType =>
+    const updated = vacationTypes.map((t): VacationType =>
       t.id === editingId
         ? {
             id: t.id,
@@ -137,7 +150,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     setBlockedDelete(null)
     let count: number
     try {
-      count = await countDayEntriesWithStatus(profile.uid, type.id)
+      count = await countDayEntriesWithStatus(profile.uid, type.id, year)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
       return
@@ -147,12 +160,22 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
       return
     }
     if (!window.confirm(`Urlaubsart "${type.name}" wirklich löschen?`)) return
-    await persist(profile.vacationTypes.filter((t) => t.id !== type.id))
+    await persist(vacationTypes.filter((t) => t.id !== type.id))
   }
 
   return (
     <div className="card form-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
       <h3 style={{ marginTop: 0 }}>Urlaubsarten verwalten</h3>
+
+      <div className="month-nav" style={{ marginBottom: 'var(--space-3)' }}>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeYear(-1)} aria-label="Vorheriges Jahr">
+          ←
+        </button>
+        <strong>{year}</strong>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => changeYear(1)} aria-label="Nächstes Jahr">
+          →
+        </button>
+      </div>
 
       {error && <p className="form-error">{error}</p>}
 
@@ -173,7 +196,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
             </tr>
           </thead>
           <tbody>
-            {profile.vacationTypes.map((type) =>
+            {vacationTypes.map((type) =>
               editingId === type.id ? (
                 <tr key={type.id}>
                   <td colSpan={4}>

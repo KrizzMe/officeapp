@@ -7,6 +7,7 @@ import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
+import { vacationTypesForYear } from '../lib/vacationTypes'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { MonthStats } from './MonthStats'
 
@@ -48,10 +49,12 @@ export function CalendarPage({ user, profile }: Props) {
     [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays, agFreieTage],
   )
 
+  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
+
   const balances = useMemo(
     () =>
-      calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage),
-    [yearDays, profile.bundesland, agFreieTage, entries, profile.vacationTypes, arbeitstage],
+      calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage),
+    [yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage],
   )
 
   const changeMonth = (delta: number) => {
@@ -65,7 +68,7 @@ export function CalendarPage({ user, profile }: Props) {
 
   const handleStatusChange = async (date: Date, status: string) => {
     setWarning(null)
-    const vacationType = profile.vacationTypes.find((v) => v.id === status)
+    const vacationType = vacationTypes.find((v) => v.id === status)
     if (vacationType) {
       const { violated, usedInPeriod } = checkRhythmViolation(date, vacationType, entries)
       if (violated) {
@@ -88,7 +91,7 @@ export function CalendarPage({ user, profile }: Props) {
         quota={quota}
         quotaLabel={monthLabel(year, month)}
         balances={balances}
-        vacationTypes={profile.vacationTypes}
+        vacationTypes={vacationTypes}
         homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
         year={year}
       />
@@ -112,7 +115,7 @@ export function CalendarPage({ user, profile }: Props) {
           bundesland={profile.bundesland}
           agFreieTage={agFreieTage}
           entries={entries}
-          vacationTypes={profile.vacationTypes}
+          vacationTypes={vacationTypes}
           homeofficeErlaubt={profile.homeofficeErlaubt ?? true}
           arbeitstage={arbeitstage}
           homeofficeWeekdays={homeofficeWeekdays}
