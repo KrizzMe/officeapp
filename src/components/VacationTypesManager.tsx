@@ -57,13 +57,9 @@ function formToRhythm(form: FormState): VacationType['rhythm'] {
 export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [year, setYear] = useState(() => new Date().getFullYear())
   const vacationTypes = vacationTypesForYear(profile, year)
-  // Vorjahr bis drei Jahre voraus plus alle Jahre mit gespeicherter Liste.
-  const yearOptions = (() => {
-    const now = new Date().getFullYear()
-    const years = new Set<number>([year, ...Object.keys(profile.vacationTypesByYear ?? {}).map(Number)])
-    for (let y = now - 1; y <= now + 3; y++) years.add(y)
-    return [...years].sort((a, b) => a - b)
-  })()
+  // Letztes, aktuelles und nächstes Jahr.
+  const now = new Date().getFullYear()
+  const yearOptions = [now - 1, now, now + 1]
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM)
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
