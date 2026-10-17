@@ -91,27 +91,50 @@ export interface UploadedBeleg {
   path: string
 }
 
+/** Bis zu dieser Größe genügt ein einfacher Upload (Graph erlaubt dort max. 4 MB), darüber eine Upload-Sitzung. */
+const SIMPLE_UPLOAD_MAX_BYTES = 3_500_000
+
+async function graphError(response: Response, fallback: string): Promise<Error> {
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  return new Error(body?.error?.message ?? `${fallback} (Status ${response.status}).`)
+}
+
 /**
- * Lädt ein Belegfoto in `<App-Ordner>/<folder>/<fileName>` hoch (Einfach-Upload, für Dateien < 4 MB;
- * die verkleinerten Fotos sind deutlich kleiner). `folder` ohne führenden Schrägstrich, Segmente
- * mit `/` getrennt.
+ * Lädt einen Beleg (Foto oder PDF) in `<App-Ordner>/<folder>/<fileName>` hoch. Kleine Dateien per
+ * einfachem PUT, größere (z. B. gescannte PDFs) über eine Upload-Sitzung in einem Stück. `folder`
+ * ohne führenden Schrägstrich, Segmente mit `/` getrennt.
  */
 export async function uploadBeleg(blob: Blob, folder: string, fileName: string): Promise<UploadedBeleg> {
   const token = await getToken()
   const path = `${folder}/${fileName}`
   const encoded = path.split('/').map(encodeURIComponent).join('/')
   // conflictBehavior=rename: zwei Belege gleichen Namens überschreiben sich nie gegenseitig.
-  const url = `${GRAPH}/me/drive/special/approot:/${encoded}:/content?@microsoft.graph.conflictBehavior=rename`
+  const itemUrl = `${GRAPH}/me/drive/special/approot:/${encoded}`
 
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': blob.type || 'image/jpeg' },
-    body: blob,
-  })
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
-    throw new Error(body?.error?.message ?? `OneDrive-Upload fehlgeschlagen (Status ${response.status}).`)
+  let response: Response
+  if (blob.size <= SIMPLE_UPLOAD_MAX_BYTES) {
+    response = await fetch(`${itemUrl}:/content?@microsoft.graph.conflictBehavior=rename`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': blob.type || 'application/octet-stream' },
+      body: blob,
+    })
+  } else {
+    const session = await fetch(`${itemUrl}:/createUploadSession`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'rename' } }),
+    })
+    if (!session.ok) throw await graphError(session, 'OneDrive-Upload fehlgeschlagen')
+    const { uploadUrl } = (await session.json()) as { uploadUrl?: string }
+    if (!uploadUrl) throw new Error('OneDrive hat keine Upload-Adresse geliefert.')
+    // Die Upload-Adresse ist vorab autorisiert und darf keinen Authorization-Header bekommen.
+    response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Range': `bytes 0-${blob.size - 1}/${blob.size}` },
+      body: blob,
+    })
   }
+  if (!response.ok) throw await graphError(response, 'OneDrive-Upload fehlgeschlagen')
   const item = (await response.json()) as { webUrl?: string; name?: string }
   if (!item.webUrl) throw new Error('OneDrive hat keinen Link zur hochgeladenen Datei geliefert.')
   return { webUrl: item.webUrl, path: `${folder}/${item.name ?? fileName}` }

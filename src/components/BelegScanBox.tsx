@@ -43,15 +43,15 @@ export function BelegScanBox({ scan, onFile, hint }: Props) {
           disabled={scan.scanning}
           onClick={() => fileRef.current?.click()}
         >
-          Datei wählen
+          Datei wählen (Bild/PDF)
         </button>
         {scan.pending && (
           <button type="button" className="btn btn-secondary btn-sm" disabled={scan.scanning} onClick={scan.clear}>
-            Foto entfernen
+            Beleg entfernen
           </button>
         )}
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleChange} />
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleChange} />
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={handleChange} />
       </div>
 
       {scan.pending && (
@@ -64,7 +64,7 @@ export function BelegScanBox({ scan, onFile, hint }: Props) {
 
       {scan.pending && !scan.scanning && !scan.scanError && (
         <p className="form-hint">
-          Bitte die vorausgefüllten Werte prüfen. Das Foto wird beim Speichern in OneDrive abgelegt.
+          Bitte die vorausgefüllten Werte prüfen. Der Beleg wird beim Speichern in OneDrive abgelegt.
         </p>
       )}
 

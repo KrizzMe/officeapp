@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { User } from 'firebase/auth'
-import { compressImage } from '../lib/image'
+import { compressImage, type CompressedImage } from '../lib/image'
+import { isPdf, renderPdfPages } from '../lib/pdf'
 import { scanBeleg, type BelegScanResult } from '../lib/belegScan'
 import {
   connectOneDrive,
@@ -11,8 +12,12 @@ import {
 } from '../lib/onedrive'
 
 interface Pending {
+  /** Was nach OneDrive hochgeladen wird: das verkleinerte Foto bzw. das unveränderte Original-PDF. */
   blob: Blob
+  /** Vorschaubild (bei PDFs die erste Seite). */
   previewUrl: string
+  /** Dateiendung für den OneDrive-Dateinamen, ohne Punkt. */
+  extension: 'jpg' | 'pdf'
 }
 
 /**
@@ -54,9 +59,19 @@ export function useBelegScan(user: User) {
       setScanning(true)
       setScanError(null)
       try {
-        const { blob, dataUrl } = await compressImage(file)
-        setPending({ blob, previewUrl: URL.createObjectURL(blob) })
-        return await scanBeleg(user, dataUrl, kategorien)
+        const pdf = isPdf(file)
+        // PDF: erste Seiten als Bilder für die KI, das Original-PDF wandert später nach OneDrive.
+        const pages: CompressedImage[] = pdf ? await renderPdfPages(file) : [await compressImage(file)]
+        setPending({
+          blob: pdf ? file : pages[0].blob,
+          previewUrl: URL.createObjectURL(pages[0].blob),
+          extension: pdf ? 'pdf' : 'jpg',
+        })
+        return await scanBeleg(
+          user,
+          pages.map((p) => p.dataUrl),
+          kategorien,
+        )
       } catch (err) {
         setScanError(err instanceof Error ? err.message : String(err))
         return null

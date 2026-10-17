@@ -21,8 +21,8 @@ const API_URL = import.meta.env.VITE_BELEG_API_URL as string | undefined
 /** Ohne `VITE_BELEG_API_URL` bleibt die Auslese-Funktion ausgeblendet (die Erfassung per Hand läuft weiter). */
 export const isBelegScanConfigured = Boolean(API_URL)
 
-/** Schickt das verkleinerte Belegfoto an die Serverfunktion und liefert die ausgelesenen Felder. */
-export async function scanBeleg(user: User, imageDataUrl: string, kategorien: string[] = []): Promise<BelegScanResult> {
+/** Schickt das verkleinerte Belegfoto (bei PDFs: die ersten Seiten) an die Serverfunktion und liefert die ausgelesenen Felder. */
+export async function scanBeleg(user: User, imageDataUrls: string[], kategorien: string[] = []): Promise<BelegScanResult> {
   if (!API_URL) throw new Error('Die Beleg-Auslesung ist nicht konfiguriert (VITE_BELEG_API_URL fehlt).')
   const idToken = await user.getIdToken()
 
@@ -31,7 +31,7 @@ export async function scanBeleg(user: User, imageDataUrl: string, kategorien: st
     response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify({ imageDataUrl, kategorien }),
+      body: JSON.stringify({ imageDataUrls, kategorien }),
     })
   } catch {
     throw new Error('Der Auslese-Dienst ist nicht erreichbar. Bitte Verbindung prüfen.')

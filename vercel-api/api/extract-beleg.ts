@@ -1,7 +1,7 @@
 /**
  * Office APP — POST /api/extract-beleg (Issue #79)
  *
- * Nimmt ein bereits verkleinertes Belegfoto entgegen, lässt Mistral Vision
+ * Nimmt ein bereits verkleinertes Belegfoto (bei PDFs die ersten Seiten als Bilder) entgegen, lässt Mistral Vision
  * daraus Rechnungsdaten extrahieren und gibt validiertes JSON zurück. Das Bild
  * wird nie gespeichert und nicht geloggt: es existiert nur für die Dauer dieses
  * Aufrufs und geht nur an Mistral (Entscheidung zu #11, Punkt 5).
@@ -24,8 +24,12 @@ const ENDPOINT = 'https://api.mistral.ai/v1/chat/completions'
 /** Konkrete Version statt "-latest"-Alias (Erfahrung aus Voxiefy, Issue #52). */
 const DEFAULT_MODEL = 'ministral-14b-2512'
 
-/** Entspricht einem Foto von ca. 2,5 MB; die App verkleinert vorher auf max. 1600 px. */
+/** Pro Bild ca. 2,5 MB; die App verkleinert vorher auf max. 1600 px. */
 const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
+/** Mehrseitige PDFs: die App schickt höchstens die ersten Seiten. */
+const MAX_IMAGES = 3
+/** Gesamtlimit (Vercel erlaubt 4,5 MB Request-Body). */
+const MAX_TOTAL_LENGTH = 4_200_000
 
 /** Schutz gegen Bedienfehler, kein Schutz gegen gezielten Missbrauch (wie bei Voxiefy). */
 const COOLDOWN_MS = 4_000
@@ -219,13 +223,13 @@ async function callMistral(apiKey: string, model: string, messages: MistralMessa
 }
 
 /** Ein Retry bei ungültiger Antwort, angereichert mit dem Fehler (robuster als ein identischer zweiter Versuch). */
-async function extractBeleg(apiKey: string, model: string, imageDataUrl: string, kategorien: string[]): Promise<BelegResult> {
+async function extractBeleg(apiKey: string, model: string, imageDataUrls: string[], kategorien: string[]): Promise<BelegResult> {
   const messages: MistralMessage[] = [
     {
       role: 'user',
       content: [
         { type: 'text', text: buildPrompt(kategorien) },
-        { type: 'image_url', image_url: imageDataUrl },
+        ...imageDataUrls.map((url) => ({ type: 'image_url' as const, image_url: url })),
       ],
     },
   ]
@@ -316,11 +320,16 @@ export async function POST(request: Request): Promise<Response> {
   } catch {
     return errorResponse(request, 'invalid_request', 'Ungültige Anfrage.', 400)
   }
-  const b = (body ?? {}) as { imageDataUrl?: unknown; kategorien?: unknown }
+  const b = (body ?? {}) as { imageDataUrls?: unknown; imageDataUrl?: unknown; kategorien?: unknown }
+  // `imageDataUrl` (einzeln) bleibt als Kurzform erlaubt.
+  const rawImages = Array.isArray(b.imageDataUrls) ? b.imageDataUrls : [b.imageDataUrl]
+  const imageDataUrls = rawImages.filter((u): u is string => typeof u === 'string')
   if (
-    typeof b.imageDataUrl !== 'string' ||
-    !b.imageDataUrl.startsWith('data:image/') ||
-    b.imageDataUrl.length > MAX_IMAGE_DATA_URL_LENGTH
+    imageDataUrls.length === 0 ||
+    imageDataUrls.length !== rawImages.length ||
+    imageDataUrls.length > MAX_IMAGES ||
+    imageDataUrls.some((u) => !u.startsWith('data:image/') || u.length > MAX_IMAGE_DATA_URL_LENGTH) ||
+    imageDataUrls.reduce((sum, u) => sum + u.length, 0) > MAX_TOTAL_LENGTH
   ) {
     return errorResponse(request, 'invalid_image', 'Bild fehlt, ist zu groß oder hat ein unerwartetes Format.', 400)
   }
@@ -342,7 +351,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const result = await extractBeleg(apiKey, process.env.MISTRAL_MODEL ?? DEFAULT_MODEL, b.imageDataUrl, kategorien)
+    const result = await extractBeleg(apiKey, process.env.MISTRAL_MODEL ?? DEFAULT_MODEL, imageDataUrls, kategorien)
     // Eine erfundene Kategorie wird verworfen, statt im Formular zu landen.
     if (result.kategorie !== null && !kategorien.includes(result.kategorie)) result.kategorie = null
     return json(request, result, 200)

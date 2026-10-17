@@ -6,7 +6,7 @@
  * (identisch) nach OneDrive, spart also Upload-Volumen und hält das Body-Limit ein.
  */
 
-const MAX_EDGE_PX = 1600
+export const MAX_EDGE_PX = 1600
 const JPEG_QUALITY = 0.82
 /** Spiegelt MAX_IMAGE_DATA_URL_LENGTH der Serverfunktion (vercel-api/api/extract-beleg.ts). */
 const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
@@ -14,6 +14,25 @@ const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
 export interface CompressedImage {
   blob: Blob
   dataUrl: string
+}
+
+/** Höchstens so viele PDF-Seiten werden gelesen (jede Seite ist ein Bild im KI-Aufruf). */
+export const MAX_PDF_PAGES = 3
+
+/** Exportiert ein Canvas als JPEG (Blob + Data-URL) und prüft das Größenlimit. */
+export async function canvasToCompressed(canvas: HTMLCanvasElement): Promise<CompressedImage> {
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
+  if (!blob) throw new Error('Das Bild konnte nicht verarbeitet werden.')
+  const dataUrl = await blobToDataUrl(blob)
+  if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+    throw new Error('Das Foto ist auch komprimiert noch zu groß. Bitte aus etwas mehr Abstand fotografieren.')
+  }
+  return { blob, dataUrl }
+}
+
+/** Skaliert eine Seitengröße so, dass die lange Kante höchstens MAX_EDGE_PX beträgt. */
+export function fitScale(width: number, height: number): number {
+  return Math.min(1, MAX_EDGE_PX / Math.max(width, height))
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -39,7 +58,7 @@ export async function compressImage(file: File): Promise<CompressedImage> {
   const objectUrl = URL.createObjectURL(file)
   try {
     const image = await loadImage(objectUrl)
-    const scale = Math.min(1, MAX_EDGE_PX / Math.max(image.naturalWidth, image.naturalHeight))
+    const scale = fitScale(image.naturalWidth, image.naturalHeight)
     const width = Math.round(image.naturalWidth * scale)
     const height = Math.round(image.naturalHeight * scale)
 
@@ -53,13 +72,7 @@ export async function compressImage(file: File): Promise<CompressedImage> {
     ctx.fillRect(0, 0, width, height)
     ctx.drawImage(image, 0, 0, width, height)
 
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
-    if (!blob) throw new Error('Das Bild konnte nicht verarbeitet werden.')
-    const dataUrl = await blobToDataUrl(blob)
-    if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
-      throw new Error('Das Foto ist auch komprimiert noch zu groß. Bitte aus etwas mehr Abstand fotografieren.')
-    }
-    return { blob, dataUrl }
+    return await canvasToCompressed(canvas)
   } finally {
     URL.revokeObjectURL(objectUrl)
   }

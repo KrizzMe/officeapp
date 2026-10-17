@@ -168,15 +168,15 @@ export function HandwerkerPage({ user }: Props) {
     setError(null)
     try {
       if (scan.pending) {
-        // Foto erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Jahr>/Handwerkerleistungen/<Datum>_<Firma>_<Leistung>.jpg
+        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Jahr>/Handwerkerleistungen/<Datum>_<Firma>_<Leistung>.jpg
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
-        const fileName = `${beleg.reDatum}_${safeName(beleg.firma, 30)}_${safeName(beleg.leistung, 30)}.jpg`
+        const fileName = `${beleg.reDatum}_${safeName(beleg.firma, 30)}_${safeName(beleg.leistung, 30)}.${scan.pending.extension}`
         try {
           const uploaded = await scan.upload(`${belegJahr}/Handwerkerleistungen`, fileName)
           if (uploaded) beleg.belegRef = uploaded.webUrl
         } catch (err) {
           setError(
-            `Upload nach OneDrive fehlgeschlagen: ${err instanceof Error ? err.message : String(err)} — nichts wurde gespeichert. Erneut „Speichern“ versucht den Upload nochmal; ohne Foto („Foto entfernen“) wird nur der Eintrag gespeichert.`,
+            `Upload nach OneDrive fehlgeschlagen: ${err instanceof Error ? err.message : String(err)} — nichts wurde gespeichert. Erneut „Speichern“ versucht den Upload nochmal; ohne Beleg („Beleg entfernen“) wird nur der Eintrag gespeichert.`,
           )
           return
         }
