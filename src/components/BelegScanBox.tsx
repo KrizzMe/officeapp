@@ -17,6 +17,7 @@ interface Props {
 export function BelegScanBox({ scan, onFile, hint }: Props) {
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const zoomRef = useRef<HTMLDialogElement>(null)
 
   if (!isBelegScanConfigured && !scan.oneDriveConfigured) return null
 
@@ -55,7 +56,21 @@ export function BelegScanBox({ scan, onFile, hint }: Props) {
       </div>
 
       {scan.pending && (
-        <img className="beleg-scan-preview" src={scan.pending.previewUrl} alt="Vorschau des Belegs" />
+        <>
+          <button
+            type="button"
+            className="beleg-scan-preview-button"
+            onClick={() => zoomRef.current?.showModal()}
+            aria-label="Vorschau vergrößern"
+            title="Zum Vergrößern klicken"
+          >
+            <img className="beleg-scan-preview" src={scan.pending.previewUrl} alt="Vorschau des Belegs" />
+          </button>
+          {/* Esc oder ein Klick irgendwohin schließt die große Ansicht. */}
+          <dialog ref={zoomRef} className="beleg-scan-zoom" onClick={() => zoomRef.current?.close()}>
+            <img src={scan.pending.previewUrl} alt="Beleg, große Ansicht" />
+          </dialog>
+        </>
       )}
 
       {scan.scanning && <p className="form-hint" role="status">Beleg wird gelesen … (kann bis zu einer Minute dauern)</p>}
