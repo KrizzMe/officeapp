@@ -10,10 +10,12 @@ import { ColorThemeEditor } from './components/ColorThemeEditor'
 import { CalendarPage } from './components/CalendarPage'
 import { HomeDashboard } from './components/HomeDashboard'
 import { YearOverview } from './components/YearOverview'
+import { HandwerkerPage } from './components/HandwerkerPage'
+import { WerbungskostenPage } from './components/WerbungskostenPage'
 import { useEffect, useState } from 'react'
 import { applyColorMode, applyColorTheme, DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from './lib/colorThemes'
 
-type Panel = 'dashboard' | 'monthOverview' | 'yearOverview' | 'profile'
+type Panel = 'dashboard' | 'monthOverview' | 'yearOverview' | 'handwerker' | 'werbungskosten' | 'profile'
 
 function App() {
   const { user, loading: authLoading } = useAuth()
@@ -97,6 +99,18 @@ function App() {
             >
               Jahresübersicht
             </button>
+            <button
+              className={activePanel === 'handwerker' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => setActivePanel('handwerker')}
+            >
+              Handwerkerleistungen
+            </button>
+            <button
+              className={activePanel === 'werbungskosten' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => setActivePanel('werbungskosten')}
+            >
+              Werbungskosten
+            </button>
           </nav>
         )}
       </header>
@@ -130,6 +144,8 @@ function App() {
             </>
           )}
           {activePanel === 'yearOverview' && <YearOverview user={user} profile={profile} />}
+          {activePanel === 'handwerker' && <HandwerkerPage user={user} />}
+          {activePanel === 'werbungskosten' && <WerbungskostenPage user={user} profile={profile} onProfileUpdated={reload} />}
           {activePanel === 'monthOverview' && <CalendarPage user={user} profile={profile} />}
           {activePanel === 'dashboard' && <HomeDashboard user={user} profile={profile} />}
         </>

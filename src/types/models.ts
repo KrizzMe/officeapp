@@ -159,6 +159,12 @@ export interface UserProfile {
    * nur die globale `vacationTypes`-Liste.
    */
   vacationTypesByYear?: Record<string, VacationType[]>
+  /**
+   * Werbungskosten-Kategorien je Jahr (Issue #10), Schlüssel = Jahreszahl als
+   * String. Jahre ohne Eintrag erben vom letzten früheren Jahr mit Eintrag,
+   * sonst gelten die Standardkategorien (siehe kategorienForYear()).
+   */
+  werbungskostenKategorienByYear?: Record<string, string[]>
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */
@@ -221,4 +227,38 @@ export interface VacationBalance {
   totalDays: number
   usedDays: number
   remainingDays: number
+}
+
+/**
+ * Handwerkerleistungs-Rechnung (Issue #10), Dokument in users/{uid}/handwerker.
+ * Abgeleitete Werte (Netto, Arbeitskosten, Arbeitskosten brutto) werden nicht
+ * gespeichert, sondern in lib/steuern.ts berechnet.
+ */
+export interface HandwerkerBeleg {
+  id: string
+  /** Rechnungsdatum, ISO YYYY-MM-DD. */
+  reDatum: string
+  /** Freitext, z. B. "03.-05.2026". */
+  leistungsZeitraum?: string
+  leistung: string
+  firma: string
+  /** Rechnungsbetrag brutto (inkl. 19 % MwSt). */
+  rechnungsbetrag: number
+  /** Materialkosten netto, werden vom Netto-Rechnungsbetrag abgezogen (nur Arbeitskosten sind absetzbar). */
+  materialkosten: number
+  /** Optionaler Verweis auf den Beleg im privaten Cloud-Speicher (Link/ID), siehe #11. */
+  belegRef?: string
+}
+
+/** Werbungskosten-Beleg (Issue #10), Dokument in users/{uid}/werbungskosten. */
+export interface WerbungskostenBeleg {
+  id: string
+  /** Rechnungsdatum, ISO YYYY-MM-DD. */
+  reDatum: string
+  artikel: string
+  kategorie: string
+  betrag: number
+  shop?: string
+  /** Optionaler Verweis auf den Beleg im privaten Cloud-Speicher (Link/ID), siehe #11. */
+  belegRef?: string
 }

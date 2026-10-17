@@ -1168,3 +1168,94 @@ select.input:focus {
     min-height: 40px;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Steuerteil: Beleg-Formulare (Issue #10)                                */
+/* ---------------------------------------------------------------------- */
+
+.beleg-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+@media (min-width: 640px) {
+  .beleg-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.beleg-form-wide {
+  grid-column: 1 / -1;
+}
+
+/* Einklappbare Infobox (Issue #10): Überschrift als Summary, standardmäßig geschlossen. */
+.info-details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.info-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.info-details > summary::before {
+  content: '▸';
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.info-details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.info-details > summary h3 {
+  margin: 0;
+}
+
+.info-details[open] > summary {
+  margin-bottom: var(--space-2);
+}
+
+.info-details-icon {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+/* Auf-/zuklappbare Überschrift als Button (Belegliste, Issue #10). */
+.info-details-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.info-details-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.info-details-arrow.is-open {
+  transform: rotate(90deg);
+}
+
+/* "In ELSTER:"-Marker in den Pauschalen-Hinweisen (Issue #10). */
+.elster-label {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--color-success);
+}

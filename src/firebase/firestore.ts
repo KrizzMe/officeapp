@@ -12,7 +12,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { db } from './config'
-import type { DayEntry, UserProfile } from '../types/models'
+import type { DayEntry, HandwerkerBeleg, UserProfile, WerbungskostenBeleg } from '../types/models'
 
 function userDoc(uid: string) {
   return doc(db, 'users', uid)
@@ -110,4 +110,68 @@ export function subscribeYearEntries(
     })
     onData(entries)
   })
+}
+
+/*
+ * Steuerteil (Issue #10): Belege liegen je Nutzer in einer eigenen Collection;
+ * Dokument-ID = Beleg-id. Das Rechnungsdatum (reDatum, ISO) dient der
+ * Jahresabfrage, ein Range-Filter auf einem einzelnen Feld braucht keinen Index.
+ */
+type BelegCollection = 'handwerker' | 'werbungskosten'
+
+function subscribeBelegeYear<T extends { id: string; reDatum: string }>(
+  uid: string,
+  collectionName: BelegCollection,
+  year: number,
+  onData: (belege: T[]) => void,
+  onError: (message: string) => void,
+): () => void {
+  const q = query(
+    collection(db, 'users', uid, collectionName),
+    where('reDatum', '>=', `${year}-01-01`),
+    where('reDatum', '<=', `${year}-12-31`),
+  )
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const belege = snapshot.docs.map((d) => ({ ...(d.data() as T), id: d.id }))
+      belege.sort((a, b) => a.reDatum.localeCompare(b.reDatum))
+      onData(belege)
+    },
+    (err) => onError(err.message),
+  )
+}
+
+export function subscribeHandwerkerYear(
+  uid: string,
+  year: number,
+  onData: (belege: HandwerkerBeleg[]) => void,
+  onError: (message: string) => void,
+): () => void {
+  return subscribeBelegeYear<HandwerkerBeleg>(uid, 'handwerker', year, onData, onError)
+}
+
+export function subscribeWerbungskostenYear(
+  uid: string,
+  year: number,
+  onData: (belege: WerbungskostenBeleg[]) => void,
+  onError: (message: string) => void,
+): () => void {
+  return subscribeBelegeYear<WerbungskostenBeleg>(uid, 'werbungskosten', year, onData, onError)
+}
+
+export async function saveHandwerkerBeleg(uid: string, beleg: HandwerkerBeleg): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'handwerker', beleg.id), beleg)
+}
+
+export async function deleteHandwerkerBeleg(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'handwerker', id))
+}
+
+export async function saveWerbungskostenBeleg(uid: string, beleg: WerbungskostenBeleg): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'werbungskosten', beleg.id), beleg)
+}
+
+export async function deleteWerbungskostenBeleg(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'werbungskosten', id))
 }
