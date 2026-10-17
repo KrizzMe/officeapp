@@ -7,7 +7,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery'
 import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances } from '../lib/vacation'
-import { vacationTypesForYear } from '../lib/vacationTypes'
+import { useVacationTypes } from '../hooks/useVacationTypes'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
 import { statusLabel } from '../lib/statusOptions'
@@ -132,7 +132,7 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, arbeitstage],
   )
 
-  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
+  const { vacationTypes } = useVacationTypes(profile, year)
 
   const vacationBalances = useMemo(
     () => calculateVacationBalances(yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage),
