@@ -31,7 +31,7 @@
 - Bei erfolgreichem Test: fragen, ob der PR auf PROD gemergt und deployed werden soll.
 - Vor dem Merge prüfen, dass der PR nur die vorgesehenen Tickets enthält (keine ungewollten Änderungen) — das eigentliche Schließen der Tickets übernimmt GitHub automatisch beim Merge (über "Fixes #Nummer" in der PR-Beschreibung).
 - Der Merge löst automatisch (über die bestehende CI-Pipeline `firebase-hosting-merge.yml`) den Deploy auf PROD aus.
-- Nach dem Merge den gemergten Branch aufräumen (löschen). Hinweis: Claude hat aktuell keine Berechtigung, Branches in diesem Repo selbst zu löschen (GitHub lehnt das mit 403 ab, vermutlich Repo-Ruleset "Restrict deletions") — bis das behoben ist, aktiv daran erinnern, dass der Nutzer den Branch manuell löscht.
+- Nach dem Merge wird der Branch automatisch von GitHub gelöscht ("Automatically delete head branches" ist im Repo aktiviert). Falls er doch noch existiert, kann Claude ihn selbst löschen (`git push origin --delete <branch>`) und lokal aufräumen.
 
 ### 4. Abschluss und Archivierung
 
