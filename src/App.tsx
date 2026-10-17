@@ -11,6 +11,7 @@ import { CalendarPage } from './components/CalendarPage'
 import { HomeDashboard } from './components/HomeDashboard'
 import { YearOverview } from './components/YearOverview'
 import { HandwerkerPage } from './components/HandwerkerPage'
+import { BelegAblageEditor } from './components/BelegAblageEditor'
 import { WerbungskostenPage } from './components/WerbungskostenPage'
 import { useEffect, useState } from 'react'
 import { applyColorMode, applyColorTheme, DEFAULT_COLOR_MODE, DEFAULT_COLOR_THEME } from './lib/colorThemes'
@@ -140,11 +141,12 @@ function App() {
               />
               <VacationTypesManager profile={profile} onUpdated={reload} />
               <AgFreieTageManager profile={profile} onUpdated={reload} />
+              <BelegAblageEditor profile={profile} onUpdated={reload} />
               <ColorThemeEditor profile={profile} onSaved={reload} />
             </>
           )}
           {activePanel === 'yearOverview' && <YearOverview user={user} profile={profile} />}
-          {activePanel === 'handwerker' && <HandwerkerPage user={user} />}
+          {activePanel === 'handwerker' && <HandwerkerPage user={user} profile={profile} />}
           {activePanel === 'werbungskosten' && <WerbungskostenPage user={user} profile={profile} onProfileUpdated={reload} />}
           {activePanel === 'monthOverview' && <CalendarPage user={user} profile={profile} />}
           {activePanel === 'dashboard' && <HomeDashboard user={user} profile={profile} />}

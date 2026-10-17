@@ -5,6 +5,7 @@ import { useWerbungskostenBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
 import { safeName } from '../lib/onedrive'
+import { belegZiel, normalizePfad } from '../lib/belegOrdner'
 import { deleteWerbungskostenBeleg, saveWerbungskostenBeleg, updateUserProfile } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -62,7 +63,7 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-  const scan = useBelegScan(user)
+  const scan = useBelegScan(user, normalizePfad(profile.belegBasisPfad))
   const [scanHint, setScanHint] = useState<string | null>(null)
   // Belegliste standardmäßig eingeklappt; Summen und Kategorie-Kacheln oben bleiben sichtbar.
   const [listOpen, setListOpen] = useState(false)
@@ -201,11 +202,11 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
     setError(null)
     try {
       if (scan.pending) {
-        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Jahr>/Werbungskosten/<Kategorie>/<Datum>_<Shop>_<Artikel>.jpg
+        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/<Datum>_<Shop>_<Artikel>.<jpg|pdf>
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
         const fileName = `${beleg.reDatum}_${safeName(beleg.shop ?? 'Beleg', 30)}_${safeName(beleg.artikel, 30)}.${scan.pending.extension}`
         try {
-          const uploaded = await scan.upload(`${belegJahr}/Werbungskosten/${safeName(beleg.kategorie, 40)}`, fileName)
+          const uploaded = await scan.upload(belegZiel(profile, belegJahr, 'werbungskosten'), fileName)
           if (uploaded) beleg.belegRef = uploaded.webUrl
         } catch (err) {
           setError(

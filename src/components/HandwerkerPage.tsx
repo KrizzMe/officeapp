@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from 'firebase/auth'
-import type { HandwerkerBeleg } from '../types/models'
+import type { HandwerkerBeleg, UserProfile } from '../types/models'
 import { useHandwerkerBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
 import { materialkostenAusScan } from '../lib/belegScan'
 import { safeName } from '../lib/onedrive'
+import { belegZiel, normalizePfad } from '../lib/belegOrdner'
 import { deleteHandwerkerBeleg, saveHandwerkerBeleg } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -20,6 +21,7 @@ import {
 
 interface Props {
   user: User
+  profile: UserProfile
 }
 
 interface FormState {
@@ -58,14 +60,14 @@ function belegToForm(b: HandwerkerBeleg): FormState {
 }
 
 /** Handwerkerleistungen (Issue #10): Rechnungen erfassen, Arbeitskosten und Steuerermäßigung (§ 35a EStG) berechnen. */
-export function HandwerkerPage({ user }: Props) {
+export function HandwerkerPage({ user, profile }: Props) {
   const [year, setYear] = useState(new Date().getFullYear())
   const { belege, loading, error: loadError } = useHandwerkerBelege(user.uid, year)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-  const scan = useBelegScan(user)
+  const scan = useBelegScan(user, normalizePfad(profile.belegBasisPfad))
   const [scanHint, setScanHint] = useState<string | null>(null)
   // Rechnungsliste standardmäßig eingeklappt; Summen-Kacheln oben bleiben sichtbar.
   const [listOpen, setListOpen] = useState(false)
@@ -168,11 +170,11 @@ export function HandwerkerPage({ user }: Props) {
     setError(null)
     try {
       if (scan.pending) {
-        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Jahr>/Handwerkerleistungen/<Datum>_<Firma>_<Leistung>.jpg
+        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/<Datum>_<Firma>_<Leistung>.<jpg|pdf>
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
         const fileName = `${beleg.reDatum}_${safeName(beleg.firma, 30)}_${safeName(beleg.leistung, 30)}.${scan.pending.extension}`
         try {
-          const uploaded = await scan.upload(`${belegJahr}/Handwerkerleistungen`, fileName)
+          const uploaded = await scan.upload(belegZiel(profile, belegJahr, 'handwerker'), fileName)
           if (uploaded) beleg.belegRef = uploaded.webUrl
         } catch (err) {
           setError(

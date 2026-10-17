@@ -24,7 +24,7 @@ interface Pending {
  * Zustand für das Beleg-Foto eines Formulars (Issue #79): Foto verkleinern, auslesen lassen,
  * bis zum Speichern im Speicher halten und dann nach OneDrive hochladen.
  */
-export function useBelegScan(user: User) {
+export function useBelegScan(user: User, basePath = '') {
   const [pending, setPending] = useState<Pending | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
@@ -32,7 +32,7 @@ export function useBelegScan(user: User) {
 
   useEffect(() => {
     let cancelled = false
-    isOneDriveConnected()
+    isOneDriveConnected(basePath)
       .then((connected) => {
         if (!cancelled) setOneDriveConnected(connected)
       })
@@ -40,7 +40,7 @@ export function useBelegScan(user: User) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [basePath])
 
   // Vorschau-URL freigeben, sobald das Foto wechselt oder die Komponente verschwindet.
   useEffect(() => {
@@ -92,18 +92,18 @@ export function useBelegScan(user: User) {
   const connect = useCallback(async () => {
     setScanError(null)
     try {
-      await connectOneDrive()
+      await connectOneDrive(basePath)
       setOneDriveConnected(true)
     } catch (err) {
       setScanError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [basePath])
 
   /** Hochladen des vorgemerkten Fotos; null, wenn keines vorgemerkt ist. Wirft bei Fehlern. */
   const upload = useCallback(
-    async (folder: string, fileName: string): Promise<UploadedBeleg | null> => {
+    async (target: { basePath: string; folder: string }, fileName: string): Promise<UploadedBeleg | null> => {
       if (!pending) return null
-      const uploaded = await uploadBeleg(pending.blob, folder, fileName)
+      const uploaded = await uploadBeleg(pending.blob, target, fileName)
       setOneDriveConnected(true)
       return uploaded
     },
