@@ -188,8 +188,8 @@ export interface DayEntry {
   date: string
   status: DayStatus
   /**
-   * Wegstrecke in km für diesen Tag, nur relevant bei status 'buero' oder
-   * 'dienstreise'. Überschreibt UserProfile.defaultCommuteDistanceKm, falls gesetzt.
+   * Wegstrecke in km für diesen Tag, nur relevant bei status 'buero'
+   * (Dienstreisen zählen nicht zur Pendlerpauschale). Überschreibt UserProfile.defaultCommuteDistanceKm, falls gesetzt.
    */
   distanceKm?: number
   /**

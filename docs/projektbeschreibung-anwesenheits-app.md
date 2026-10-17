@@ -85,8 +85,9 @@ Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt 
 
 ### 5.3 Arbeitsweg / Pendlerpauschale
 
-- Summe aller km an Tagen mit Status `Büro`/`Dienstreise` über das Jahr (für die Steuererklärung nutzbar)
-- Route/km-Wert pro Tag überschreibbar (Beispiel aus der Praxis: kürzester Weg ist eine Strecke, tatsächlich gefahren wird aber regelmäßig eine andere, meist schnellere Route mit mehr km)
+- Summe aller km an Tagen mit Status `Büro` (Standardstrecke aus dem Profil) über das Jahr (für die Steuererklärung nutzbar); Dienstreisen zählen nicht mit, gezählt wird nur bis heute
+- Anzeige als Kachel „Arbeitsweg“ im Kalender (Monat) und in der Jahresübersicht sowie als km-Spalte in der Monatstabelle
+- Eine Überschreibung pro Tag ist nicht vorgesehen (die Pendlerpauschale wird pauschal angesetzt)
 
 ### 5.4 Urlaubskontingente
 
