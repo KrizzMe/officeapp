@@ -1,7 +1,7 @@
 /**
  * Office APP — POST /api/extract-beleg (Issue #79)
  *
- * Nimmt ein bereits verkleinertes Belegfoto (bei PDFs die ersten Seiten als Bilder) entgegen, lässt Mistral Vision
+ * Nimmt ein bereits verkleinertes Belegfoto (bzw. den Text eines digitalen PDFs) entgegen, lässt Mistral Vision
  * daraus Rechnungsdaten extrahieren und gibt validiertes JSON zurück. Das Bild
  * wird nie gespeichert und nicht geloggt: es existiert nur für die Dauer dieses
  * Aufrufs und geht nur an Mistral (Entscheidung zu #11, Punkt 5).
@@ -30,6 +30,8 @@ const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
 const MAX_IMAGES = 3
 /** Gesamtlimit (Vercel erlaubt 4,5 MB Request-Body). */
 const MAX_TOTAL_LENGTH = 4_200_000
+/** Text eines digitalen PDFs (die App kürzt auf 20.000 Zeichen). */
+const MAX_TEXT_LENGTH = 25_000
 
 /** Schutz gegen Bedienfehler, kein Schutz gegen gezielten Missbrauch (wie bei Voxiefy). */
 const COOLDOWN_MS = 4_000
@@ -87,7 +89,7 @@ const JSON_SCHEMA = {
   },
 }
 
-function buildPrompt(kategorien: string[]): string {
+function buildPrompt(kategorien: string[], fromText: boolean): string {
   const rules = [
     'Erfinde nichts. Was nicht eindeutig auf dem Beleg steht, setzt du auf null. Ein fehlender Wert ist immer besser als ein geratener.',
     'datum ist das Rechnungs- bzw. Belegdatum im Format YYYY-MM-DD (nicht das Fälligkeits- oder Lieferdatum).',
@@ -110,7 +112,9 @@ function buildPrompt(kategorien: string[]): string {
   rules.push('Ein unleserlicher Beleg oder ein Foto ohne Rechnung ist ein gültiges Ergebnis: gib art "unklar" und alle anderen Felder null zurück.')
 
   return [
-    'Du liest ein Foto oder einen Scan einer Rechnung bzw. eines Kaufbelegs (Deutschland) und extrahierst die Rechnungsdaten als JSON.',
+    fromText
+      ? 'Du liest den Text einer Rechnung bzw. eines Kaufbelegs (Deutschland), der aus einem PDF extrahiert wurde (Zeilen und Spalten können durcheinander sein), und extrahierst die Rechnungsdaten als JSON.'
+      : 'Du liest ein Foto oder einen Scan einer Rechnung bzw. eines Kaufbelegs (Deutschland) und extrahierst die Rechnungsdaten als JSON.',
     '',
     'Regeln, ausnahmslos:',
     ...rules.map((rule, i) => `${i + 1}. ${rule}`),
@@ -223,13 +227,19 @@ async function callMistral(apiKey: string, model: string, messages: MistralMessa
 }
 
 /** Ein Retry bei ungültiger Antwort, angereichert mit dem Fehler (robuster als ein identischer zweiter Versuch). */
-async function extractBeleg(apiKey: string, model: string, imageDataUrls: string[], kategorien: string[]): Promise<BelegResult> {
+async function extractBeleg(
+  apiKey: string,
+  model: string,
+  input: { imageDataUrls: string[]; text: string | null },
+  kategorien: string[],
+): Promise<BelegResult> {
   const messages: MistralMessage[] = [
     {
       role: 'user',
       content: [
-        { type: 'text', text: buildPrompt(kategorien) },
-        ...imageDataUrls.map((url) => ({ type: 'image_url' as const, image_url: url })),
+        { type: 'text', text: buildPrompt(kategorien, input.text !== null) },
+        ...(input.text !== null ? [{ type: 'text' as const, text: `Text der Rechnung:\n\n${input.text}` }] : []),
+        ...input.imageDataUrls.map((url) => ({ type: 'image_url' as const, image_url: url })),
       ],
     },
   ]
@@ -320,12 +330,16 @@ export async function POST(request: Request): Promise<Response> {
   } catch {
     return errorResponse(request, 'invalid_request', 'Ungültige Anfrage.', 400)
   }
-  const b = (body ?? {}) as { imageDataUrls?: unknown; imageDataUrl?: unknown; kategorien?: unknown }
-  // `imageDataUrl` (einzeln) bleibt als Kurzform erlaubt.
-  const rawImages = Array.isArray(b.imageDataUrls) ? b.imageDataUrls : [b.imageDataUrl]
+  const b = (body ?? {}) as { imageDataUrls?: unknown; imageDataUrl?: unknown; text?: unknown; kategorien?: unknown }
+  // Entweder Text eines digitalen PDFs oder Bild(er); `imageDataUrl` (einzeln) bleibt als Kurzform erlaubt.
+  const text = typeof b.text === 'string' && b.text.trim() !== '' ? b.text.trim() : null
+  if (text !== null && text.length > MAX_TEXT_LENGTH) {
+    return errorResponse(request, 'invalid_text', 'Der Beleg-Text ist zu lang.', 400)
+  }
+  const rawImages = Array.isArray(b.imageDataUrls) ? b.imageDataUrls : b.imageDataUrl === undefined ? [] : [b.imageDataUrl]
   const imageDataUrls = rawImages.filter((u): u is string => typeof u === 'string')
   if (
-    imageDataUrls.length === 0 ||
+    (text === null && imageDataUrls.length === 0) ||
     imageDataUrls.length !== rawImages.length ||
     imageDataUrls.length > MAX_IMAGES ||
     imageDataUrls.some((u) => !u.startsWith('data:image/') || u.length > MAX_IMAGE_DATA_URL_LENGTH) ||
@@ -351,7 +365,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const result = await extractBeleg(apiKey, process.env.MISTRAL_MODEL ?? DEFAULT_MODEL, imageDataUrls, kategorien)
+    const result = await extractBeleg(apiKey, process.env.MISTRAL_MODEL ?? DEFAULT_MODEL, { imageDataUrls, text }, kategorien)
     // Eine erfundene Kategorie wird verworfen, statt im Formular zu landen.
     if (result.kategorie !== null && !kategorien.includes(result.kategorie)) result.kategorie = null
     return json(request, result, 200)
