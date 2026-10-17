@@ -4,10 +4,11 @@ import type { UserProfile } from '../types/models'
 import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { clearDayEntry, setDayEntry } from '../firebase/firestore'
-import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
-import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
+import { getMonthDays, getYearDays, MONTH_LABELS, monthLabel, toIsoDate } from '../lib/dates'
+import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
 import { useVacationTypes } from '../hooks/useVacationTypes'
+import { calculateCommuteSummary } from '../lib/commute'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { MonthStats } from './MonthStats'
 
@@ -47,6 +48,24 @@ export function CalendarPage({ user, profile }: Props) {
         homeofficeWeekdays,
       ),
     [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays, agFreieTage],
+  )
+
+  const sickDays = useMemo(
+    () => calculateSickDays(currentMonthDays, profile.bundesland, agFreieTage, entries, arbeitstage),
+    [currentMonthDays, profile.bundesland, agFreieTage, entries, arbeitstage],
+  )
+
+  const commute = useMemo(
+    () =>
+      calculateCommuteSummary(
+        currentMonthDays,
+        profile.bundesland,
+        agFreieTage,
+        entries,
+        profile.defaultCommuteDistanceKm,
+        arbeitstage,
+      ),
+    [currentMonthDays, profile.bundesland, profile.defaultCommuteDistanceKm, agFreieTage, entries, arbeitstage],
   )
 
   const { vacationTypes } = useVacationTypes(profile, year)
@@ -90,6 +109,9 @@ export function CalendarPage({ user, profile }: Props) {
       <MonthStats
         quota={quota}
         quotaLabel={monthLabel(year, month)}
+        commute={commute}
+        krankDays={sickDays.krankDays}
+        monthName={MONTH_LABELS[month]}
         balances={balances}
         vacationTypes={vacationTypes}
         homeofficeErlaubt={profile.homeofficeErlaubt ?? true}

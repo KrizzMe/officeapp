@@ -4,14 +4,16 @@ import type { BaseDayStatus, UserProfile } from '../types/models'
 import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE, NO_WEEKDAYS } from '../types/models'
 import { useYearEntries } from '../hooks/useYearEntries'
 import { useMediaQuery } from '../hooks/useMediaQuery'
-import { getMonthDays, getYearDays, monthLabel } from '../lib/dates'
+import { getMonthDays, getYearDays, MONTH_LABELS } from '../lib/dates'
 import { calculateAttendanceQuota, calculateSickDays, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances } from '../lib/vacation'
 import { useVacationTypes } from '../hooks/useVacationTypes'
 import { computeStatusRanges } from '../lib/statusRanges'
 import { statusVisual } from '../lib/statusColors'
 import { statusLabel } from '../lib/statusOptions'
+import { calculateCommuteSummary } from '../lib/commute'
 import { AttendanceQuotaTile } from './AttendanceQuotaTile'
+import { CommuteKmTile } from './CommuteKmTile'
 import { StatusRangesTable } from './StatusRangesTable'
 import { VacationBalanceTile } from './VacationBalanceTile'
 
@@ -103,6 +105,34 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, requiredRatio, arbeitstage, homeofficeWeekdays],
   )
 
+  const commute = useMemo(
+    () =>
+      calculateCommuteSummary(
+        yearDays,
+        profile.bundesland,
+        agFreieTage,
+        entries,
+        profile.defaultCommuteDistanceKm,
+        arbeitstage,
+      ),
+    [yearDays, profile.bundesland, profile.defaultCommuteDistanceKm, agFreieTage, entries, arbeitstage],
+  )
+
+  const monthlyCommute = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, m) =>
+        calculateCommuteSummary(
+          getMonthDays(year, m),
+          profile.bundesland,
+          agFreieTage,
+          entries,
+          profile.defaultCommuteDistanceKm,
+          arbeitstage,
+        ),
+      ),
+    [year, profile.bundesland, profile.defaultCommuteDistanceKm, agFreieTage, entries, arbeitstage],
+  )
+
   const monthlyQuotas = useMemo(
     () =>
       Array.from({ length: 12 }, (_, m) =>
@@ -162,13 +192,15 @@ export function YearOverview({ user, profile }: Props) {
         </div>
 
         <div className="card-grid">
-          {homeofficeErlaubt && <AttendanceQuotaTile quota={yearQuota} periodLabel={`Durchschnitt Jahr ${year}`} />}
+          {homeofficeErlaubt && <AttendanceQuotaTile quota={yearQuota} periodLabel="Durchschnitt Jahr" />}
 
           {vacationBalances.map((b) => {
             const vacationType = vacationTypes.find((v) => v.id === b.vacationTypeId)
             if (!vacationType) return null
             return <VacationBalanceTile key={b.vacationTypeId} balance={b} vacationType={vacationType} year={year} />
           })}
+
+          <CommuteKmTile summary={commute} />
         </div>
       </div>
 
@@ -183,10 +215,10 @@ export function YearOverview({ user, profile }: Props) {
               aria-pressed={activeDetail === 'dienstreise'}
             >
               <span className="stat-label">
-                {statusVisual('dienstreise').icon} {DETAIL_LABELS.dienstreise.title} {year}
+                {DETAIL_LABELS.dienstreise.title}
               </span>
               <span className="stat-value">{yearQuota.businessTripDays}</span>
-              <span className="stat-sub">Tage im Jahr {year}</span>
+              <span className="stat-sub">Tage im Jahr</span>
             </button>
           )}
 
@@ -197,10 +229,10 @@ export function YearOverview({ user, profile }: Props) {
             aria-pressed={activeDetail === 'krank'}
           >
             <span className="stat-label">
-              {statusVisual('krank').icon} {DETAIL_LABELS.krank.title} {year}
+              {DETAIL_LABELS.krank.title}
             </span>
             <span className="stat-value">{yearSickDays.krankDays}</span>
-            <span className="stat-sub">Tage im Jahr {year}</span>
+            <span className="stat-sub">Tage im Jahr</span>
           </button>
 
           {yearSickDays.kindKrankDays > 0 && (
@@ -211,10 +243,10 @@ export function YearOverview({ user, profile }: Props) {
               aria-pressed={activeDetail === 'kind-krank'}
             >
               <span className="stat-label">
-                {statusVisual('kind-krank').icon} {DETAIL_LABELS['kind-krank'].title} {year}
+                {DETAIL_LABELS['kind-krank'].title}
               </span>
               <span className="stat-value">{yearSickDays.kindKrankDays}</span>
-              <span className="stat-sub">Tage im Jahr {year}</span>
+              <span className="stat-sub">Tage im Jahr</span>
             </button>
           )}
         </div>
@@ -243,18 +275,22 @@ export function YearOverview({ user, profile }: Props) {
                 {TABLE_COLUMNS.map((status) => (
                   <th key={status}>{isMobile ? <TableHeaderCell status={status} /> : statusLabel(status, [])}</th>
                 ))}
-                {homeofficeErlaubt && <th>Quote</th>}
+                <th>{isMobile ? <span role="img" aria-label="Kilometer">🚗</span> : 'km'}</th>
+                {homeofficeErlaubt && (
+                  <th>{isMobile ? <span role="img" aria-label="Quote">📊</span> : 'Quote'}</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {monthlyQuotas.map((q, m) => (
                 <tr key={m}>
-                  <td>{monthLabel(year, m)}</td>
+                  <td>{MONTH_LABELS[m]}</td>
                   <td>{q.officeDays}</td>
                   <td>{q.businessTripDays}</td>
                   <td>{q.homeofficeDays}</td>
                   <td style={{ color: statusVisual('krank').color }}>{monthlySickDays[m].krankDays}</td>
                   <td style={{ color: statusVisual('kind-krank').color }}>{monthlySickDays[m].kindKrankDays}</td>
+                  <td>{monthlyCommute[m].totalKm.toLocaleString('de-DE', { maximumFractionDigits: 1 })}</td>
                   {homeofficeErlaubt && (
                     <td
                       style={{
