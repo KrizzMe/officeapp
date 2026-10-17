@@ -52,6 +52,16 @@ function normalizeCarryOver(type: VacationType): VacationType {
   return { ...type, totalDays: 0, carryOverManual: false }
 }
 
+/**
+ * Bleibt der Resturlaub manuell? Wird der Wert auf den berechneten Übertrag
+ * zurückgestellt, gilt er wieder als automatisch; sonst überschreibt jede
+ * Änderung (oder ein bereits manueller Wert) den Übertrag.
+ */
+function isResturlaubManual(type: VacationType, newDays: number, carryOver: number | undefined): boolean {
+  if (carryOver !== undefined && newDays === carryOver) return false
+  return newDays !== type.totalDays || isCarryOverManual(type)
+}
+
 function typeToForm(type: VacationType): FormState {
   return {
     name: type.name,
@@ -154,7 +164,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
             totalDays: Number(editForm.totalDays) || 0,
             ...(rhythm ? { rhythm } : {}),
             ...(t.id === DEFAULT_VACATION_TYPE_IDS.resturlaub
-              ? { carryOverManual: (Number(editForm.totalDays) || 0) !== t.totalDays || isCarryOverManual(t) }
+              ? { carryOverManual: isResturlaubManual(t, Number(editForm.totalDays) || 0, carryOver) }
               : {}),
           }
         : t,
