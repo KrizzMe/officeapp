@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import type { UserProfile, VacationType } from '../types/models'
+import { DEFAULT_VACATION_TYPE_IDS } from '../types/models'
 import { countDayEntriesWithStatus, updateUserProfile } from '../firebase/firestore'
-import { vacationTypesForYear } from '../lib/vacationTypes'
+import { isCarryOverManual } from '../lib/vacationTypes'
+import { useVacationTypes } from '../hooks/useVacationTypes'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface Props {
@@ -40,6 +42,26 @@ function uniqueId(name: string, existing: VacationType[]): string {
   return `${base}-${i}`
 }
 
+/**
+ * Resturlaub (Issue #74) immer mit explizitem Flag speichern: automatisch
+ * berechnete Werte werden nicht eingefroren (0 + false), manuelle bleiben.
+ */
+function normalizeCarryOver(type: VacationType): VacationType {
+  if (type.id !== DEFAULT_VACATION_TYPE_IDS.resturlaub) return type
+  if (isCarryOverManual(type)) return { ...type, carryOverManual: true }
+  return { ...type, totalDays: 0, carryOverManual: false }
+}
+
+/**
+ * Bleibt der Resturlaub manuell? Wird der Wert auf den berechneten Übertrag
+ * zurückgestellt, gilt er wieder als automatisch; sonst überschreibt jede
+ * Änderung (oder ein bereits manueller Wert) den Übertrag.
+ */
+function isResturlaubManual(type: VacationType, newDays: number, carryOver: number | undefined): boolean {
+  if (carryOver !== undefined && newDays === carryOver) return false
+  return newDays !== type.totalDays || isCarryOverManual(type)
+}
+
 function typeToForm(type: VacationType): FormState {
   return {
     name: type.name,
@@ -56,7 +78,7 @@ function formToRhythm(form: FormState): VacationType['rhythm'] {
 
 export function VacationTypesManager({ profile, onUpdated }: Props) {
   const [year, setYear] = useState(() => new Date().getFullYear())
-  const vacationTypes = vacationTypesForYear(profile, year)
+  const { vacationTypes, carryOver } = useVacationTypes(profile, year)
   // Letztes, aktuelles und nächstes Jahr.
   const now = new Date().getFullYear()
   const yearOptions = [now - 1, now, now + 1]
@@ -80,7 +102,7 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
     setError(null)
     try {
       await updateUserProfile(profile.uid, {
-        vacationTypesByYear: { ...profile.vacationTypesByYear, [String(year)]: types },
+        vacationTypesByYear: { ...profile.vacationTypesByYear, [String(year)]: types.map(normalizeCarryOver) },
       })
       onUpdated()
     } catch (err) {
@@ -141,10 +163,19 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
             name: editForm.name.trim(),
             totalDays: Number(editForm.totalDays) || 0,
             ...(rhythm ? { rhythm } : {}),
+            ...(t.id === DEFAULT_VACATION_TYPE_IDS.resturlaub
+              ? { carryOverManual: isResturlaubManual(t, Number(editForm.totalDays) || 0, carryOver) }
+              : {}),
           }
         : t,
     )
     await persist(updated)
+    cancelEdit()
+  }
+
+  /** Manuellen Resturlaub zurück auf den automatisch berechneten Übertrag setzen. */
+  const handleResetCarryOver = async (type: VacationType) => {
+    await persist(vacationTypes.map((t) => (t.id === type.id ? { ...t, carryOverManual: false } : t)))
     cancelEdit()
   }
 
@@ -248,6 +279,18 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
                         <button type="button" className="btn btn-secondary btn-sm" onClick={cancelEdit} aria-label="Abbrechen">
                           {isMobile ? '❌' : 'Abbrechen'}
                         </button>
+                        {type.id === DEFAULT_VACATION_TYPE_IDS.resturlaub && carryOver !== undefined && isCarryOverManual(type) && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleResetCarryOver(type)}
+                            disabled={saving}
+                            aria-label="Auf Übertrag aus Vorjahr zurücksetzen"
+                            title="Auf Übertrag aus Vorjahr zurücksetzen"
+                          >
+                            {isMobile ? '↺' : `Auf Übertrag zurücksetzen (${carryOver})`}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="btn btn-danger btn-sm"
@@ -270,7 +313,14 @@ export function VacationTypesManager({ profile, onUpdated }: Props) {
               ) : (
                 <tr key={type.id}>
                   <td>{type.name}</td>
-                  <td>{type.totalDays}</td>
+                  <td>
+                    {type.totalDays}
+                    {type.id === DEFAULT_VACATION_TYPE_IDS.resturlaub && carryOver !== undefined && (
+                      <span style={{ marginLeft: 'var(--space-2)', fontSize: '0.85em', color: 'var(--color-text-muted)' }}>
+                        {isCarryOverManual(type) ? '(manuell)' : '(Übertrag aus Vorjahr)'}
+                      </span>
+                    )}
+                  </td>
                   <td>{type.rhythm?.kind === 'quarterly' ? `max. ${type.rhythm.maxPerPeriod}/Quartal` : '–'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button

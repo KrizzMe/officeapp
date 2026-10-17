@@ -7,7 +7,7 @@ import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, getYearDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota, requiredOfficeRatio } from '../lib/attendance'
 import { calculateVacationBalances, checkRhythmViolation } from '../lib/vacation'
-import { vacationTypesForYear } from '../lib/vacationTypes'
+import { useVacationTypes } from '../hooks/useVacationTypes'
 import { MonthGrid } from './Calendar/MonthGrid'
 import { MonthStats } from './MonthStats'
 
@@ -49,7 +49,7 @@ export function CalendarPage({ user, profile }: Props) {
     [currentMonthDays, profile, entries, arbeitstage, homeofficeWeekdays, agFreieTage],
   )
 
-  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
+  const { vacationTypes } = useVacationTypes(profile, year)
 
   const balances = useMemo(
     () =>

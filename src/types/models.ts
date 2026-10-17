@@ -61,6 +61,12 @@ export interface VacationType {
   /** Gesamtkontingent in Tagen pro Jahr. */
   totalDays: number
   rhythm?: VacationTypeRhythm
+  /**
+   * Nur für den Resturlaub (Issue #74): `true` = Wert manuell gesetzt, `false`
+   * = wird automatisch aus den ungenutzten Urlaubstagen des Vorjahres berechnet.
+   * Fehlt das Feld (Altdaten), gilt ein Wert > 0 als manuell.
+   */
+  carryOverManual?: boolean
 }
 
 /** Nutzerprofil, einmalig gepflegt (Abschnitt 4.1). Firestore: users/{uid}. */

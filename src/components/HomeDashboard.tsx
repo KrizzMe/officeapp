@@ -7,7 +7,7 @@ import { clearDayEntry, setDayEntry } from '../firebase/firestore'
 import { getMonthDays, monthLabel, toIsoDate } from '../lib/dates'
 import { calculateAttendanceQuota, effectiveDayStatus, requiredOfficeRatio } from '../lib/attendance'
 import { checkRhythmViolation } from '../lib/vacation'
-import { vacationTypesForYear } from '../lib/vacationTypes'
+import { useVacationTypes } from '../hooks/useVacationTypes'
 import { statusVisual } from '../lib/statusColors'
 import { buildStatusOptions, statusLabel } from '../lib/statusOptions'
 import { AttendanceQuotaTile } from './AttendanceQuotaTile'
@@ -31,7 +31,7 @@ export function HomeDashboard({ user, profile }: Props) {
   const homeofficeWeekdays = profile.homeofficeWeekdays ?? NO_WEEKDAYS
   const agFreieTage = profile.agFreieTage ?? NO_AG_FREIE_TAGE
   const homeofficeErlaubt = profile.homeofficeErlaubt ?? true
-  const vacationTypes = useMemo(() => vacationTypesForYear(profile, year), [profile, year])
+  const { vacationTypes } = useVacationTypes(profile, year)
 
   const currentMonthDays = useMemo(() => getMonthDays(year, month), [year, month])
 
