@@ -242,6 +242,8 @@ export interface HandwerkerBeleg {
   leistungsZeitraum?: string
   leistung: string
   firma: string
+  /** Rechnungsnummer laut Beleg (Issue #79), optional. */
+  rechnungsnummer?: string
   /** Rechnungsbetrag brutto (inkl. 19 % MwSt). */
   rechnungsbetrag: number
   /** Materialkosten netto, werden vom Netto-Rechnungsbetrag abgezogen (nur Arbeitskosten sind absetzbar). */
@@ -259,6 +261,8 @@ export interface WerbungskostenBeleg {
   kategorie: string
   betrag: number
   shop?: string
+  /** Rechnungs-/Belegnummer laut Beleg (Issue #79), optional. */
+  rechnungsnummer?: string
   /** Optionaler Verweis auf den Beleg im privaten Cloud-Speicher (Link/ID), siehe #11. */
   belegRef?: string
 }

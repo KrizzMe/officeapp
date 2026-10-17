@@ -1,0 +1,7 @@
+{
+  "name": "officeapp-vercel-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Serverfunktion zum Auslesen von Belegfotos (Issue #79). Eigenes Vercel-Projekt, Root Directory: vercel-api"
+}

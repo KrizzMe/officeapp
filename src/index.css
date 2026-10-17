@@ -1259,3 +1259,26 @@ select.input:focus {
   font-weight: 600;
   color: var(--color-success);
 }
+
+/* Beleg-Foto aufnehmen/auslesen (Issue #79) */
+.beleg-scan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.beleg-scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.beleg-scan-preview {
+  max-width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  align-self: flex-start;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.4));
+  border-radius: 0.5rem;
+}

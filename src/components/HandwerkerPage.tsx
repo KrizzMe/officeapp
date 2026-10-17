@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from 'firebase/auth'
 import type { HandwerkerBeleg } from '../types/models'
 import { useHandwerkerBelege } from '../hooks/useBelege'
+import { useBelegScan } from '../hooks/useBelegScan'
+import { BelegScanBox } from './BelegScanBox'
+import { materialkostenAusScan } from '../lib/belegScan'
+import { safeName } from '../lib/onedrive'
 import { deleteHandwerkerBeleg, saveHandwerkerBeleg } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -9,6 +13,7 @@ import {
   formatDatum,
   formatEuro,
   HANDWERKER_ERMAESSIGUNG_MAX,
+  MWST_FAKTOR,
   summeJeMonat,
   summiereHandwerker,
 } from '../lib/steuern'
@@ -22,6 +27,7 @@ interface FormState {
   leistungsZeitraum: string
   leistung: string
   firma: string
+  rechnungsnummer: string
   rechnungsbetrag: string
   materialkosten: string
   belegRef: string
@@ -32,6 +38,7 @@ const EMPTY_FORM: FormState = {
   leistungsZeitraum: '',
   leistung: '',
   firma: '',
+  rechnungsnummer: '',
   rechnungsbetrag: '',
   materialkosten: '0',
   belegRef: '',
@@ -43,6 +50,7 @@ function belegToForm(b: HandwerkerBeleg): FormState {
     leistungsZeitraum: b.leistungsZeitraum ?? '',
     leistung: b.leistung,
     firma: b.firma,
+    rechnungsnummer: b.rechnungsnummer ?? '',
     rechnungsbetrag: String(b.rechnungsbetrag),
     materialkosten: String(b.materialkosten),
     belegRef: b.belegRef ?? '',
@@ -57,6 +65,8 @@ export function HandwerkerPage({ user }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+  const scan = useBelegScan(user)
+  const [scanHint, setScanHint] = useState<string | null>(null)
   // Rechnungsliste standardmäßig eingeklappt; Summen-Kacheln oben bleiben sichtbar.
   const [listOpen, setListOpen] = useState(false)
 
@@ -85,7 +95,37 @@ export function HandwerkerPage({ user }: Props) {
     return berechneHandwerker({ rechnungsbetrag, materialkosten })
   }, [form.rechnungsbetrag, form.materialkosten])
 
+  /** Foto aufnehmen/wählen, auslesen und die erkannten Werte ins Formular übernehmen (Issue #79). */
+  const handleScanFile = async (file: File) => {
+    setScanHint(null)
+    const result = await scan.scanFile(file)
+    if (!result) return
+    setForm((f) => ({
+      ...f,
+      reDatum: result.datum ?? f.reDatum,
+      leistung: result.beschreibung ?? f.leistung,
+      firma: result.aussteller ?? f.firma,
+      rechnungsnummer: result.rechnungsnummer ?? f.rechnungsnummer,
+      leistungsZeitraum: result.leistungszeitraum ?? f.leistungsZeitraum,
+      rechnungsbetrag: result.bruttoBetrag !== null ? String(result.bruttoBetrag) : f.rechnungsbetrag,
+      materialkosten:
+        result.bruttoBetrag !== null || result.materialkostenNetto !== null
+          ? String(materialkostenAusScan(result, MWST_FAKTOR))
+          : f.materialkosten,
+    }))
+    const hints: string[] = []
+    if (result.art === 'werbungskosten') hints.push('Der Beleg sieht eher nach Werbungskosten als nach einer Handwerkerleistung aus.')
+    if (result.art === 'unklar') hints.push('Der Beleg konnte nicht sicher als Rechnung erkannt werden — bitte alle Werte prüfen.')
+    if (result.mwstBetrag !== null) hints.push(`MwSt. laut Beleg: ${formatEuro(result.mwstBetrag)}.`)
+    if (result.arbeitskostenNetto !== null && result.materialkostenNetto === null && result.bruttoBetrag === null) {
+      hints.push(`Arbeitskosten netto laut Beleg: ${formatEuro(result.arbeitskostenNetto)}.`)
+    }
+    setScanHint(hints.length > 0 ? hints.join(' ') : null)
+  }
+
   const closeForm = () => {
+    scan.clear()
+    setScanHint(null)
     setForm(EMPTY_FORM)
     setEditingId(null)
     setFormOpen(false)
@@ -120,12 +160,27 @@ export function HandwerkerPage({ user }: Props) {
       rechnungsbetrag,
       materialkosten,
     }
+    if (form.rechnungsnummer.trim()) beleg.rechnungsnummer = form.rechnungsnummer.trim()
     if (form.leistungsZeitraum.trim()) beleg.leistungsZeitraum = form.leistungsZeitraum.trim()
     if (form.belegRef.trim()) beleg.belegRef = form.belegRef.trim()
 
     setSaving(true)
     setError(null)
     try {
+      if (scan.pending) {
+        // Foto erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Jahr>/Handwerkerleistungen/<Datum>_<Firma>_<Leistung>.jpg
+        const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
+        const fileName = `${beleg.reDatum}_${safeName(beleg.firma, 30)}_${safeName(beleg.leistung, 30)}.jpg`
+        try {
+          const uploaded = await scan.upload(`${belegJahr}/Handwerkerleistungen`, fileName)
+          if (uploaded) beleg.belegRef = uploaded.webUrl
+        } catch (err) {
+          setError(
+            `Upload nach OneDrive fehlgeschlagen: ${err instanceof Error ? err.message : String(err)} — nichts wurde gespeichert. Erneut „Speichern“ versucht den Upload nochmal; ohne Foto („Foto entfernen“) wird nur der Eintrag gespeichert.`,
+          )
+          return
+        }
+      }
       await saveHandwerkerBeleg(user.uid, beleg)
       closeForm()
     } catch (err) {
@@ -202,6 +257,7 @@ export function HandwerkerPage({ user }: Props) {
 
         {formOpen && (
           <form ref={formRef} onSubmit={handleSubmit} className="beleg-form">
+            <BelegScanBox scan={scan} onFile={(file) => void handleScanFile(file)} hint={scanHint} />
             <label className="field">
               <span>Rechnungsdatum</span>
               <input
@@ -237,6 +293,14 @@ export function HandwerkerPage({ user }: Props) {
                 value={form.firma}
                 onChange={(e) => setForm({ ...form, firma: e.target.value })}
                 required
+              />
+            </label>
+            <label className="field">
+              <span>Rechnungsnummer (optional)</span>
+              <input
+                className="input"
+                value={form.rechnungsnummer}
+                onChange={(e) => setForm({ ...form, rechnungsnummer: e.target.value })}
               />
             </label>
             <label className="field">
@@ -329,6 +393,7 @@ export function HandwerkerPage({ user }: Props) {
                     <td>
                       {b.leistung}
                       {b.leistungsZeitraum && <div className="stat-sub">{b.leistungsZeitraum}</div>}
+                      {b.rechnungsnummer && <div className="stat-sub">Nr. {b.rechnungsnummer}</div>}
                       {b.belegRef && (
                         <div className="stat-sub">
                           <a href={b.belegRef} target="_blank" rel="noreferrer noopener">
