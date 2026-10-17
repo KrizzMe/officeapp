@@ -112,6 +112,7 @@ Die bestehende Excel-Datei (inkl. aller Formeln für Anwesenheitsquote, Urlaubsz
 
 ## 8. Roadmap (nicht Teil des MVP-Auftrags)
 
-- Steuerteil: Handwerkerabrechnungen, Werbungskosten (Beleg-Erfassung, Kategorien)
-- Besondere Verschlüsselung für Steuerdaten
+- Steuerteil (Issue #10, umgesetzt): Handwerkerleistungen und Werbungskosten je Nutzer in den Firestore-Collections `handwerker` und `werbungskosten` (Rechnungsdatum, Beträge, Kategorie, optionaler Beleg-Verweis). Berechnung wie in der Excel: Netto = Brutto / 1,19, Arbeitskosten = Netto − Material, Arbeitskosten inkl. MwSt = × 1,19; Richtwert Steuerermäßigung 20 % (max. 1.200 €/Jahr). Monats-/Jahresübersicht, kein Export.
+- Steuerdaten-Schutz (Issue #11, entschieden): keine eigene Verschlüsselung; strikte Firestore-Rules, nur Beträge + Verweis in der App (Originale im privaten Cloud-Speicher), minimale Cloud-Rechte, KI/OCR-Keys nur im Backend.
+- Später: Belegfoto → privater Cloud-Speicher → automatisches Auslesen von Beträgen/Leistungen mit Verweis auf den Beleg
 - Gemeinsame Kalenderansicht für Urlaubsplanung zu zweit
