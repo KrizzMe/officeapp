@@ -8,14 +8,20 @@ export function isPdf(file: File): boolean {
 const MIN_TEXT_LENGTH = 80
 /** Obergrenze für den Text einer Rechnung; schützt Aufrufgröße und Kosten (Server erlaubt etwas mehr). */
 const MAX_TEXT_LENGTH = 80_000
+/** So viele Seiten werden höchstens als Vorschau gerendert (lange PDFs würden sonst zu lange dauern). */
+const MAX_PREVIEW_PAGES = 12
+/** Lange Kante der Vorschaubilder: lesbar beim Vergrößern, aber klein genug für viele Seiten. */
+const PREVIEW_EDGE = 1200
 /** Lange Kante der Seitenbilder bei Scans, von groß nach klein: so viele Seiten wie möglich in einem Aufruf. */
 const SCAN_EDGES = [1600, 1300, 1000, 800]
 
 export interface PdfContent {
   /** Text der Textebene, wenn das PDF digital erzeugt wurde; sonst null (Scan). */
   text: string | null
-  /** Seitenbilder: bei Text nur die erste Seite (Vorschau), bei einem Scan alle (bis MAX_PDF_SCAN_PAGES) für die KI. */
+  /** Seitenbilder für die KI (nur bei Scans; bei digitalem Text leer). */
   pages: CompressedImage[]
+  /** Vorschaubilder aller Seiten (bis MAX_PREVIEW_PAGES), zum Prüfen und Vergrößern. */
+  previews: CompressedImage[]
   /** Seitenzahl des PDFs. */
   totalPages: number
   /** Nicht alles wurde gelesen (zu viele Seiten bzw. zu viel Text). */
@@ -91,12 +97,11 @@ export async function readPdf(file: File): Promise<PdfContent> {
     const text = texts.join('\n\n').trim()
 
     if (text.length >= MIN_TEXT_LENGTH) {
-      return {
-        text: text.slice(0, MAX_TEXT_LENGTH),
-        pages: [await renderPage(await pdf.getPage(1), SCAN_EDGES[0])],
-        totalPages,
-        truncated: textTruncated,
+      const previews: CompressedImage[] = []
+      for (let i = 1; i <= Math.min(totalPages, MAX_PREVIEW_PAGES); i++) {
+        previews.push(await renderPage(await pdf.getPage(i), PREVIEW_EDGE))
       }
+      return { text: text.slice(0, MAX_TEXT_LENGTH), pages: [], previews, totalPages, truncated: textTruncated }
     }
 
     // Scan: Seitenbilder; Kantenlänge verkleinern, bis alle Seiten zusammen ins Größenlimit passen.
@@ -112,7 +117,8 @@ export async function readPdf(file: File): Promise<PdfContent> {
       }
       if (total <= MAX_SCAN_TOTAL_LENGTH) break
     }
-    return { text: null, pages, totalPages, truncated: totalPages > count }
+    // Scan: die Seitenbilder dienen zugleich als Vorschau (weitere Seiten über dem Limit werden nicht gezeigt).
+    return { text: null, pages, previews: pages, totalPages, truncated: totalPages > count }
   } finally {
     await pdf.destroy()
   }

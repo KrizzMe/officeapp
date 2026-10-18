@@ -17,10 +17,10 @@ export interface BelegPhoto extends CompressedImage {
   previewUrl: string
 }
 
-/** Ein hochgeladenes PDF; `previewUrl` zeigt die erste Seite. */
+/** Ein hochgeladenes PDF; `previewUrls` zeigen die Seiten (bei sehr langen PDFs nur die ersten). */
 export interface BelegPdf {
   file: File
-  previewUrl: string
+  previewUrls: string[]
   pageCount: number
 }
 
@@ -72,7 +72,7 @@ export function useBelegScan(user: User, basePath = '') {
 
   const clear = useCallback(() => {
     photos.forEach((p) => release(p.previewUrl))
-    if (pdf) release(pdf.previewUrl)
+    if (pdf) pdf.previewUrls.forEach(release)
     setPhotos([])
     setPdf(null)
     setScanError(null)
@@ -114,9 +114,13 @@ export function useBelegScan(user: User, basePath = '') {
         if (pdfFile) {
           const content = await readPdf(pdfFile)
           photos.forEach((p) => release(p.previewUrl))
-          if (pdf) release(pdf.previewUrl)
+          if (pdf) pdf.previewUrls.forEach(release)
           setPhotos([])
-          setPdf({ file: pdfFile, previewUrl: track(URL.createObjectURL(content.pages[0].blob)), pageCount: content.totalPages })
+          setPdf({
+            file: pdfFile,
+            previewUrls: content.previews.map((p) => track(URL.createObjectURL(p.blob))),
+            pageCount: content.totalPages,
+          })
           const notes: string[] = []
           if (files.length > 1) notes.push('Es wurde nur das PDF übernommen, die übrigen Dateien nicht.')
           if (content.truncated) notes.push('Das PDF ist sehr lang, es wurde nicht komplett gelesen — bitte alle Werte prüfen.')
@@ -131,7 +135,7 @@ export function useBelegScan(user: User, basePath = '') {
           const image = await compressImage(file)
           added.push({ ...image, previewUrl: track(URL.createObjectURL(image.blob)) })
         }
-        if (pdf) release(pdf.previewUrl)
+        if (pdf) pdf.previewUrls.forEach(release)
         setPdf(null)
         const base = pdf ? [] : photos
         const room = MAX_PDF_SCAN_PAGES - base.length

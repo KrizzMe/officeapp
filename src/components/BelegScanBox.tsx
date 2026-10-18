@@ -97,22 +97,22 @@ export function BelegScanBox({ scan, onFiles, onScanPhotos, hint }: Props) {
               </button>
             </div>
           ))}
-          {scan.pdf && (
-            <div className="beleg-scan-thumb">
+          {scan.pdf?.previewUrls.map((url, index) => (
+            <div key={url} className="beleg-scan-thumb">
               <button
                 type="button"
                 className="beleg-scan-preview-button"
-                onClick={() => setZoomUrl(scan.pdf!.previewUrl)}
-                aria-label="Vorschau vergrößern"
+                onClick={() => setZoomUrl(url)}
+                aria-label={`PDF-Seite ${index + 1} vergrößern`}
                 title="Zum Vergrößern klicken"
               >
-                <img className="beleg-scan-preview" src={scan.pdf.previewUrl} alt="Vorschau der ersten PDF-Seite" />
+                <img className="beleg-scan-preview" src={url} alt={`PDF-Seite ${index + 1}`} />
               </button>
               <span className="stat-sub">
-                PDF, {scan.pdf.pageCount} {scan.pdf.pageCount === 1 ? 'Seite' : 'Seiten'}
+                Seite {index + 1} von {scan.pdf!.pageCount}
               </span>
             </div>
-          )}
+          ))}
         </div>
       )}
 
@@ -133,7 +133,11 @@ export function BelegScanBox({ scan, onFiles, onScanPhotos, hint }: Props) {
         </p>
       )}
       {scan.pdf && !scan.scanning && !scan.scanError && (
-        <p className="form-hint">Bitte die vorausgefüllten Werte prüfen. Das PDF wird beim Speichern in OneDrive abgelegt.</p>
+        <p className="form-hint">
+          Bitte die vorausgefüllten Werte prüfen. Das PDF wird beim Speichern in OneDrive abgelegt.
+          {scan.pdf.previewUrls.length < scan.pdf.pageCount &&
+            ` Gezeigt werden die ersten ${scan.pdf.previewUrls.length} von ${scan.pdf.pageCount} Seiten.`}
+        </p>
       )}
 
       {scan.oneDriveConfigured && !scan.oneDriveConnected && (
