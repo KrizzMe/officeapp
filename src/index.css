@@ -1347,3 +1347,8 @@ select.input:focus {
   cursor: pointer;
   line-height: 1;
 }
+
+/* OneDrive-Verbindung im Profil (Issue #81) */
+.beleg-verbindung {
+  margin: var(--space-3) 0;
+}

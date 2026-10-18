@@ -5,7 +5,6 @@ import { isPdf, readPdf } from '../lib/pdf'
 import { jpegsToPdf } from '../lib/pdfBuilder'
 import { scanBeleg, type BelegScanResult, type ScanInput } from '../lib/belegScan'
 import {
-  connectOneDrive,
   isOneDriveConfigured,
   isOneDriveConnected,
   uploadBeleg,
@@ -176,17 +175,6 @@ export function useBelegScan(user: User, basePath = '') {
     [photos, runScan],
   )
 
-  /** Microsoft-Konto verbinden (Popup, nur aus einem Klick heraus aufrufen). */
-  const connect = useCallback(async () => {
-    setScanError(null)
-    try {
-      await connectOneDrive(basePath)
-      setOneDriveConnected(true)
-    } catch (err) {
-      setScanError(err instanceof Error ? err.message : String(err))
-    }
-  }, [basePath])
-
   /** Hochladen des Belegs (PDF, einzelnes Foto oder aus mehreren Fotos gebautes PDF); null, wenn nichts vorgemerkt ist. Wirft bei Fehlern. */
   const upload = useCallback(
     async (target: { basePath: string; folder: string }, fileName: string): Promise<UploadedBeleg | null> => {
@@ -217,7 +205,6 @@ export function useBelegScan(user: User, basePath = '') {
     addFiles,
     scanPhotos,
     removePhoto,
-    connect,
     upload,
     clear,
   }

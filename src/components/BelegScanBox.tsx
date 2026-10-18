@@ -142,10 +142,8 @@ export function BelegScanBox({ scan, onFiles, onScanPhotos, hint }: Props) {
 
       {scan.oneDriveConfigured && !scan.oneDriveConnected && (
         <p className="form-hint">
-          OneDrive ist noch nicht verbunden.{' '}
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => void scan.connect()}>
-            Mit OneDrive verbinden
-          </button>
+          OneDrive ist nicht verbunden. Bitte im Profil unter „Beleg-Ablage (OneDrive)“ verbinden, sonst kann der Beleg
+          nicht abgelegt werden.
         </p>
       )}
     </div>
