@@ -1259,3 +1259,91 @@ select.input:focus {
   font-weight: 600;
   color: var(--color-success);
 }
+
+/* Beleg-Foto aufnehmen/auslesen (Issue #79) */
+.beleg-scan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.beleg-scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.beleg-scan-preview {
+  max-width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  align-self: flex-start;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.4));
+  border-radius: 0.5rem;
+}
+
+/* Vorschau vergrößern (Issue #79) */
+.beleg-scan-preview-button {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.beleg-scan-zoom {
+  max-width: 96vw;
+  max-height: 96vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-out;
+}
+
+.beleg-scan-zoom::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.beleg-scan-zoom img {
+  display: block;
+  max-width: 96vw;
+  max-height: 96vh;
+  margin: 0 auto;
+  object-fit: contain;
+  background: #fff;
+}
+
+/* Mehrere Seiten eines Belegs (Issue #79) */
+.beleg-scan-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.beleg-scan-thumb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.beleg-scan-thumb .beleg-scan-preview {
+  max-height: 9rem;
+}
+
+.beleg-scan-thumb-remove {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid rgba(128, 128, 128, 0.6);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #b00020;
+  cursor: pointer;
+  line-height: 1;
+}

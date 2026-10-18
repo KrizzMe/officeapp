@@ -165,6 +165,16 @@ export interface UserProfile {
    * sonst gelten die Standardkategorien (siehe kategorienForYear()).
    */
   werbungskostenKategorienByYear?: Record<string, string[]>
+  /**
+   * OneDrive-Ablage für Belege (Issue #79): Stamm-Pfad relativ zum OneDrive-Stamm, z. B.
+   * "01_Allgemeine_Unterlagen/Steuern"; darunter entstehen `<Jahr>/<Ordnername>`. Leer/fehlend =
+   * App-Ordner `Apps/<App-Name>` (nur dafür genügen die engen Rechte).
+   */
+  belegBasisPfad?: string
+  /** Ordnername für Handwerker-Belege unter dem Jahresordner (Standard siehe lib/belegOrdner.ts). */
+  belegOrdnerHandwerker?: string
+  /** Ordnername für Werbungskosten-Belege unter dem Jahresordner (Standard siehe lib/belegOrdner.ts). */
+  belegOrdnerWerbungskosten?: string
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */
@@ -242,6 +252,8 @@ export interface HandwerkerBeleg {
   leistungsZeitraum?: string
   leistung: string
   firma: string
+  /** Rechnungsnummer laut Beleg (Issue #79), optional. */
+  rechnungsnummer?: string
   /** Rechnungsbetrag brutto (inkl. 19 % MwSt). */
   rechnungsbetrag: number
   /** Materialkosten netto, werden vom Netto-Rechnungsbetrag abgezogen (nur Arbeitskosten sind absetzbar). */
@@ -259,6 +271,8 @@ export interface WerbungskostenBeleg {
   kategorie: string
   betrag: number
   shop?: string
+  /** Rechnungs-/Belegnummer laut Beleg (Issue #79), optional. */
+  rechnungsnummer?: string
   /** Optionaler Verweis auf den Beleg im privaten Cloud-Speicher (Link/ID), siehe #11. */
   belegRef?: string
 }
