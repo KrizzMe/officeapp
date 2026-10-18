@@ -79,6 +79,13 @@ export async function connectOneDrive(basePath = ''): Promise<void> {
   await getToken(scopesFor(basePath))
 }
 
+/** Anmeldename (E-Mail) des verbundenen Microsoft-Kontos, null wenn keines verbunden ist. */
+export async function getOneDriveAccountName(): Promise<string | null> {
+  if (!isOneDriveConfigured) return null
+  const app = await getApp()
+  return app.getAllAccounts()[0]?.username ?? null
+}
+
 /** Meldet das Microsoft-Konto in dieser App ab (lokal; die Dateien in OneDrive bleiben unberührt). */
 export async function disconnectOneDrive(): Promise<void> {
   const app = await getApp()

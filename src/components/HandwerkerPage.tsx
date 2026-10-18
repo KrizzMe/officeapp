@@ -177,6 +177,10 @@ export function HandwerkerPage({ user, profile }: Props) {
     setError(null)
     try {
       if (scan.pending) {
+        if (scan.oneDriveConfigured && !scan.oneDriveConnected) {
+          setError('OneDrive ist nicht verbunden. Bitte im Profil unter „Beleg-Ablage (OneDrive)“ verbinden — nichts wurde gespeichert.')
+          return
+        }
         // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/JJJJ.MM.TT_<Firma>-<Leistung>.<jpg|pdf>
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
         const fileName = belegDateiname('handwerker', beleg.reDatum, beleg, scan.pending.extension)
