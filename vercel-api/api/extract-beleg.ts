@@ -17,7 +17,7 @@
  *   ALLOWED_ORIGINS      kommagetrennte Liste erlaubter App-Origins (CORS)
  */
 
-export const config = { maxDuration: 60 }
+export const config = { maxDuration: 120 }
 
 const ENDPOINT = 'https://api.mistral.ai/v1/chat/completions'
 
@@ -26,12 +26,12 @@ const DEFAULT_MODEL = 'ministral-14b-2512'
 
 /** Pro Bild ca. 2,5 MB; die App verkleinert vorher auf max. 1600 px. */
 const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
-/** Mehrseitige PDFs: die App schickt höchstens die ersten Seiten. */
-const MAX_IMAGES = 3
+/** Mehrseitige Belege: Seiten als Bilder (gescannte PDFs, mehrere Fotos). */
+const MAX_IMAGES = 8
 /** Gesamtlimit (Vercel erlaubt 4,5 MB Request-Body). */
 const MAX_TOTAL_LENGTH = 4_200_000
-/** Text eines digitalen PDFs (die App kürzt auf 20.000 Zeichen). */
-const MAX_TEXT_LENGTH = 25_000
+/** Text eines digitalen PDFs (die App kürzt auf 80.000 Zeichen). */
+const MAX_TEXT_LENGTH = 100_000
 
 /** Schutz gegen Bedienfehler, kein Schutz gegen gezielten Missbrauch (wie bei Voxiefy). */
 const COOLDOWN_MS = 4_000

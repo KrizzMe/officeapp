@@ -5,6 +5,7 @@ import { useWerbungskostenBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
 import { belegDateiname, belegZiel, normalizePfad } from '../lib/belegOrdner'
+import type { BelegScanResult } from '../lib/belegScan'
 import { deleteWerbungskostenBeleg, saveWerbungskostenBeleg, updateUserProfile } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -139,9 +140,7 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
   }
 
   /** Foto aufnehmen/wählen, auslesen und die erkannten Werte ins Formular übernehmen (Issue #79). */
-  const handleScanFile = async (file: File) => {
-    setScanHint(null)
-    const result = await scan.scanFile(file, kategorien)
+  const applyScan = (result: BelegScanResult | null) => {
     if (!result) return
     setForm((f) => ({
       ...f,
@@ -156,6 +155,16 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
     if (result.art === 'handwerker') hints.push('Der Beleg sieht eher nach einer Handwerkerleistung als nach Werbungskosten aus.')
     if (result.art === 'unklar') hints.push('Der Beleg konnte nicht sicher als Rechnung erkannt werden — bitte alle Werte prüfen.')
     setScanHint(hints.length > 0 ? hints.join(' ') : null)
+  }
+
+  const handleScanFiles = async (files: File[]) => {
+    setScanHint(null)
+    applyScan(await scan.addFiles(files, kategorien))
+  }
+
+  const handleScanPhotos = async () => {
+    setScanHint(null)
+    applyScan(await scan.scanPhotos(kategorien))
   }
 
   const closeForm = () => {
@@ -368,7 +377,12 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
 
         {formOpen && (
           <form ref={formRef} onSubmit={handleSubmit} className="beleg-form">
-            <BelegScanBox scan={scan} onFile={(file) => void handleScanFile(file)} hint={scanHint} />
+            <BelegScanBox
+              scan={scan}
+              onFiles={(files) => void handleScanFiles(files)}
+              onScanPhotos={() => void handleScanPhotos()}
+              hint={scanHint}
+            />
             <label className="field">
               <span>Rechnungsdatum</span>
               <input

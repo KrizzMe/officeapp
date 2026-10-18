@@ -23,7 +23,7 @@ Kleine Serverfunktion, die ein Belegfoto per Mistral Vision in Rechnungsdaten
 ## Endpunkt
 
 `POST /api/extract-beleg` mit `Authorization: Bearer <Firebase-ID-Token>` und Body
-`{ "imageDataUrls": ["data:image/jpeg;base64,…"], "kategorien": ["Büromaterial", …] }` (bis zu 3 Bilder, z. B. die Seiten eines gescannten PDFs) oder statt der Bilder `{ "text": "…", "kategorien": […] }` mit dem Text eines digitalen PDFs.
+`{ "imageDataUrls": ["data:image/jpeg;base64,…"], "kategorien": ["Büromaterial", …] }` (bis zu 8 Bilder, z. B. die Seiten eines gescannten PDFs oder mehrere Fotos) oder statt der Bilder `{ "text": "…", "kategorien": […] }` mit dem Text eines digitalen PDFs.
 Antwort: siehe `BelegResult` in `api/extract-beleg.ts`.
 
 Das Bild wird weder gespeichert noch geloggt.

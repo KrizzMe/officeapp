@@ -4,7 +4,7 @@ import type { HandwerkerBeleg, UserProfile } from '../types/models'
 import { useHandwerkerBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
-import { materialkostenAusScan } from '../lib/belegScan'
+import { materialkostenAusScan, type BelegScanResult } from '../lib/belegScan'
 import { belegDateiname, belegZiel, normalizePfad } from '../lib/belegOrdner'
 import { deleteHandwerkerBeleg, saveHandwerkerBeleg } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
@@ -97,9 +97,7 @@ export function HandwerkerPage({ user, profile }: Props) {
   }, [form.rechnungsbetrag, form.materialkosten])
 
   /** Foto aufnehmen/wählen, auslesen und die erkannten Werte ins Formular übernehmen (Issue #79). */
-  const handleScanFile = async (file: File) => {
-    setScanHint(null)
-    const result = await scan.scanFile(file)
+  const applyScan = (result: BelegScanResult | null) => {
     if (!result) return
     setForm((f) => ({
       ...f,
@@ -122,6 +120,16 @@ export function HandwerkerPage({ user, profile }: Props) {
       hints.push(`Arbeitskosten netto laut Beleg: ${formatEuro(result.arbeitskostenNetto)}.`)
     }
     setScanHint(hints.length > 0 ? hints.join(' ') : null)
+  }
+
+  const handleScanFiles = async (files: File[]) => {
+    setScanHint(null)
+    applyScan(await scan.addFiles(files))
+  }
+
+  const handleScanPhotos = async () => {
+    setScanHint(null)
+    applyScan(await scan.scanPhotos())
   }
 
   const closeForm = () => {
@@ -258,7 +266,12 @@ export function HandwerkerPage({ user, profile }: Props) {
 
         {formOpen && (
           <form ref={formRef} onSubmit={handleSubmit} className="beleg-form">
-            <BelegScanBox scan={scan} onFile={(file) => void handleScanFile(file)} hint={scanHint} />
+            <BelegScanBox
+              scan={scan}
+              onFiles={(files) => void handleScanFiles(files)}
+              onScanPhotos={() => void handleScanPhotos()}
+              hint={scanHint}
+            />
             <label className="field">
               <span>Rechnungsdatum</span>
               <input

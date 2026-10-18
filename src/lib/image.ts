@@ -14,10 +14,15 @@ const MAX_IMAGE_DATA_URL_LENGTH = 3_500_000
 export interface CompressedImage {
   blob: Blob
   dataUrl: string
+  /** Pixelmaße des JPEGs. */
+  width: number
+  height: number
 }
 
-/** Höchstens so viele PDF-Seiten werden gelesen (jede Seite ist ein Bild im KI-Aufruf). */
-export const MAX_PDF_PAGES = 3
+/** Höchstens so viele Seiten/Fotos gehen als Bilder in einen KI-Aufruf (Server: MAX_IMAGES). */
+export const MAX_PDF_SCAN_PAGES = 8
+/** Summe aller Bild-Data-URLs je Aufruf; Vercel erlaubt 4,5 MB Request-Body, hier bleibt Luft. */
+export const MAX_SCAN_TOTAL_LENGTH = 3_800_000
 
 /** Exportiert ein Canvas als JPEG (Blob + Data-URL) und prüft das Größenlimit. */
 export async function canvasToCompressed(canvas: HTMLCanvasElement): Promise<CompressedImage> {
@@ -27,7 +32,7 @@ export async function canvasToCompressed(canvas: HTMLCanvasElement): Promise<Com
   if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
     throw new Error('Das Foto ist auch komprimiert noch zu groß. Bitte aus etwas mehr Abstand fotografieren.')
   }
-  return { blob, dataUrl }
+  return { blob, dataUrl, width: canvas.width, height: canvas.height }
 }
 
 /** Skaliert eine Seitengröße so, dass die lange Kante höchstens MAX_EDGE_PX beträgt. */
@@ -53,12 +58,12 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-/** Verkleinert ein Foto auf max. 1600 px und exportiert es als JPEG. */
-export async function compressImage(file: File): Promise<CompressedImage> {
+/** Verkleinert ein Bild auf max. `maxEdge` px (Standard 1600) lange Kante und exportiert es als JPEG. */
+export async function compressImage(file: Blob, maxEdge = MAX_EDGE_PX): Promise<CompressedImage> {
   const objectUrl = URL.createObjectURL(file)
   try {
     const image = await loadImage(objectUrl)
-    const scale = fitScale(image.naturalWidth, image.naturalHeight)
+    const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight))
     const width = Math.round(image.naturalWidth * scale)
     const height = Math.round(image.naturalHeight * scale)
 

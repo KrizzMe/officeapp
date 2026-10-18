@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
-import { compressImage, type CompressedImage } from '../lib/image'
+import { compressImage, MAX_PDF_SCAN_PAGES, MAX_SCAN_TOTAL_LENGTH, type CompressedImage } from '../lib/image'
 import { isPdf, readPdf } from '../lib/pdf'
+import { jpegsToPdf } from '../lib/pdfBuilder'
 import { scanBeleg, type BelegScanResult, type ScanInput } from '../lib/belegScan'
 import {
   connectOneDrive,
@@ -11,24 +12,51 @@ import {
   type UploadedBeleg,
 } from '../lib/onedrive'
 
-interface Pending {
-  /** Was nach OneDrive hochgeladen wird: das verkleinerte Foto bzw. das unveränderte Original-PDF. */
-  blob: Blob
-  /** Vorschaubild (bei PDFs die erste Seite). */
+/** Ein aufgenommenes Foto (eine Seite des Belegs). */
+export interface BelegPhoto extends CompressedImage {
   previewUrl: string
-  /** Dateiendung für den OneDrive-Dateinamen, ohne Punkt. */
-  extension: 'jpg' | 'pdf'
 }
 
+/** Ein hochgeladenes PDF; `previewUrl` zeigt die erste Seite. */
+export interface BelegPdf {
+  file: File
+  previewUrl: string
+  pageCount: number
+}
+
+/** Kantenlängen, auf die Fotos für den KI-Aufruf verkleinert werden, wenn viele Seiten zusammen zu groß wären. */
+const SHRINK_EDGES = [1300, 1000, 800]
+
 /**
- * Zustand für das Beleg-Foto eines Formulars (Issue #79): Foto verkleinern, auslesen lassen,
- * bis zum Speichern im Speicher halten und dann nach OneDrive hochladen.
+ * Zustand für den Beleg eines Formulars (Issue #79): ein PDF ODER mehrere Fotos (Seiten). Digitale
+ * PDFs werden sofort gelesen; Fotos sammelt die App, bis der Nutzer „Beleg auslesen“ wählt. Zum
+ * Speichern wandert das PDF bzw. — bei mehreren Fotos — ein daraus gebautes PDF nach OneDrive.
  */
 export function useBelegScan(user: User, basePath = '') {
-  const [pending, setPending] = useState<Pending | null>(null)
+  const [photos, setPhotos] = useState<BelegPhoto[]>([])
+  const [pdf, setPdf] = useState<BelegPdf | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [oneDriveConnected, setOneDriveConnected] = useState(false)
+
+  // Vorschau-URLs freigeben: beim Entfernen und wenn die Komponente verschwindet.
+  const urlsRef = useRef<Set<string>>(new Set())
+  const track = (url: string) => {
+    urlsRef.current.add(url)
+    return url
+  }
+  const release = (url: string) => {
+    URL.revokeObjectURL(url)
+    urlsRef.current.delete(url)
+  }
+  useEffect(() => {
+    const urls = urlsRef.current
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u))
+      urls.clear()
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -42,42 +70,75 @@ export function useBelegScan(user: User, basePath = '') {
     }
   }, [basePath])
 
-  // Vorschau-URL freigeben, sobald das Foto wechselt oder die Komponente verschwindet.
-  useEffect(() => {
-    if (!pending) return
-    return () => URL.revokeObjectURL(pending.previewUrl)
-  }, [pending])
-
   const clear = useCallback(() => {
-    setPending(null)
+    photos.forEach((p) => release(p.previewUrl))
+    if (pdf) release(pdf.previewUrl)
+    setPhotos([])
+    setPdf(null)
     setScanError(null)
+    setNotice(null)
+  }, [photos, pdf])
+
+  const removePhoto = useCallback((index: number) => {
+    setPhotos((prev) => {
+      const target = prev[index]
+      if (target) release(target.previewUrl)
+      return prev.filter((_, i) => i !== index)
+    })
+    setNotice(null)
   }, [])
 
-  /** Foto übernehmen und auslesen. Gibt null zurück, wenn das Auslesen fehlschlug (Foto bleibt trotzdem erhalten). */
-  const scanFile = useCallback(
-    async (file: File, kategorien: string[] = []): Promise<BelegScanResult | null> => {
+  const runScan = useCallback(
+    async (input: ScanInput, kategorien: string[]): Promise<BelegScanResult | null> => {
+      try {
+        return await scanBeleg(user, input, kategorien)
+      } catch (err) {
+        setScanError(err instanceof Error ? err.message : String(err))
+        return null
+      }
+    },
+    [user],
+  )
+
+  /**
+   * Dateien übernehmen. Ein PDF wird sofort gelesen und das Ergebnis zurückgegeben; Bilder werden
+   * als weitere Seiten gesammelt (Ergebnis null, ausgelesen wird mit scanPhotos()).
+   */
+  const addFiles = useCallback(
+    async (files: File[], kategorien: string[] = []): Promise<BelegScanResult | null> => {
       setScanning(true)
       setScanError(null)
+      setNotice(null)
       try {
-        const pdf = isPdf(file)
-        // Digitales PDF: Text direkt auslesen (keine Bilderkennung nötig); Scan/Foto: Bilder. Das
-        // Original-PDF wandert später unverändert nach OneDrive.
-        let pages: CompressedImage[]
-        let input: ScanInput
-        if (pdf) {
-          const content = await readPdf(file)
-          pages = content.pages
-          input = content.text !== null ? { text: content.text } : { imageDataUrls: pages.map((p) => p.dataUrl) }
-        } else {
-          pages = [await compressImage(file)]
-          input = { imageDataUrls: [pages[0].dataUrl] }
+        const pdfFile = files.find(isPdf)
+        if (pdfFile) {
+          const content = await readPdf(pdfFile)
+          photos.forEach((p) => release(p.previewUrl))
+          if (pdf) release(pdf.previewUrl)
+          setPhotos([])
+          setPdf({ file: pdfFile, previewUrl: track(URL.createObjectURL(content.pages[0].blob)), pageCount: content.totalPages })
+          const notes: string[] = []
+          if (files.length > 1) notes.push('Es wurde nur das PDF übernommen, die übrigen Dateien nicht.')
+          if (content.truncated) notes.push('Das PDF ist sehr lang, es wurde nicht komplett gelesen — bitte alle Werte prüfen.')
+          setNotice(notes.length > 0 ? notes.join(' ') : null)
+          const input: ScanInput =
+            content.text !== null ? { text: content.text } : { imageDataUrls: content.pages.map((p) => p.dataUrl) }
+          return await runScan(input, kategorien)
         }
-        setPending({
-          blob: pdf ? file : pages[0].blob,
-          previewUrl: URL.createObjectURL(pages[0].blob),
-          extension: pdf ? 'pdf' : 'jpg',
-        })
-        return await scanBeleg(user, input, kategorien)
+
+        const added: BelegPhoto[] = []
+        for (const file of files) {
+          const image = await compressImage(file)
+          added.push({ ...image, previewUrl: track(URL.createObjectURL(image.blob)) })
+        }
+        if (pdf) release(pdf.previewUrl)
+        setPdf(null)
+        const base = pdf ? [] : photos
+        const room = MAX_PDF_SCAN_PAGES - base.length
+        added.slice(room).forEach((p) => release(p.previewUrl))
+        setPhotos([...base, ...added.slice(0, Math.max(room, 0))])
+        if (added.length > room) setNotice(`Pro Beleg sind höchstens ${MAX_PDF_SCAN_PAGES} Seiten möglich.`)
+        return null
       } catch (err) {
         setScanError(err instanceof Error ? err.message : String(err))
         return null
@@ -85,7 +146,30 @@ export function useBelegScan(user: User, basePath = '') {
         setScanning(false)
       }
     },
-    [user],
+    [photos, pdf, runScan],
+  )
+
+  /** Alle gesammelten Fotos gemeinsam auslesen (Seiten werden für den Aufruf bei Bedarf verkleinert). */
+  const scanPhotos = useCallback(
+    async (kategorien: string[] = []): Promise<BelegScanResult | null> => {
+      if (photos.length === 0) return null
+      setScanning(true)
+      setScanError(null)
+      try {
+        let urls = photos.map((p) => p.dataUrl)
+        for (const edge of SHRINK_EDGES) {
+          if (urls.reduce((sum, u) => sum + u.length, 0) <= MAX_SCAN_TOTAL_LENGTH) break
+          urls = await Promise.all(photos.map(async (p) => (await compressImage(p.blob, edge)).dataUrl))
+        }
+        return await runScan({ imageDataUrls: urls }, kategorien)
+      } catch (err) {
+        setScanError(err instanceof Error ? err.message : String(err))
+        return null
+      } finally {
+        setScanning(false)
+      }
+    },
+    [photos, runScan],
   )
 
   /** Microsoft-Konto verbinden (Popup, nur aus einem Klick heraus aufrufen). */
@@ -99,24 +183,36 @@ export function useBelegScan(user: User, basePath = '') {
     }
   }, [basePath])
 
-  /** Hochladen des vorgemerkten Fotos; null, wenn keines vorgemerkt ist. Wirft bei Fehlern. */
+  /** Hochladen des Belegs (PDF, einzelnes Foto oder aus mehreren Fotos gebautes PDF); null, wenn nichts vorgemerkt ist. Wirft bei Fehlern. */
   const upload = useCallback(
     async (target: { basePath: string; folder: string }, fileName: string): Promise<UploadedBeleg | null> => {
-      if (!pending) return null
-      const uploaded = await uploadBeleg(pending.blob, target, fileName)
+      let blob: Blob
+      if (pdf) blob = pdf.file
+      else if (photos.length === 1) blob = photos[0].blob
+      else if (photos.length > 1) blob = await jpegsToPdf(photos)
+      else return null
+      const uploaded = await uploadBeleg(blob, target, fileName)
       setOneDriveConnected(true)
       return uploaded
     },
-    [pending],
+    [pdf, photos],
   )
 
+  /** Vorgemerkter Beleg: Dateiendung für den OneDrive-Namen; null, wenn nichts da ist. */
+  const pending = pdf || photos.length > 1 ? { extension: 'pdf' as const } : photos.length === 1 ? { extension: 'jpg' as const } : null
+
   return {
+    photos,
+    pdf,
     pending,
     scanning,
     scanError,
+    notice,
     oneDriveConfigured: isOneDriveConfigured,
     oneDriveConnected,
-    scanFile,
+    addFiles,
+    scanPhotos,
+    removePhoto,
     connect,
     upload,
     clear,
