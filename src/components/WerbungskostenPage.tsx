@@ -4,8 +4,7 @@ import type { UserProfile, WerbungskostenBeleg } from '../types/models'
 import { useWerbungskostenBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
-import { safeName } from '../lib/onedrive'
-import { belegZiel, normalizePfad } from '../lib/belegOrdner'
+import { belegDateiname, belegZiel, normalizePfad } from '../lib/belegOrdner'
 import { deleteWerbungskostenBeleg, saveWerbungskostenBeleg, updateUserProfile } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -202,9 +201,9 @@ export function WerbungskostenPage({ user, profile, onProfileUpdated }: Props) {
     setError(null)
     try {
       if (scan.pending) {
-        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/<Datum>_<Shop>_<Artikel>.<jpg|pdf>
+        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/JJJJ.MM.TT_<Artikel>.<jpg|pdf>
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
-        const fileName = `${beleg.reDatum}_${safeName(beleg.shop ?? 'Beleg', 30)}_${safeName(beleg.artikel, 30)}.${scan.pending.extension}`
+        const fileName = belegDateiname('werbungskosten', beleg.reDatum, beleg, scan.pending.extension)
         try {
           const uploaded = await scan.upload(belegZiel(profile, belegJahr, 'werbungskosten'), fileName)
           if (uploaded) beleg.belegRef = uploaded.webUrl

@@ -5,8 +5,7 @@ import { useHandwerkerBelege } from '../hooks/useBelege'
 import { useBelegScan } from '../hooks/useBelegScan'
 import { BelegScanBox } from './BelegScanBox'
 import { materialkostenAusScan } from '../lib/belegScan'
-import { safeName } from '../lib/onedrive'
-import { belegZiel, normalizePfad } from '../lib/belegOrdner'
+import { belegDateiname, belegZiel, normalizePfad } from '../lib/belegOrdner'
 import { deleteHandwerkerBeleg, saveHandwerkerBeleg } from '../firebase/firestore'
 import { MONTH_LABELS } from '../lib/dates'
 import {
@@ -170,9 +169,9 @@ export function HandwerkerPage({ user, profile }: Props) {
     setError(null)
     try {
       if (scan.pending) {
-        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/<Datum>_<Firma>_<Leistung>.<jpg|pdf>
+        // Beleg erst jetzt, nach der Prüfung durch den Nutzer, nach OneDrive: <Stamm>/<Jahr>/<Ordner>/JJJJ.MM.TT_<Firma>-<Leistung>.<jpg|pdf>
         const belegJahr = /^\d{4}/.test(beleg.reDatum) ? beleg.reDatum.slice(0, 4) : String(year)
-        const fileName = `${beleg.reDatum}_${safeName(beleg.firma, 30)}_${safeName(beleg.leistung, 30)}.${scan.pending.extension}`
+        const fileName = belegDateiname('handwerker', beleg.reDatum, beleg, scan.pending.extension)
         try {
           const uploaded = await scan.upload(belegZiel(profile, belegJahr, 'handwerker'), fileName)
           if (uploaded) beleg.belegRef = uploaded.webUrl

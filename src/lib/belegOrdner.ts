@@ -1,4 +1,5 @@
 import type { UserProfile } from '../types/models'
+import { safeName } from './onedrive'
 
 /** Standard-Ordnernamen unter dem Jahresordner (im Profil überschreibbar). */
 export const DEFAULT_ORDNER_HANDWERKER = 'Belege Handwerkerkosten'
@@ -37,4 +38,28 @@ export function belegZiel(profile: UserProfile | undefined, year: string, art: B
     normalizePfad(art === 'handwerker' ? profile?.belegOrdnerHandwerker : profile?.belegOrdnerWerbungskosten) ||
     (art === 'handwerker' ? DEFAULT_ORDNER_HANDWERKER : DEFAULT_ORDNER_WERBUNGSKOSTEN)
   return { basePath: normalizePfad(profile?.belegBasisPfad), folder: `${year}/${name}` }
+}
+
+/** ISO-Datum YYYY-MM-DD -> JJJJ.MM.TT (Präfix der Beleg-Dateinamen, sortiert alphabetisch chronologisch). */
+function datumPraefix(isoDatum: string): string {
+  return isoDatum.replace(/-/g, '.')
+}
+
+/**
+ * Dateiname eines Belegs in OneDrive (Issue #79):
+ * - Werbungskosten: `JJJJ.MM.TT_Artikelbezeichnung.ext`
+ * - Handwerker:     `JJJJ.MM.TT_Firma-Leistungsbeschreibung.ext`
+ */
+export function belegDateiname(
+  art: BelegArt,
+  isoDatum: string,
+  felder: { artikel?: string; firma?: string; leistung?: string },
+  extension: string,
+): string {
+  const prefix = datumPraefix(isoDatum)
+  const text =
+    art === 'werbungskosten'
+      ? safeName(felder.artikel ?? '', 80)
+      : `${safeName(felder.firma ?? '', 40)}-${safeName(felder.leistung ?? '', 60)}`
+  return `${prefix}_${text}.${extension}`
 }
