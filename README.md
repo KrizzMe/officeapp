@@ -11,12 +11,12 @@ Produktiv im Einsatz (Firebase Hosting, Deploy automatisch bei Merge auf `main`)
 - **Dashboard:** Anwesenheitsquote, heutiger Status (direkt änderbar), Stempeln (Kommen/Gehen) und Überstunden-Saldo
 - **Monatsübersicht:** Kalender als zentrale Eingabe (ein Status pro Tag), Kacheln für Quote, Urlaub je Art, Arbeitsweg (km) und Überstunden; fehlende Tage lassen sich mit dem Soll füllen
 - **Jahresübersicht:** Monatstabelle (Quote, km, Saldo), Urlaubs-, Krankheits- und Dienstreise-Zeiträume, Überstunden-Übertrag
-- **Arbeitszeiterfassung** (#83): mehrere Arbeitsblöcke pro Tag oder nur Stunden, gesetzliche Mindestpause (§ 4 ArbZG), Saldo gegen die Wochenstunden mit Übertrag ins Folgejahr
-- **Urlaub:** frei definierbare Urlaubsarten je Jahr (#72) mit Kontingent und Rhythmus (z. B. Dispositionstag 1×/Quartal), automatischer Resturlaub-Übertrag (#74)
-- **Profil:** Adressen mit Adressprüfung und kürzestem Arbeitsweg (#61), Bundesland (Feiertage), Arbeitstage Mo–So, Homeoffice-Schalter/-Quote/-Wochentage, AG-freie Tage, Wochenstunden, Farbdesign + Hell/Dunkel, Beleg-Ablage und OneDrive-Verbindung
-- **Steuerteil** (#10): Handwerkerleistungen und Werbungskosten je Jahr, Beleg-Scan per KI (Foto/PDF → Rechnungsdaten, #79) mit Ablage in OneDrive (#81)
+- **Arbeitszeiterfassung:** mehrere Arbeitsblöcke pro Tag oder nur Stunden, gesetzliche Mindestpause (§ 4 ArbZG), Saldo gegen die Wochenstunden mit Übertrag ins Folgejahr
+- **Urlaub:** frei definierbare Urlaubsarten je Jahr mit Kontingent und Rhythmus (z. B. Dispositionstag 1×/Quartal), automatischer Resturlaub-Übertrag
+- **Profil:** Adressen mit Adressprüfung und kürzestem Arbeitsweg, Bundesland (Feiertage), Arbeitstage Mo–So, Homeoffice-Schalter/-Quote/-Wochentage, AG-freie Tage, Wochenstunden, Farbdesign + Hell/Dunkel, Beleg-Ablage und OneDrive-Verbindung
+- **Steuerteil:** Handwerkerleistungen und Werbungskosten je Jahr, Beleg-Scan per KI (Foto/PDF → Rechnungsdaten) mit Ablage in OneDrive
 
-Offene Themen (Auswahl): gemeinsame Kalenderansicht (#12), Code-Splitting (#9), Tests mit Vitest (#66), Refactorings (#67–#69), URL-Routing (#70).
+Offene Themen (Auswahl): gemeinsame Kalenderansicht, Code-Splitting, Tests mit Vitest, Refactorings, Navigation über URL-Routen.
 
 ## Tech-Stack
 
@@ -37,15 +37,15 @@ Welche Dienste die App nutzt, wofür und welche Daten dorthin gehen. Zugangsdate
 | Hosting der App | Firebase Hosting (Google) | CI bei Merge auf `main` | statischer Build (`dist/`) | GitHub-Secret Service-Account, Target `prod` |
 | Login | Firebase Authentication, Google Sign-In (Popup) | Browser | Google-Konto-Anmeldung | `VITE_FIREBASE_*` |
 | Datenhaltung | Cloud Firestore | Browser (Firebase SDK) | Profil, Tagesstatus, Arbeitszeiten, Belegdaten — je Nutzer isoliert per `firestore.rules` | `VITE_FIREBASE_*` |
-| Adressprüfung (Geocoding, #61) | OpenStreetMap **Nominatim** (öffentliche API, kostenlos) | Browser, nur per Klick auf „Prüfen“ | eingegebene Wohn-/Arbeitsadresse | keine; Nutzungsrichtlinie: max. 1 Anfrage/Sekunde, kein Bulk-Geocoding |
-| Kürzester Arbeitsweg (#61) | **OSRM**-Demo-Server (`router.project-osrm.org`, kostenlos) | Browser | Koordinaten von Wohn- und Arbeitsort | keine; Auto-Routing, für geringes Anfragevolumen gedacht |
-| KI-Beleg-Scan (#79) | Eigene Serverfunktion auf **Vercel** (`vercel-api/`) → **Mistral AI** (Modell `ministral-14b-2512`, überschreibbar) | Browser → Vercel → Mistral | verkleinerte Belegfotos bzw. PDF-Seiten (max. 8) oder Text digitaler PDFs; nicht gespeichert, nicht geloggt | App: `VITE_BELEG_API_URL`; Vercel: `MISTRAL_API_KEY`, `MISTRAL_MODEL`, `FIREBASE_API_KEY`, `ALLOWED_ORIGINS` |
+| Adressprüfung (Geocoding) | OpenStreetMap **Nominatim** (öffentliche API, kostenlos) | Browser, nur per Klick auf „Prüfen“ | eingegebene Wohn-/Arbeitsadresse | keine; Nutzungsrichtlinie: max. 1 Anfrage/Sekunde, kein Bulk-Geocoding |
+| Kürzester Arbeitsweg | **OSRM**-Demo-Server (`router.project-osrm.org`, kostenlos) | Browser | Koordinaten von Wohn- und Arbeitsort | keine; Auto-Routing, für geringes Anfragevolumen gedacht |
+| KI-Beleg-Scan | Eigene Serverfunktion auf **Vercel** (`vercel-api/`) → **Mistral AI** (Modell `ministral-14b-2512`, überschreibbar) | Browser → Vercel → Mistral | verkleinerte Belegfotos bzw. PDF-Seiten (max. 8) oder Text digitaler PDFs; nicht gespeichert, nicht geloggt | App: `VITE_BELEG_API_URL`; Vercel: `MISTRAL_API_KEY`, `MISTRAL_MODEL`, `FIREBASE_API_KEY`, `ALLOWED_ORIGINS` |
 | Token-Prüfung der Serverfunktion | Firebase Auth REST-API (Identity Toolkit) | Vercel | Firebase-ID-Token des angemeldeten Nutzers | `FIREBASE_API_KEY` |
-| Beleg-Ablage (#79/#81) | **Microsoft OneDrive** über Microsoft Graph, Login per MSAL.js (nur private Microsoft-Konten) | Browser | Beleg-Datei (Foto/PDF); gespeichert wird nur der Link | `VITE_MS_CLIENT_ID` (Entra-App-Registrierung) |
+| Beleg-Ablage | **Microsoft OneDrive** über Microsoft Graph, Login per MSAL.js (nur private Microsoft-Konten) | Browser | Beleg-Datei (Foto/PDF); gespeichert wird nur der Link | `VITE_MS_CLIENT_ID` (Entra-App-Registrierung) |
 
 Lokal und ohne externen Dienst laufen: Feiertagsberechnung (Osterformel je Bundesland), PDF-Auslesen und -Vorschau (`pdfjs-dist`), Zusammenfassen mehrerer Fotos zu einem PDF sowie alle Quoten-, Urlaubs-, km- und Arbeitszeit-Berechnungen.
 
-Schutzmaßnahmen (Entscheidung #11): keine eigene Verschlüsselung, dafür strikte Firestore-Regeln, nur Beträge + Beleg-Verweis in der App (Originale im privaten OneDrive), minimale OneDrive-Rechte (`Files.ReadWrite.AppFolder`, das ganze OneDrive nur bei eigenem Stamm-Pfad) und KI-Schlüssel ausschließlich im Backend. Die Serverfunktion akzeptiert nur gültige Firebase-ID-Tokens, erlaubt Browser-Aufrufe nur von eingetragenen Origins und hat eine kurze Wartezeit zwischen zwei Scans.
+Schutzmaßnahmen: keine eigene Verschlüsselung, dafür strikte Firestore-Regeln, nur Beträge + Beleg-Verweis in der App (Originale im privaten OneDrive), minimale OneDrive-Rechte (`Files.ReadWrite.AppFolder`, das ganze OneDrive nur bei eigenem Stamm-Pfad) und KI-Schlüssel ausschließlich im Backend. Die Serverfunktion akzeptiert nur gültige Firebase-ID-Tokens, erlaubt Browser-Aufrufe nur von eingetragenen Origins und hat eine kurze Wartezeit zwischen zwei Scans.
 
 ## Setup
 
