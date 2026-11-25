@@ -1,6 +1,6 @@
 # Office App
 
-Anwesenheits-, Urlaubs- und Arbeitszeit-Tracker mit Steuerteil (Web-App). Löst eine jährlich neu aufgesetzte Excel-Datei ab, die zur Berechnung der Homeoffice-/Büro-Anwesenheitsquote, zum Tracking von Urlaubskontingenten, zur Erfassung der Pendlerstrecke und zum Sammeln von Handwerkerleistungen und Werbungskosten für die Steuererklärung diente.
+Anwesenheits-, Urlaubs- und Arbeitszeit-Tracker mit Steuerteil (Web-App). Berechnet die Homeoffice-/Büro-Anwesenheitsquote, verfolgt Urlaubskontingente, erfasst die Pendlerstrecke und sammelt Handwerkerleistungen und Werbungskosten für die Steuererklärung.
 
 Vollständige Projektbeschreibung: [`docs/projektbeschreibung-anwesenheits-app.md`](docs/projektbeschreibung-anwesenheits-app.md).
 
@@ -47,16 +47,6 @@ Lokal und ohne externen Dienst laufen: Feiertagsberechnung (Osterformel je Bunde
 
 Schutzmaßnahmen: keine eigene Verschlüsselung, dafür strikte Firestore-Regeln, nur Beträge + Beleg-Verweis in der App (Originale im privaten OneDrive), minimale OneDrive-Rechte (`Files.ReadWrite.AppFolder`, das ganze OneDrive nur bei eigenem Stamm-Pfad) und KI-Schlüssel ausschließlich im Backend. Die Serverfunktion akzeptiert nur gültige Firebase-ID-Tokens, erlaubt Browser-Aufrufe nur von eingetragenen Origins und hat eine kurze Wartezeit zwischen zwei Scans.
 
-## Setup
-
-```bash
-npm install
-cp .env.example .env.local   # Firebase-Zugangsdaten eintragen
-npm run dev                  # http://localhost:5173
-```
-
-Weitere Befehle: `npm run build` (tsc + vite), `npm run lint`, `npm run preview`, `npm run deploy` (Build + `firebase deploy`).
-
 ### Umgebungsvariablen
 
 | Variable | Pflicht | Zweck |
@@ -97,8 +87,4 @@ docs/           Projektbeschreibung
 
 ## Datenmodell
 
-Siehe [`src/types/models.ts`](src/types/models.ts) — orientiert an Abschnitt 4 der Projektbeschreibung, jedoch bewusst nicht 1:1 aus der Referenz-Excel übernommen.
-
-## Referenz
-
-`docs/Steuern_2026.xlsx` — bisherige Excel-Lösung mit allen Formeln für Anwesenheitsquote, Urlaubszählung und Wegstrecken-Zuordnung. Enthält reale Privatadressen, daher `.gitignore`d — nur lokale Referenz, nicht im Repo.
+Siehe [`src/types/models.ts`](src/types/models.ts) — orientiert an Abschnitt 4 der Projektbeschreibung.

@@ -10,8 +10,10 @@ dist-ssr/
 .env.local
 .env.*.local
 
-# Enthält reale Privatadressen (Wohn-/Arbeitsweg) — nur lokale Referenz, nicht ins Repo
-docs/Steuern_2026.xlsx
+# Lokale Office-Dateien nie committen
+*.xlsx
+*.xls
+*.xlsm
 
 # Editor / OS
 .vscode/*

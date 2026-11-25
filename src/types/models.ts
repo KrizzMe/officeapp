@@ -1,7 +1,5 @@
 /**
  * Datenmodell gemäß docs/projektbeschreibung-anwesenheits-app.md, Abschnitt 4.
- * Bewusst nicht 1:1 aus der Referenz-Excel übernommen — siehe Abschnitt 1 ("kein
- * strukturelles Nachbauen, sondern eigenes Datenmodell mit übernommener Berechnungslogik").
  */
 
 /** Deutsche Bundesländer, für die automatische Feiertagszuordnung. */
@@ -200,8 +198,8 @@ export const DEFAULT_VACATION_TYPE_IDS = {
 
 /**
  * Status eines Tages: einer der festen Basis-Status oder die id einer
- * nutzerdefinierten VacationType. Ersetzt die bisherigen zwei getrennten
- * Excel-Felder (Homeoffice-Flag + Abwesenheits-Dropdown) durch ein Feld.
+ * nutzerdefinierten VacationType. Ein Feld statt zwei getrennter
+ * (Homeoffice-Flag + Abwesenheits-Dropdown).
  */
 export type DayStatus = BaseDayStatus | string
 
