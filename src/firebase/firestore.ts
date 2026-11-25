@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './config'
 import type { DayEntry, HandwerkerBeleg, UserProfile, WerbungskostenBeleg } from '../types/models'
-import type { Arbeitszeit } from '../lib/arbeitszeit'
+import { arbeitszeitOf, type Arbeitszeit } from '../lib/arbeitszeit'
 
 function userDoc(uid: string) {
   return doc(db, 'users', uid)
@@ -84,14 +84,21 @@ export async function setDayEntryGrund(uid: string, entries: DayEntry[], grund: 
   )
 }
 
-/** Nur die gesetzten Arbeitszeit-Felder (Issue #83) eines Eintrags — Firestore lehnt `undefined`-Werte ab. */
-function zeitFelder(entry: Pick<DayEntry, 'beginn' | 'ende' | 'pauseMin'> | undefined): Partial<DayEntry> {
-  const felder: Partial<DayEntry> = {}
-  if (entry?.beginn && entry.ende) {
-    felder.beginn = entry.beginn
-    felder.ende = entry.ende
-    if (entry.pauseMin !== undefined && entry.pauseMin > 0) felder.pauseMin = entry.pauseMin
-  }
+/**
+ * Arbeitszeit-Felder (Issue #83) eines Eintrags im Blockformat; Altformat
+ * (`beginn`/`ende`) wird dabei zu `bloecke`. Firestore lehnt `undefined`-Werte
+ * ab, daher nur gesetzte Felder (ein laufender Block hat kein `ende`).
+ */
+function zeitFelder(
+  entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'stundenMin' | 'pauseMin'> | undefined,
+): Partial<DayEntry> {
+  const zeit = arbeitszeitOf(entry)
+  if (!zeit) return {}
+  const felder: Partial<DayEntry> =
+    zeit.stundenMin !== undefined
+      ? { stundenMin: zeit.stundenMin }
+      : { bloecke: zeit.bloecke.map((b) => (b.ende ? { beginn: b.beginn, ende: b.ende } : { beginn: b.beginn })) }
+  if (zeit.pauseMin !== undefined && zeit.pauseMin > 0) felder.pauseMin = zeit.pauseMin
   return felder
 }
 
@@ -109,7 +116,7 @@ export async function setDayStatus(
   existing: DayEntry | undefined,
 ): Promise<void> {
   const zeit = zeitFelder(existing)
-  if (status === defaultStatus && !zeit.beginn) {
+  if (status === defaultStatus && !zeit.bloecke && !zeit.stundenMin) {
     await clearDayEntry(uid, date)
     return
   }

@@ -1,4 +1,4 @@
-import type { AgFreierTag, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
+import type { AgFreierTag, ArbeitsBlock, Bundesland, DayEntry, UserProfile, Weekday } from '../types/models'
 import { DEFAULT_ARBEITSTAGE, NO_AG_FREIE_TAGE } from '../types/models'
 import { getYearDays, toIsoDate } from './dates'
 import { effectiveDayStatus } from './attendance'
@@ -8,10 +8,13 @@ import { effectiveDayStatus } from './attendance'
  * ganzen Minuten, damit Summen nicht durch Gleitkomma-Rundung abdriften.
  */
 
-/** Zeitfelder eines Tageseintrags (DayEntry.beginn/ende/pauseMin). */
+/**
+ * Arbeitszeit eines Tages: Arbeitsblöcke oder (CR 3) nur eine Stundenzahl
+ * (`stundenMin`, dann ist `bloecke` leer), plus optional selbst eingetragene Pause.
+ */
 export interface Arbeitszeit {
-  beginn: string
-  ende: string
+  bloecke: ArbeitsBlock[]
+  stundenMin?: number
   pauseMin?: number
 }
 
@@ -32,10 +35,35 @@ export function parseUhrzeit(value: string | undefined): number | null {
   return h * 60 + m
 }
 
-/** Zeitfelder eines Tageseintrags, sofern Beginn und Ende gesetzt sind. */
-export function arbeitszeitOf(entry: DayEntry | undefined): Arbeitszeit | undefined {
-  if (!entry?.beginn || !entry.ende) return undefined
-  return { beginn: entry.beginn, ende: entry.ende, pauseMin: entry.pauseMin }
+/** Minuten seit Mitternacht → "HH:MM". */
+export function formatUhrzeit(min: number): string {
+  const clamped = Math.max(0, Math.min(23 * 60 + 59, Math.round(min)))
+  return `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`
+}
+
+/**
+ * Arbeitszeit eines Tageseintrags, sofern Blöcke erfasst sind. Einträge im
+ * Altformat (nur `beginn`/`ende`) werden als ein Block gelesen.
+ */
+export function arbeitszeitOf(
+  entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'stundenMin' | 'pauseMin'> | undefined,
+): Arbeitszeit | undefined {
+  if (!entry) return undefined
+  if (entry.stundenMin !== undefined && entry.stundenMin > 0) {
+    return { bloecke: [], stundenMin: entry.stundenMin, pauseMin: entry.pauseMin }
+  }
+  const bloecke = entry.bloecke?.length
+    ? entry.bloecke
+    : entry.beginn && entry.ende
+      ? [{ beginn: entry.beginn, ende: entry.ende }]
+      : undefined
+  if (!bloecke) return undefined
+  return { bloecke, pauseMin: entry.pauseMin }
+}
+
+/** Ob der letzte Block noch läuft (Beginn gestempelt, Ende noch nicht). */
+export function hatOffenenBlock(zeit: Arbeitszeit | undefined): boolean {
+  return !!zeit && zeit.bloecke.length > 0 && !zeit.bloecke[zeit.bloecke.length - 1].ende
 }
 
 /** Gesetzliche Mindestpause für eine Anwesenheitsdauer (volle 30/45 Min., ohne Kappung). */
@@ -43,34 +71,154 @@ export function gesetzlichePauseMin(anwesendMin: number): number {
   return PAUSE_REGELN.find((r) => anwesendMin > r.abMin)?.pauseMin ?? 0
 }
 
+/**
+ * Prüft die Blöcke eines Tages: gültige Uhrzeiten, Ende nach Beginn,
+ * aufsteigend und ohne Überschneidung, höchstens der letzte Block offen.
+ * Liefert eine Fehlermeldung oder `null`.
+ */
+export function pruefeBloecke(bloecke: ArbeitsBlock[], offenErlaubt: boolean): string | null {
+  if (bloecke.length === 0) return 'Bitte mindestens einen Arbeitsblock angeben.'
+  let vorherEnde = -1
+  for (let i = 0; i < bloecke.length; i++) {
+    const nr = bloecke.length > 1 ? ` (Block ${i + 1})` : ''
+    const beginn = parseUhrzeit(bloecke[i].beginn)
+    if (beginn === null) return `Bitte einen gültigen Beginn angeben${nr}.`
+    if (beginn < vorherEnde) return `Die Blöcke dürfen sich nicht überschneiden${nr}.`
+    if (!bloecke[i].ende) {
+      if (i < bloecke.length - 1 || !offenErlaubt) return `Bitte ein Ende angeben${nr}.`
+      return null
+    }
+    const ende = parseUhrzeit(bloecke[i].ende)
+    if (ende === null) return `Bitte ein gültiges Ende angeben${nr}.`
+    if (ende <= beginn) return `Das Ende muss nach dem Beginn liegen${nr}.`
+    vorherEnde = ende
+  }
+  return null
+}
+
+/** Blöcke nach Beginn sortiert (für die Eingabe in beliebiger Reihenfolge). */
+export function sortiereBloecke(bloecke: ArbeitsBlock[]): ArbeitsBlock[] {
+  return [...bloecke].sort((a, b) => (parseUhrzeit(a.beginn) ?? 0) - (parseUhrzeit(b.beginn) ?? 0))
+}
+
 export interface NettoArbeitszeit {
-  /** Ende − Beginn. */
+  /** Beginn des ersten bis Ende des letzten Blocks. */
   anwesendMin: number
-  /** Tatsächlich abgezogene Pause: das Größere aus eigener und gesetzlicher Pause. */
-  pauseMin: number
-  /** Ob die gesetzliche Mindestpause die eigene Angabe übersteigt (Hinweis in der Eingabe). */
+  /** Lücken zwischen den Blöcken (keine Arbeitszeit). */
+  lueckenMin: number
+  /** Selbst eingetragene Pause. */
+  eigenePauseMin: number
+  /** Zusätzlich abgezogen, weil Lücken + eigene Pause die gesetzliche Mindestpause nicht erreichen. */
+  zusatzPauseMin: number
+  /** Ob die gesetzliche Mindestpause einen zusätzlichen Abzug ausgelöst hat (Hinweis in der Eingabe). */
   gesetzlichAngewendet: boolean
   nettoMin: number
 }
 
 /**
- * Netto-Arbeitszeit eines Tages. `null`, wenn Beginn/Ende ungültig sind oder
- * das Ende nicht nach dem Beginn liegt (keine Schichten über Mitternacht).
+ * Netto-Arbeitszeit eines Tages: Summe der Blöcke abzüglich eigener Pause;
+ * Lücken + eigene Pause werden bei Bedarf auf die gesetzliche Mindestpause
+ * (bemessen an der Anwesenheit) aufgefüllt. Ein offener letzter Block zählt
+ * bis `offenBisMin` (laufender Tag), ohne diesen Wert ist das Ergebnis `null`.
+ * Ebenfalls `null` bei ungültigen Blöcken.
  */
-export function berechneNetto(zeit: Arbeitszeit): NettoArbeitszeit | null {
-  const beginn = parseUhrzeit(zeit.beginn)
-  const ende = parseUhrzeit(zeit.ende)
-  if (beginn === null || ende === null || ende <= beginn) return null
-  const anwesendMin = ende - beginn
-  const eigenePause = Math.max(0, Math.round(zeit.pauseMin ?? 0))
-  const gesetzlich = gesetzlichePauseMin(anwesendMin)
-  const pauseMin = Math.min(anwesendMin, Math.max(eigenePause, gesetzlich))
+export function berechneNetto(zeit: Arbeitszeit, offenBisMin?: number): NettoArbeitszeit | null {
+  const eigenePauseMin = Math.max(0, Math.round(zeit.pauseMin ?? 0))
+
+  if (zeit.stundenMin !== undefined) {
+    // Nur Stunden (CR 3): wie ein einzelner Block der Länge stundenMin.
+    const anwesendMin = Math.round(zeit.stundenMin)
+    if (!(anwesendMin > 0)) return null
+    const zusatzPauseMin = Math.max(0, gesetzlichePauseMin(anwesendMin) - eigenePauseMin)
+    return {
+      anwesendMin,
+      lueckenMin: 0,
+      eigenePauseMin,
+      zusatzPauseMin,
+      gesetzlichAngewendet: zusatzPauseMin > 0,
+      nettoMin: Math.max(0, anwesendMin - eigenePauseMin - zusatzPauseMin),
+    }
+  }
+
+  const offen = hatOffenenBlock(zeit)
+  if (offen && offenBisMin === undefined) return null
+  if (pruefeBloecke(zeit.bloecke, offen) !== null) return null
+
+  const spannen = zeit.bloecke.map((b) => {
+    const beginn = parseUhrzeit(b.beginn) as number
+    const ende = b.ende ? (parseUhrzeit(b.ende) as number) : Math.max(beginn, offenBisMin as number)
+    return { beginn, ende }
+  })
+  const summeMin = spannen.reduce((sum, s) => sum + (s.ende - s.beginn), 0)
+  const anwesendMin = spannen[spannen.length - 1].ende - spannen[0].beginn
+  const lueckenMin = anwesendMin - summeMin
+  const zusatzPauseMin = Math.max(0, gesetzlichePauseMin(anwesendMin) - lueckenMin - eigenePauseMin)
   return {
     anwesendMin,
-    pauseMin,
-    gesetzlichAngewendet: gesetzlich > eigenePause,
-    nettoMin: anwesendMin - pauseMin,
+    lueckenMin,
+    eigenePauseMin,
+    zusatzPauseMin,
+    gesetzlichAngewendet: zusatzPauseMin > 0,
+    nettoMin: Math.max(0, summeMin - eigenePauseMin - zusatzPauseMin),
   }
+}
+
+/**
+ * Kleinste Anwesenheit (für „Nur Stunden“), die nach Abzug der gesetzlichen
+ * Mindestpause genau `nettoMin` ergibt, z. B. 7:36 h → 8:06 h (CR 3, „Monat mit Soll füllen“).
+ */
+export function anwesenheitFuerNetto(nettoMin: number): number {
+  for (const pause of [0, 30, 45]) {
+    const anwesend = nettoMin + pause
+    if (gesetzlichePauseMin(anwesend) <= pause) return anwesend
+  }
+  return nettoMin + 45
+}
+
+/** Eingabe einer Dauer ("7:30", "7,5") → Minuten, `null` bei ungültiger oder nicht positiver Eingabe. */
+export function parseDauer(value: string): number | null {
+  if (/^\s*[+\-−]/.test(value)) return null
+  const min = parseSaldo(value)
+  return min !== null && min > 0 ? min : null
+}
+
+/*
+ * Stempeln auf dem Dashboard: Beginn wird auf 5 Min. abgerundet und dann
+ * 5 Min. früher gebucht, Ende auf 5 Min. aufgerundet und dann 5 Min. später
+ * (Weg Tiefgarage ↔ Arbeitsplatz zählt als Arbeitszeit). 8:21 → 8:15, 17:44 → 17:50.
+ */
+export function stempelBeginnMin(jetzt: Date): number {
+  const min = jetzt.getHours() * 60 + jetzt.getMinutes()
+  return Math.max(0, Math.floor(min / 5) * 5 - 5)
+}
+
+export function stempelEndeMin(jetzt: Date): number {
+  const min = jetzt.getHours() * 60 + jetzt.getMinutes()
+  return Math.min(23 * 60 + 59, Math.ceil(min / 5) * 5 + 5)
+}
+
+/** Minuten seit Mitternacht von `date`. */
+export function minutenSeitMitternacht(date: Date): number {
+  return date.getHours() * 60 + date.getMinutes()
+}
+
+/**
+ * Feierabend-Prognose bei laufendem Block: frühester Klick auf „Ende“ (ab
+ * jetzt, minutengenau), mit dem das Tagessoll inkl. Pausenabzug und
+ * Ende-Rundung erreicht ist. `null`, wenn heute nicht mehr erreichbar.
+ */
+export function feierabendPrognose(
+  zeit: Arbeitszeit,
+  sollMin: number,
+  jetzt: Date,
+): { klickMin: number; gebuchtMin: number } | null {
+  if (!hatOffenenBlock(zeit)) return null
+  for (let klick = minutenSeitMitternacht(jetzt); klick < 24 * 60; klick++) {
+    const gebucht = Math.min(23 * 60 + 59, Math.ceil(klick / 5) * 5 + 5)
+    const netto = berechneNetto(zeit, gebucht)
+    if (netto && netto.nettoMin >= sollMin) return { klickMin: klick, gebuchtMin: gebucht }
+  }
+  return null
 }
 
 /** Soll je Arbeitstag (Durchschnittstag) in Minuten, `null` ohne hinterlegte Wochenstunden. */
@@ -185,6 +333,16 @@ export function summiereArbeitszeit(
     if (t.art === 'fehlt') summe.fehlendeTage++
   }
   return summe
+}
+
+/**
+ * Vergangene Büro-/Homeoffice-Tage ganz ohne Zeiten (CR 3, „Monat mit Soll
+ * füllen“). Tage mit offenem Block („Ende fehlt“) zählen nicht dazu.
+ */
+export function tageOhneZeiten(days: Date[], entries: Map<string, DayEntry>, ctx: ArbeitszeitKontext): Date[] {
+  return days.filter(
+    (date) => tagesSaldoFuer(date, entries, ctx).art === 'fehlt' && !arbeitszeitOf(entries.get(toIsoDate(date))),
+  )
 }
 
 /** Frühestes Jahr mit erfassten Zeiten, `undefined` wenn noch nie Zeiten erfasst wurden. */

@@ -227,14 +227,30 @@ export interface DayEntry {
    */
   grund?: string
   /**
-   * Arbeitszeit des Tages (Issue #83), nur an Büro-/Homeoffice-Tagen
-   * erfassbar: Beginn und Ende als "HH:MM", optional eine selbst
-   * eingetragene Pause in Minuten. Die Netto-Arbeitszeit (inkl. gesetzlicher
+   * Arbeitsblöcke des Tages (Issue #83), nur an Büro-/Homeoffice-Tagen
+   * erfassbar, z. B. 08:00–14:00 und 16:00–18:00. Lücken zwischen den
+   * Blöcken sind keine Arbeitszeit. Ein Block ohne `ende` läuft noch
+   * (Stempeln auf dem Dashboard). Die Netto-Arbeitszeit (inkl. gesetzlicher
    * Mindestpause) wird nicht gespeichert, sondern in lib/arbeitszeit.ts berechnet.
    */
+  bloecke?: ArbeitsBlock[]
+  /** Altformat (erste Version von #83): ein Block als Beginn/Ende, wird beim nächsten Speichern zu `bloecke`. */
   beginn?: string
   ende?: string
+  /**
+   * Alternative zu `bloecke` (Issue #83, CR 3): nur die Anwesenheit des Tages
+   * in Minuten, ohne Uhrzeiten (z. B. zum Nachtragen). Davon wird wie bei
+   * einem einzelnen Block die gesetzliche Mindestpause abgezogen.
+   */
+  stundenMin?: number
+  /** Optional selbst eingetragene Pause in Minuten, zusätzlich zu den Lücken zwischen den Blöcken. */
   pauseMin?: number
+}
+
+/** Ein Arbeitsblock (Issue #83), Uhrzeiten als "HH:MM". Ohne `ende` läuft der Block noch. */
+export interface ArbeitsBlock {
+  beginn: string
+  ende?: string
 }
 
 /** Ergebnis der 40/60-Anwesenheitsquoten-Berechnung (Abschnitt 5.1) für einen Zeitraum. */

@@ -7,7 +7,7 @@ import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { getAgFreierTagName } from '../../lib/agFreieTage'
 import { statusVisual } from '../../lib/statusColors'
 import { buildStatusOptions, statusLabel } from '../../lib/statusOptions'
-import { arbeitszeitOf, berechneNetto, formatDauer, istZeiterfassungsStatus } from '../../lib/arbeitszeit'
+import { arbeitszeitOf, berechneNetto, formatDauer, hatOffenenBlock, istZeiterfassungsStatus } from '../../lib/arbeitszeit'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { StatusDropdown } from './StatusDropdown'
 
@@ -118,11 +118,8 @@ export function MonthGrid({
               {workday && !holiday && inMonth && istZeiterfassungsStatus(statusId) && (
                 <ZeitButton
                   date={date}
-                  netto={(() => {
-                    const zeit = arbeitszeitOf(entry)
-                    return zeit ? (berechneNetto(zeit)?.nettoMin ?? null) : null
-                  })()}
-                  fehlt={iso < todayIso}
+                  zeit={arbeitszeitOf(entry)}
+                  vergangen={iso < todayIso}
                   compact={isMobile}
                   onClick={() => onEditZeit(date)}
                 />
@@ -137,32 +134,45 @@ export function MonthGrid({
 
 interface ZeitButtonProps {
   date: Date
-  /** Netto-Arbeitszeit in Minuten, `null` ohne (gültige) Zeiten. */
-  netto: number | null
-  /** Vergangener Tag: fehlende Zeiten zählen als Minusstunden und werden hervorgehoben. */
-  fehlt: boolean
+  zeit: ReturnType<typeof arbeitszeitOf>
+  /** Vergangener Tag: fehlende Zeiten bzw. ein fehlendes Ende zählen als Minusstunden und werden hervorgehoben. */
+  vergangen: boolean
   compact: boolean
   onClick: () => void
 }
 
-/** Zeitzeile einer Tageszelle (Issue #83): Netto-Arbeitszeit oder Hinweis auf fehlende Zeiten. */
-function ZeitButton({ date, netto, fehlt, compact, onClick }: ZeitButtonProps) {
+/**
+ * Zeitzeile einer Tageszelle (Issue #83): Netto-Arbeitszeit, ein laufender
+ * Block (heute gestempelt) oder Hinweis auf fehlende Zeiten bzw. fehlendes Ende.
+ */
+function ZeitButton({ date, zeit, vergangen, compact, onClick }: ZeitButtonProps) {
   const tag = `${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}`
-  if (netto !== null) {
+  const netto = zeit ? berechneNetto(zeit) : null
+  if (netto) {
     return (
-      <button type="button" className="day-zeit day-zeit--erfasst" onClick={onClick} aria-label={`Arbeitszeit ${tag}: ${formatDauer(netto)} Stunden, bearbeiten`}>
-        {formatDauer(netto)}
+      <button type="button" className="day-zeit day-zeit--erfasst" onClick={onClick} aria-label={`Arbeitszeit ${tag}: ${formatDauer(netto.nettoMin)} Stunden, bearbeiten`}>
+        {formatDauer(netto.nettoMin)}
       </button>
     )
   }
+  if (zeit && hatOffenenBlock(zeit) && !vergangen) {
+    const seit = zeit.bloecke[zeit.bloecke.length - 1].beginn
+    return (
+      <button type="button" className="day-zeit day-zeit--laeuft" onClick={onClick} aria-label={`Arbeitszeit ${tag}: läuft seit ${seit}, bearbeiten`}>
+        {compact ? '▶' : `▶ ${seit}`}
+      </button>
+    )
+  }
+  const endeFehlt = !!zeit && hatOffenenBlock(zeit)
+  const fehlt = vergangen || endeFehlt
   return (
     <button
       type="button"
       className={fehlt ? 'day-zeit day-zeit--fehlt' : 'day-zeit'}
       onClick={onClick}
-      aria-label={`Arbeitszeit ${tag} ${fehlt ? 'fehlt' : 'eintragen'}`}
+      aria-label={`Arbeitszeit ${tag} ${endeFehlt ? ': Ende fehlt' : fehlt ? 'fehlt' : 'eintragen'}`}
     >
-      {compact ? '⏱' : fehlt ? '⏱ fehlt' : '⏱ +'}
+      {compact ? '⏱' : endeFehlt ? '⏱ Ende fehlt' : fehlt ? '⏱ fehlt' : '⏱ +'}
     </button>
   )
 }
