@@ -24,9 +24,28 @@ Offene Themen (Auswahl): gemeinsame Kalenderansicht (#12), Code-Splitting (#9), 
 - **Auth:** Firebase Auth (Google Sign-In)
 - **Datenhaltung:** Firestore (`users/{uid}` mit Unter-Collections `days`, `handwerker`, `werbungskosten`; Regeln in `firestore.rules`)
 - **Hosting:** Firebase Hosting (Projekt `officeapp-krizzme`, Target `prod`)
-- **Beleg-Auslesung:** Serverfunktion in [`vercel-api/`](vercel-api/README.md) (eigenes Vercel-Projekt, Mistral Vision); PDFs per `pdfjs-dist`
-- **Beleg-Ablage:** OneDrive über Microsoft Graph + MSAL.js (`@azure/msal-browser`)
-- **Adressprüfung/Arbeitsweg:** OpenStreetMap Nominatim (Geocoding) und OSRM (Routing)
+- **Serverfunktion:** [`vercel-api/`](vercel-api/README.md) auf Vercel (KI-Beleg-Scan)
+- **Bibliotheken:** `firebase`, `@azure/msal-browser` (OneDrive-Login), `pdfjs-dist` (PDF-Text und -Vorschau)
+- Externe APIs (Adressprüfung, KI, OneDrive …): siehe [Externe Dienste & APIs](#externe-dienste--apis)
+
+## Externe Dienste & APIs
+
+Welche Dienste die App nutzt, wofür und welche Daten dorthin gehen. Zugangsdaten stehen nie im Repo, sondern in `.env.local`, GitHub-Secrets bzw. den Vercel-Umgebungsvariablen (nur die Variablennamen sind hier genannt).
+
+| Bereich | Dienst | Aufruf von | Was übertragen wird | Konfiguration |
+|---|---|---|---|---|
+| Hosting der App | Firebase Hosting (Google) | CI bei Merge auf `main` | statischer Build (`dist/`) | GitHub-Secret Service-Account, Target `prod` |
+| Login | Firebase Authentication, Google Sign-In (Popup) | Browser | Google-Konto-Anmeldung | `VITE_FIREBASE_*` |
+| Datenhaltung | Cloud Firestore | Browser (Firebase SDK) | Profil, Tagesstatus, Arbeitszeiten, Belegdaten — je Nutzer isoliert per `firestore.rules` | `VITE_FIREBASE_*` |
+| Adressprüfung (Geocoding, #61) | OpenStreetMap **Nominatim** (öffentliche API, kostenlos) | Browser, nur per Klick auf „Prüfen“ | eingegebene Wohn-/Arbeitsadresse | keine; Nutzungsrichtlinie: max. 1 Anfrage/Sekunde, kein Bulk-Geocoding |
+| Kürzester Arbeitsweg (#61) | **OSRM**-Demo-Server (`router.project-osrm.org`, kostenlos) | Browser | Koordinaten von Wohn- und Arbeitsort | keine; Auto-Routing, für geringes Anfragevolumen gedacht |
+| KI-Beleg-Scan (#79) | Eigene Serverfunktion auf **Vercel** (`vercel-api/`) → **Mistral AI** (Modell `ministral-14b-2512`, überschreibbar) | Browser → Vercel → Mistral | verkleinerte Belegfotos bzw. PDF-Seiten (max. 8) oder Text digitaler PDFs; nicht gespeichert, nicht geloggt | App: `VITE_BELEG_API_URL`; Vercel: `MISTRAL_API_KEY`, `MISTRAL_MODEL`, `FIREBASE_API_KEY`, `ALLOWED_ORIGINS` |
+| Token-Prüfung der Serverfunktion | Firebase Auth REST-API (Identity Toolkit) | Vercel | Firebase-ID-Token des angemeldeten Nutzers | `FIREBASE_API_KEY` |
+| Beleg-Ablage (#79/#81) | **Microsoft OneDrive** über Microsoft Graph, Login per MSAL.js (nur private Microsoft-Konten) | Browser | Beleg-Datei (Foto/PDF); gespeichert wird nur der Link | `VITE_MS_CLIENT_ID` (Entra-App-Registrierung) |
+
+Lokal und ohne externen Dienst laufen: Feiertagsberechnung (Osterformel je Bundesland), PDF-Auslesen und -Vorschau (`pdfjs-dist`), Zusammenfassen mehrerer Fotos zu einem PDF sowie alle Quoten-, Urlaubs-, km- und Arbeitszeit-Berechnungen.
+
+Schutzmaßnahmen (Entscheidung #11): keine eigene Verschlüsselung, dafür strikte Firestore-Regeln, nur Beträge + Beleg-Verweis in der App (Originale im privaten OneDrive), minimale OneDrive-Rechte (`Files.ReadWrite.AppFolder`, das ganze OneDrive nur bei eigenem Stamm-Pfad) und KI-Schlüssel ausschließlich im Backend. Die Serverfunktion akzeptiert nur gültige Firebase-ID-Tokens, erlaubt Browser-Aufrufe nur von eingetragenen Origins und hat eine kurze Wartezeit zwischen zwei Scans.
 
 ## Setup
 
