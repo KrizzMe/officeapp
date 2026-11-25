@@ -175,6 +175,18 @@ export interface UserProfile {
   belegOrdnerHandwerker?: string
   /** Ordnername für Werbungskosten-Belege unter dem Jahresordner (Standard siehe lib/belegOrdner.ts). */
   belegOrdnerWerbungskosten?: string
+  /**
+   * Vertragliche Wochenarbeitszeit in Stunden (Issue #83), z. B. 38. Der
+   * Durchschnittstag (Soll je Arbeitstag) ist wochenstunden / Anzahl
+   * arbeitstage. Fehlt das Feld, ist das Überstunden-Saldo nicht berechenbar.
+   */
+  wochenstunden?: number
+  /**
+   * Manuell gesetzter Überstunden-Übertrag je Jahr in Minuten (Issue #83),
+   * Schlüssel = Jahreszahl als String. Jahre ohne Eintrag übernehmen
+   * automatisch den Endsaldo des Vorjahres (siehe lib/arbeitszeit.ts).
+   */
+  arbeitszeitUebertragByYear?: Record<string, number>
 }
 
 /** Feste, nicht vom Nutzer konfigurierbare Basis-Status (Abschnitt 4.2). */
@@ -214,6 +226,15 @@ export interface DayEntry {
    * zusammenhängenden Zeitraums gleichgesetzt.
    */
   grund?: string
+  /**
+   * Arbeitszeit des Tages (Issue #83), nur an Büro-/Homeoffice-Tagen
+   * erfassbar: Beginn und Ende als "HH:MM", optional eine selbst
+   * eingetragene Pause in Minuten. Die Netto-Arbeitszeit (inkl. gesetzlicher
+   * Mindestpause) wird nicht gespeichert, sondern in lib/arbeitszeit.ts berechnet.
+   */
+  beginn?: string
+  ende?: string
+  pauseMin?: number
 }
 
 /** Ergebnis der 40/60-Anwesenheitsquoten-Berechnung (Abschnitt 5.1) für einen Zeitraum. */

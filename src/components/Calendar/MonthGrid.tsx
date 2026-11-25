@@ -7,6 +7,7 @@ import { getHolidayName, isWeekend } from '../../lib/holidays'
 import { getAgFreierTagName } from '../../lib/agFreieTage'
 import { statusVisual } from '../../lib/statusColors'
 import { buildStatusOptions, statusLabel } from '../../lib/statusOptions'
+import { arbeitszeitOf, berechneNetto, formatDauer, istZeiterfassungsStatus } from '../../lib/arbeitszeit'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { StatusDropdown } from './StatusDropdown'
 
@@ -24,8 +25,10 @@ interface Props {
   arbeitstage: readonly Weekday[]
   /** An welchen Wochentagen der Nutzer i. d. R. im Homeoffice ist (UserProfile.homeofficeWeekdays, Issue #39). */
   homeofficeWeekdays: readonly Weekday[]
-  onStatusChange: (date: Date, status: string) => void
-  onClearStatus: (date: Date) => void
+  /** Neuer Status samt berechnetem Default des Tages (entspricht er dem Default, fällt der Tag auf die Fallback-Logik zurück). */
+  onStatusChange: (date: Date, status: string, defaultStatus: string) => void
+  /** Öffnet die Arbeitszeit-Eingabe für einen Büro-/Homeoffice-Tag (Issue #83). */
+  onEditZeit: (date: Date) => void
 }
 
 export function MonthGrid({
@@ -39,7 +42,7 @@ export function MonthGrid({
   arbeitstage,
   homeofficeWeekdays,
   onStatusChange,
-  onClearStatus,
+  onEditZeit,
 }: Props) {
   const days = getMonthGrid(year, month)
   const todayIso = toIsoDate(new Date())
@@ -48,20 +51,6 @@ export function MonthGrid({
   // s. StatusDropdown) bleibt der Text unabhängig davon immer sichtbar
   // (Issue #36).
   const isMobile = useMediaQuery('(max-width: 639px)')
-
-  /**
-   * Ein gewählter Status, der dem berechneten Default entspricht (i. d. R.
-   * `buero`, für zukünftige Homeoffice-Wochentage aber `homeoffice`, Issue
-   * #39), wird nicht als Eintrag geschrieben, sondern der Tag bleibt/wird
-   * wieder eine Ausnahme-freie Fallback-Zelle.
-   */
-  const handleSelect = (date: Date, value: string, defaultStatus: string) => {
-    if (value === defaultStatus) {
-      onClearStatus(date)
-    } else {
-      onStatusChange(date, value)
-    }
-  }
 
   return (
     <div style={{ '--workday-count': arbeitstage.length } as CSSProperties}>
@@ -118,17 +107,62 @@ export function MonthGrid({
                 <StatusDropdown
                   value={statusId}
                   options={buildStatusOptions(vacationTypes, homeofficeErlaubt, statusId)}
-                  onChange={(v) => handleSelect(date, v, defaultStatusId)}
+                  onChange={(v) => onStatusChange(date, v, defaultStatusId)}
                   color={visual.color}
                   hatched={visual.hatched}
                   showLabelWhenClosed={!isMobile}
                   ariaLabel={`Status für ${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}: ${statusLabel(statusId, vacationTypes)}`}
                 />
               ) : null}
+
+              {workday && !holiday && inMonth && istZeiterfassungsStatus(statusId) && (
+                <ZeitButton
+                  date={date}
+                  netto={(() => {
+                    const zeit = arbeitszeitOf(entry)
+                    return zeit ? (berechneNetto(zeit)?.nettoMin ?? null) : null
+                  })()}
+                  fehlt={iso < todayIso}
+                  compact={isMobile}
+                  onClick={() => onEditZeit(date)}
+                />
+              )}
             </div>
           )
         })}
       </div>
     </div>
+  )
+}
+
+interface ZeitButtonProps {
+  date: Date
+  /** Netto-Arbeitszeit in Minuten, `null` ohne (gültige) Zeiten. */
+  netto: number | null
+  /** Vergangener Tag: fehlende Zeiten zählen als Minusstunden und werden hervorgehoben. */
+  fehlt: boolean
+  compact: boolean
+  onClick: () => void
+}
+
+/** Zeitzeile einer Tageszelle (Issue #83): Netto-Arbeitszeit oder Hinweis auf fehlende Zeiten. */
+function ZeitButton({ date, netto, fehlt, compact, onClick }: ZeitButtonProps) {
+  const tag = `${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'long' })}`
+  if (netto !== null) {
+    return (
+      <button type="button" className="day-zeit day-zeit--erfasst" onClick={onClick} aria-label={`Arbeitszeit ${tag}: ${formatDauer(netto)} Stunden, bearbeiten`}>
+        {formatDauer(netto)}
+      </button>
+    )
+  }
+  return (
+    <button
+      type="button"
+      className={fehlt ? 'day-zeit day-zeit--fehlt' : 'day-zeit'}
+      onClick={onClick}
+      aria-label={`Arbeitszeit ${tag} ${fehlt ? 'fehlt' : 'eintragen'}`}
+    >
+      {compact ? '⏱' : fehlt ? '⏱ fehlt' : '⏱ +'}
+    </button>
   )
 }

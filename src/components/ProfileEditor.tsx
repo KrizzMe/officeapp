@@ -5,6 +5,7 @@ import { BUNDESLAENDER } from '../lib/bundeslaender'
 import { updateUserProfile } from '../firebase/firestore'
 import { CommuteCheck } from './CommuteCheck'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import { formatDauer, sollMinProTag } from '../lib/arbeitszeit'
 
 interface Props {
   profile: UserProfile
@@ -37,6 +38,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
   const [homeofficeWeekdays, setHomeofficeWeekdays] = useState<Weekday[]>(
     (profile.homeofficeWeekdays ?? []).filter((d) => arbeitstage.includes(d)),
   )
+  const [wochenstunden, setWochenstunden] = useState(profile.wochenstunden ? String(profile.wochenstunden) : '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   /* Speichern/Abbrechen auf Mobile als Icons statt Text (Issue #63-Folgeticket). */
@@ -95,6 +97,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
         homeofficeErlaubt,
         homeofficeQuote: Number(homeofficeQuote) || 0,
         homeofficeWeekdays: homeofficeErlaubt ? homeofficeWeekdays : [],
+        wochenstunden: Number(wochenstunden.replace(',', '.')) || 0,
       }
       await updateUserProfile(profile.uid, patch)
       onSaved()
@@ -222,6 +225,31 @@ export function ProfileEditor({ profile, onSaved, onCancel }: Props) {
           ))}
         </div>
       </div>
+
+      <label className="field">
+        <span>Wochenarbeitszeit laut Arbeitsvertrag (Stunden)</span>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          max="80"
+          step="0.01"
+          inputMode="decimal"
+          value={wochenstunden}
+          onChange={(e) => setWochenstunden(e.target.value)}
+          placeholder="z. B. 38"
+        />
+      </label>
+      {(() => {
+        const soll = sollMinProTag({ wochenstunden: Number(wochenstunden.replace(',', '.')) || 0, arbeitstage })
+        return (
+          <p className="form-hint">
+            {soll !== null
+              ? `Durchschnittstag: ${formatDauer(soll)} h je Arbeitstag. Diese Zeit wird für Dienstreise, Urlaub, Krankheit, Feiertage und AG-freie Tage gutgeschrieben.`
+              : 'Für das Überstunden-Saldo die vertragliche Wochenarbeitszeit eintragen.'}
+          </p>
+        )
+      })()}
 
       <label className="checkbox-label" style={{ marginBottom: 'var(--space-3)' }}>
         <input

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { CommuteSummary } from '../lib/commute'
 import type { AttendanceQuota, VacationBalance, VacationType } from '../types/models'
 import { AttendanceQuotaTile } from './AttendanceQuotaTile'
@@ -18,6 +19,8 @@ interface Props {
   homeofficeErlaubt: boolean
   /** Jahr, auf das sich die Urlaubssalden beziehen (für den Hinweistext der Kacheln). */
   year: number
+  /** Überstunden-Kachel des Monats (Issue #83). */
+  arbeitszeitTile?: ReactNode
 }
 
 export function MonthStats({
@@ -30,10 +33,13 @@ export function MonthStats({
   vacationTypes,
   homeofficeErlaubt,
   year,
+  arbeitszeitTile,
 }: Props) {
   return (
     <div className="card-grid">
       {homeofficeErlaubt && <AttendanceQuotaTile quota={quota} periodLabel={quotaLabel} />}
+
+      {arbeitszeitTile}
 
       {balances.map((b) => {
         const vacationType = vacationTypes.find((v) => v.id === b.vacationTypeId)
