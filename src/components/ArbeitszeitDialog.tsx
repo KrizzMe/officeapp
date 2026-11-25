@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { DayEntry } from '../types/models'
-import { arbeitszeitOf, berechneNetto, formatDauer, formatSaldo, type Arbeitszeit } from '../lib/arbeitszeit'
+import type { ArbeitsBlock, DayEntry } from '../types/models'
+import {
+  arbeitszeitOf,
+  berechneNetto,
+  formatDauer,
+  formatSaldo,
+  minutenSeitMitternacht,
+  pruefeBloecke,
+  sortiereBloecke,
+  type Arbeitszeit,
+} from '../lib/arbeitszeit'
+import { toIsoDate } from '../lib/dates'
 
 interface Props {
   date: Date
@@ -11,19 +21,24 @@ interface Props {
   onClose: () => void
 }
 
+const LEERER_BLOCK: ArbeitsBlock = { beginn: '', ende: '' }
+
 /**
- * Eingabe von Beginn/Ende/Pause eines Tages (Issue #83) als modaler Dialog
- * aus der Monatsübersicht. Zeigt live die Netto-Arbeitszeit inkl. der
- * automatisch abgezogenen gesetzlichen Mindestpause.
+ * Eingabe der Arbeitsblöcke eines Tages (Issue #83) als modaler Dialog aus
+ * der Monatsübersicht, z. B. 08:00–14:00 und 16:00–18:00. Zeigt live die
+ * Netto-Arbeitszeit inkl. der gesetzlichen Mindestpause. Am heutigen Tag
+ * darf der letzte Block offen bleiben (läuft noch, vgl. Stempeln im Dashboard).
  */
 export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const vorhanden = arbeitszeitOf(entry)
-  const [beginn, setBeginn] = useState(vorhanden?.beginn ?? '')
-  const [ende, setEnde] = useState(vorhanden?.ende ?? '')
+  const [bloecke, setBloecke] = useState<ArbeitsBlock[]>(
+    vorhanden ? vorhanden.bloecke.map((b) => ({ beginn: b.beginn, ende: b.ende ?? '' })) : [{ ...LEERER_BLOCK }],
+  )
   const [pause, setPause] = useState(vorhanden?.pauseMin ? String(vorhanden.pauseMin) : '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const istHeute = toIsoDate(date) === toIsoDate(new Date())
 
   useEffect(() => {
     const dialog = ref.current
@@ -31,8 +46,17 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
   }, [])
 
   const pauseMin = pause.trim() === '' ? undefined : Math.max(0, Math.round(Number(pause.replace(',', '.'))))
-  const zeit: Arbeitszeit = { beginn, ende, ...(pauseMin ? { pauseMin } : {}) }
-  const netto = beginn && ende ? berechneNetto(zeit) : null
+  const bereinigt: ArbeitsBlock[] = sortiereBloecke(
+    bloecke
+      .filter((b) => b.beginn || b.ende)
+      .map((b) => (b.ende ? { beginn: b.beginn, ende: b.ende } : { beginn: b.beginn })),
+  )
+  const zeit: Arbeitszeit = { bloecke: bereinigt, ...(pauseMin ? { pauseMin } : {}) }
+  const netto = berechneNetto(zeit, istHeute ? minutenSeitMitternacht(new Date()) : undefined)
+  const laeuft = bereinigt.length > 0 && !bereinigt[bereinigt.length - 1].ende
+
+  const updateBlock = (index: number, feld: keyof ArbeitsBlock, value: string) =>
+    setBloecke((prev) => prev.map((b, i) => (i === index ? { ...b, [feld]: value } : b)))
 
   const run = async (value: Arbeitszeit | null) => {
     setSaving(true)
@@ -52,8 +76,9 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
       setError('Pause bitte in ganzen Minuten angeben.')
       return
     }
-    if (!netto) {
-      setError('Bitte Beginn und Ende angeben; das Ende muss nach dem Beginn liegen.')
+    const fehler = pruefeBloecke(bereinigt, istHeute)
+    if (fehler) {
+      setError(fehler)
       return
     }
     void run(zeit)
@@ -68,38 +93,82 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
           Arbeitszeit {titel}
         </h3>
 
-        <div className="zeit-dialog-fields">
-          <label className="field">
-            <span>Beginn</span>
-            <input className="input" type="time" value={beginn} onChange={(e) => setBeginn(e.target.value)} required />
-          </label>
-          <label className="field">
-            <span>Ende</span>
-            <input className="input" type="time" value={ende} onChange={(e) => setEnde(e.target.value)} required />
-          </label>
-          <label className="field">
-            <span>Pause (Min., optional)</span>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              value={pause}
-              onChange={(e) => setPause(e.target.value)}
-            />
-          </label>
+        <div className="zeit-bloecke">
+          {bloecke.map((block, index) => (
+            <div key={index} className="zeit-block-row">
+              <label className="field">
+                <span>Beginn</span>
+                <input
+                  className="input"
+                  type="time"
+                  value={block.beginn}
+                  onChange={(e) => updateBlock(index, 'beginn', e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>Ende{istHeute && index === bloecke.length - 1 ? ' (leer = läuft)' : ''}</span>
+                <input
+                  className="input"
+                  type="time"
+                  value={block.ende ?? ''}
+                  onChange={(e) => updateBlock(index, 'ende', e.target.value)}
+                />
+              </label>
+              {bloecke.length > 1 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary zeit-block-remove"
+                  aria-label={`Block ${index + 1} entfernen`}
+                  onClick={() => setBloecke((prev) => prev.filter((_, i) => i !== index))}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setBloecke((prev) => [...prev, { ...LEERER_BLOCK }])}
+          >
+            + Arbeitsblock
+          </button>
         </div>
+
+        <label className="field">
+          <span>Pause (Min., optional)</span>
+          <input
+            className="input"
+            type="number"
+            min="0"
+            step="1"
+            inputMode="numeric"
+            value={pause}
+            onChange={(e) => setPause(e.target.value)}
+          />
+        </label>
 
         {netto && (
           <dl className="zeit-dialog-summary">
             <dt>Anwesenheit</dt>
-            <dd>{formatDauer(netto.anwesendMin)} h</dd>
-            <dt>Pause</dt>
             <dd>
-              {formatDauer(netto.pauseMin)} h
-              {netto.gesetzlichAngewendet && <span className="zeit-dialog-hint"> (gesetzliche Mindestpause)</span>}
+              {formatDauer(netto.anwesendMin)} h{laeuft && <span className="zeit-dialog-hint"> (läuft)</span>}
             </dd>
+            {netto.lueckenMin > 0 && (
+              <>
+                <dt>Unterbrechungen</dt>
+                <dd>{formatDauer(netto.lueckenMin)} h</dd>
+              </>
+            )}
+            {netto.eigenePauseMin + netto.zusatzPauseMin > 0 && (
+              <>
+                <dt>Pause</dt>
+                <dd>
+                  {formatDauer(netto.eigenePauseMin + netto.zusatzPauseMin)} h
+                  {netto.gesetzlichAngewendet && <span className="zeit-dialog-hint"> (gesetzliche Mindestpause)</span>}
+                </dd>
+              </>
+            )}
             <dt>Arbeitszeit</dt>
             <dd>
               <strong>{formatDauer(netto.nettoMin)} h</strong>

@@ -14,7 +14,8 @@ import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusDropdown } from './Calendar/StatusDropdown'
 import { ArbeitszeitSaldoTile } from './ArbeitszeitSaldoTile'
 import { useArbeitszeitKonto } from '../hooks/useArbeitszeitKonto'
-import { formatSaldo } from '../lib/arbeitszeit'
+import { arbeitszeitOf, formatSaldo, hatOffenenBlock, istZeiterfassungsStatus } from '../lib/arbeitszeit'
+import { StempelTile } from './StempelTile'
 
 interface Props {
   user: User
@@ -62,6 +63,16 @@ export function HomeDashboard({ user, profile }: Props) {
   const defaultStatus = effectiveDayStatus(today, profile.bundesland, agFreieTage, undefined, arbeitstage, homeofficeWeekdays)
   const defaultStatusId = typeof defaultStatus === 'string' ? defaultStatus : 'buero'
 
+  // Vergangene Tage mit offenem Block (Ende beim Stempeln vergessen, Issue #83).
+  const offeneTage = useMemo(
+    () =>
+      [...entries.values()]
+        .filter((e) => e.date < todayIso && hatOffenenBlock(arbeitszeitOf(e)))
+        .map((e) => e.date)
+        .sort(),
+    [entries, todayIso],
+  )
+
   const handleStatusChange = async (value: string) => {
     setWarning(null)
     const vacationType = vacationTypes.find((v) => v.id === value)
@@ -99,6 +110,16 @@ export function HomeDashboard({ user, profile }: Props) {
         </div>
         {warning && <p className="form-warning">{warning}</p>}
       </div>
+
+      {isEditableToday && istZeiterfassungsStatus(todayStatusId) && (
+        <StempelTile
+          uid={user.uid}
+          entry={entries.get(todayIso)}
+          defaultStatus={defaultStatusId}
+          sollMin={konto.ctx?.sollMin ?? null}
+          offeneTage={offeneTage}
+        />
+      )}
 
       <ArbeitszeitSaldoTile label="Überstunden-Saldo" saldoMin={konto.ctx ? konto.gesamtSaldoMin : null}>
         <span className="stat-sub">
