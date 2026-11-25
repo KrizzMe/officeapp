@@ -16,10 +16,15 @@ import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { CommuteKmTile } from './CommuteKmTile'
 import { StatusRangesTable } from './StatusRangesTable'
 import { VacationBalanceTile } from './VacationBalanceTile'
+import { ArbeitszeitJahresTile } from './ArbeitszeitJahresTile'
+import { useArbeitszeitKonto } from '../hooks/useArbeitszeitKonto'
+import { formatSaldo, summiereArbeitszeit } from '../lib/arbeitszeit'
 
 interface Props {
   user: User
   profile: UserProfile
+  /** Nach Änderung des Überstunden-Übertrags (Issue #83) das Profil neu laden. */
+  onProfileUpdated: () => void
 }
 
 /** Per Klick aufklappbare Detail-Zeiträume oben in der Jahresübersicht (Issue #33). */
@@ -80,7 +85,7 @@ function TableHeaderCell({ status }: { status: BaseDayStatus }) {
  * sich auf den angezeigten Monat) unverändert bleibt. calculateAttendanceQuota
  * wird hier einmal übers ganze Jahr und einmal je Monat aufgerufen.
  */
-export function YearOverview({ user, profile }: Props) {
+export function YearOverview({ user, profile, onProfileUpdated }: Props) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [activeDetail, setActiveDetail] = useState<DetailStatus | null>(null)
   const entries = useYearEntries(user.uid, year)
@@ -169,6 +174,15 @@ export function YearOverview({ user, profile }: Props) {
     [yearDays, profile.bundesland, agFreieTage, entries, vacationTypes, arbeitstage],
   )
 
+  const konto = useArbeitszeitKonto(profile, year)
+  const monthlyZeit = useMemo(
+    () =>
+      konto.ctx
+        ? Array.from({ length: 12 }, (_, m) => summiereArbeitszeit(getMonthDays(year, m), entries, konto.ctx!))
+        : null,
+    [konto.ctx, year, entries],
+  )
+
   const activeRanges = useMemo(() => {
     if (!activeDetail) return []
     return computeStatusRanges(year, activeDetail, profile.bundesland, agFreieTage, entries, arbeitstage)
@@ -201,6 +215,8 @@ export function YearOverview({ user, profile }: Props) {
           })}
 
           <CommuteKmTile summary={commute} />
+
+          <ArbeitszeitJahresTile uid={user.uid} year={year} konto={konto} onUpdated={onProfileUpdated} />
         </div>
       </div>
 
@@ -279,6 +295,7 @@ export function YearOverview({ user, profile }: Props) {
                 {homeofficeErlaubt && (
                   <th>{isMobile ? <span role="img" aria-label="Quote">📊</span> : 'Quote'}</th>
                 )}
+                {monthlyZeit && <th>{isMobile ? <span role="img" aria-label="Überstunden">⏱</span> : 'Saldo'}</th>}
               </tr>
             </thead>
             <tbody>
@@ -299,6 +316,22 @@ export function YearOverview({ user, profile }: Props) {
                       }}
                     >
                       {q.possibleWorkDays > 0 ? `${(q.ratio * 100).toFixed(0)}%` : '–'}
+                    </td>
+                  )}
+                  {monthlyZeit && (
+                    <td
+                      style={{
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        color:
+                          monthlyZeit[m].sollMin === 0
+                            ? undefined
+                            : monthlyZeit[m].saldoMin >= 0
+                              ? 'var(--color-success)'
+                              : 'var(--color-danger)',
+                      }}
+                    >
+                      {monthlyZeit[m].sollMin > 0 ? formatSaldo(monthlyZeit[m].saldoMin) : '–'}
                     </td>
                   )}
                 </tr>

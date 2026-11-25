@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   documentId,
   getDoc,
@@ -13,6 +14,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './config'
 import type { DayEntry, HandwerkerBeleg, UserProfile, WerbungskostenBeleg } from '../types/models'
+import type { Arbeitszeit } from '../lib/arbeitszeit'
 
 function userDoc(uid: string) {
   return doc(db, 'users', uid)
@@ -49,6 +51,17 @@ export async function updateUserProfile(uid: string, patch: Partial<UserProfile>
   await updateDoc(userDoc(uid), patch)
 }
 
+/**
+ * Setzt (Minuten) oder entfernt (`null` = wieder automatisch) den manuellen
+ * Überstunden-Übertrag eines Jahres (Issue #83). Feldpfad-Update, damit
+ * parallel geänderte Übertrage anderer Jahre nicht überschrieben werden.
+ */
+export async function setArbeitszeitUebertrag(uid: string, year: number, minuten: number | null): Promise<void> {
+  await updateDoc(userDoc(uid), {
+    [`arbeitszeitUebertragByYear.${year}`]: minuten === null ? deleteField() : minuten,
+  })
+}
+
 export async function setDayEntry(uid: string, entry: DayEntry): Promise<void> {
   await setDoc(dayDoc(uid, entry.date), entry)
 }
@@ -65,9 +78,66 @@ export async function setDayEntryGrund(uid: string, entries: DayEntry[], grund: 
       const payload: DayEntry = { date: entry.date, status: entry.status }
       if (entry.distanceKm !== undefined) payload.distanceKm = entry.distanceKm
       if (trimmed) payload.grund = trimmed
+      Object.assign(payload, zeitFelder(entry))
       return setDayEntry(uid, payload)
     }),
   )
+}
+
+/** Nur die gesetzten Arbeitszeit-Felder (Issue #83) eines Eintrags — Firestore lehnt `undefined`-Werte ab. */
+function zeitFelder(entry: Pick<DayEntry, 'beginn' | 'ende' | 'pauseMin'> | undefined): Partial<DayEntry> {
+  const felder: Partial<DayEntry> = {}
+  if (entry?.beginn && entry.ende) {
+    felder.beginn = entry.beginn
+    felder.ende = entry.ende
+    if (entry.pauseMin !== undefined && entry.pauseMin > 0) felder.pauseMin = entry.pauseMin
+  }
+  return felder
+}
+
+/**
+ * Setzt den Status eines Tages. Entspricht er dem berechneten Default, wird
+ * der Eintrag gelöscht (Tag fällt auf die Fallback-Logik zurück) — es sei
+ * denn, für den Tag sind Arbeitszeiten erfasst (Issue #83): die bleiben bei
+ * jedem Statuswechsel erhalten, der Status wird dann explizit gespeichert.
+ */
+export async function setDayStatus(
+  uid: string,
+  date: string,
+  status: string,
+  defaultStatus: string,
+  existing: DayEntry | undefined,
+): Promise<void> {
+  const zeit = zeitFelder(existing)
+  if (status === defaultStatus && !zeit.beginn) {
+    await clearDayEntry(uid, date)
+    return
+  }
+  await setDayEntry(uid, { date, status, ...zeit })
+}
+
+/**
+ * Speichert (oder entfernt mit `null`) die Arbeitszeit eines Tages (Issue
+ * #83). Andere Felder des Eintrags bleiben erhalten; bleibt ohne Zeiten nur
+ * noch der Default-Status übrig, wird der Eintrag ganz gelöscht.
+ */
+export async function setDayArbeitszeit(
+  uid: string,
+  date: string,
+  zeit: Arbeitszeit | null,
+  defaultStatus: string,
+  existing: DayEntry | undefined,
+): Promise<void> {
+  const payload: DayEntry = { date, status: existing?.status ?? defaultStatus }
+  if (existing?.distanceKm !== undefined) payload.distanceKm = existing.distanceKm
+  if (existing?.grund) payload.grund = existing.grund
+  if (zeit) Object.assign(payload, zeitFelder(zeit))
+  const nurDefault = payload.status === defaultStatus && payload.distanceKm === undefined && !payload.grund
+  if (!zeit && nurDefault) {
+    await clearDayEntry(uid, date)
+    return
+  }
+  await setDayEntry(uid, payload)
 }
 
 /** Löscht einen Tageseintrag, sodass der Tag wieder auf die Fallback-Logik zurückfällt. */
@@ -104,6 +174,21 @@ export function subscribeYearEntries(
     where(documentId(), '<=', `${year}-12-31`),
   )
   return onSnapshot(yearQuery, (snapshot) => {
+    const entries = new Map<string, DayEntry>()
+    snapshot.forEach((docSnap) => {
+      entries.set(docSnap.id, docSnap.data() as DayEntry)
+    })
+    onData(entries)
+  })
+}
+
+/**
+ * Abonniert alle Tageseinträge über alle Jahre (Issue #83): der
+ * Überstunden-Übertrag verkettet die Jahressalden ab dem ersten Jahr mit
+ * erfassten Zeiten. Pro Jahr sind es nur einige hundert kleine Dokumente.
+ */
+export function subscribeAllDayEntries(uid: string, onData: (entries: Map<string, DayEntry>) => void): () => void {
+  return onSnapshot(collection(db, 'users', uid, 'days'), (snapshot) => {
     const entries = new Map<string, DayEntry>()
     snapshot.forEach((docSnap) => {
       entries.set(docSnap.id, docSnap.data() as DayEntry)
