@@ -145,7 +145,7 @@ function App() {
               <ColorThemeEditor profile={profile} onSaved={reload} />
             </>
           )}
-          {activePanel === 'yearOverview' && <YearOverview user={user} profile={profile} onProfileUpdated={reload} />}
+          {activePanel === 'yearOverview' && <YearOverview user={user} profile={profile} />}
           {activePanel === 'handwerker' && <HandwerkerPage user={user} profile={profile} />}
           {activePanel === 'werbungskosten' && <WerbungskostenPage user={user} profile={profile} onProfileUpdated={reload} />}
           {activePanel === 'monthOverview' && <CalendarPage user={user} profile={profile} />}

@@ -17,7 +17,6 @@ import { useArbeitszeitKonto } from '../hooks/useArbeitszeitKonto'
 import {
   anwesenheitFuerNetto,
   formatDauer,
-  formatSaldo,
   summiereArbeitszeit,
   tageOhneZeiten,
   type Arbeitszeit,
@@ -179,20 +178,10 @@ export function CalendarPage({ user, profile }: Props) {
         year={year}
         arbeitszeitTile={
           <ArbeitszeitSaldoTile label={`Überstunden ${MONTH_LABELS[month]}`} saldoMin={monatsZeit?.saldoMin ?? null}>
-            {monatsZeit && (
-              <>
-                <span className="stat-sub">
-                  Ist {formatDauer(monatsZeit.istMin)} h von Soll {formatDauer(monatsZeit.sollMin)} h
-                </span>
-                <span className="stat-sub">
-                  Saldo {year} gesamt: {formatSaldo(konto.gesamtSaldoMin)} h
-                </span>
-                {monatsZeit.fehlendeTage > 0 && (
-                  <span className="stat-sub stat-sub--warning">
-                    {monatsZeit.fehlendeTage} {monatsZeit.fehlendeTage === 1 ? 'Tag' : 'Tage'} ohne Zeiten
-                  </span>
-                )}
-              </>
+            {monatsZeit && monatsZeit.fehlendeTage > 0 && (
+              <span className="stat-sub stat-sub--warning">
+                {monatsZeit.fehlendeTage} {monatsZeit.fehlendeTage === 1 ? 'Tag' : 'Tage'} ohne Zeiten
+              </span>
             )}
           </ArbeitszeitSaldoTile>
         }

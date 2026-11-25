@@ -1395,28 +1395,6 @@ select.input:focus {
   font-weight: 600;
 }
 
-.link-button {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: var(--color-primary);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.uebertrag-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
-}
-
-.uebertrag-form .input {
-  flex: 1 1 7rem;
-  width: auto;
-}
-
 .zeit-dialog {
   width: min(28rem, calc(100vw - 2 * var(--space-4)));
   padding: var(--space-5);

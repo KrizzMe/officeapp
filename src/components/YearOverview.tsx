@@ -23,8 +23,6 @@ import { formatSaldo, summiereArbeitszeit } from '../lib/arbeitszeit'
 interface Props {
   user: User
   profile: UserProfile
-  /** Nach Änderung des Überstunden-Übertrags (Issue #83) das Profil neu laden. */
-  onProfileUpdated: () => void
 }
 
 /** Per Klick aufklappbare Detail-Zeiträume oben in der Jahresübersicht (Issue #33). */
@@ -85,7 +83,7 @@ function TableHeaderCell({ status }: { status: BaseDayStatus }) {
  * sich auf den angezeigten Monat) unverändert bleibt. calculateAttendanceQuota
  * wird hier einmal übers ganze Jahr und einmal je Monat aufgerufen.
  */
-export function YearOverview({ user, profile, onProfileUpdated }: Props) {
+export function YearOverview({ user, profile }: Props) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [activeDetail, setActiveDetail] = useState<DetailStatus | null>(null)
   const entries = useYearEntries(user.uid, year)
@@ -216,7 +214,7 @@ export function YearOverview({ user, profile, onProfileUpdated }: Props) {
 
           <CommuteKmTile summary={commute} />
 
-          <ArbeitszeitJahresTile uid={user.uid} year={year} konto={konto} onUpdated={onProfileUpdated} />
+          <ArbeitszeitJahresTile year={year} konto={konto} />
         </div>
       </div>
 

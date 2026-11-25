@@ -43,7 +43,7 @@ Die App setzt auf ein sauberes, eigenes Datenmodell.
 - Regelmäßige Homeoffice-Wochentage (Teilmenge der Arbeitstage einzeln wählbar, Issue #39, nur relevant wenn Home Office erlaubt) — dient als Vorbelegung für zukünftige Monate ohne eigenen Eintrag (siehe 5.2); wirkt nie auf den aktuellen oder vergangene Monate. Arbeitsfreie Tage sind nicht auswählbar, da an ihnen kein Homeoffice vorbelegt werden kann.
 - Zusätzliche AG-freie Tage (Issue #37, z. B. 24.12./31.12. durch Betriebsvereinbarung) — frei definierbare Liste aus Datum (Tag+Monat, wiederkehrend jedes Jahr) und Bezeichnung, zentral im Profil gepflegt statt pro Jahr neu einzutragen. Werden wie gesetzliche Feiertage behandelt (siehe 4.2, 5.2).
 - Wochenarbeitszeit in Stunden (Issue #83) — Grundlage für das Soll je Arbeitstag (siehe 5.6); ohne Angabe ist kein Überstunden-Saldo berechenbar
-- Überstunden-Übertrag je Jahr (Issue #83), optional manuell überschreibbar (siehe 5.6)
+- Überstunden-Übertrag je Jahr (Issue #83), automatisch berechnet (siehe 5.6)
 - Werbungskosten-Kategorien je Jahr (Issue #10)
 - Beleg-Ablage in OneDrive (Issue #79/#81): Stamm-Pfad und Ordnernamen für Handwerker- und Werbungskosten-Belege; OneDrive-Verbindung (Status, Verbinden, Trennen) im Profil
 - Farbdesign (Lila / Rot-Weiß / Gelb-Grün, Issue #21) und Hell-/Dunkelmodus (Issue #41, inkl. „automatisch“)
@@ -116,7 +116,7 @@ Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt 
 ### 5.6 Arbeitszeit und Überstunden-Saldo (Issue #83)
 
 - Erfassung an `Büro`- und `Homeoffice`-Tagen: mehrere Arbeitsblöcke pro Tag (z. B. 08:00–14:00 und 16:00–18:00; Lücken zählen nicht als Arbeitszeit) **oder** nur die Anwesenheit in Stunden ohne Uhrzeiten (zum Nachtragen), optional mit selbst eingetragener Pause
-- Stempeln (Kommen/Gehen) auf dem Dashboard; ein Block ohne Ende läuft noch, mit Feierabend-Prognose
+- Stempeln (Kommen/Gehen) auf dem Dashboard; ein Block ohne Ende läuft noch. Die Kachel zeigt die Arbeitszeit des Tages und „Beginn: HH:MM Uhr“ (erster Block), während einer Unterbrechung zusätzlich „Unterbrochen seit HH:MM Uhr“ — ohne Saldo oder Feierabend-Prognose (Issue #89)
 - Gesetzliche Mindestpause (§ 4 ArbZG) wird abgezogen: mehr als 6 h Anwesenheit → mind. 30 Min., mehr als 9 h → mind. 45 Min.
 - Soll je Arbeitstag = Wochenstunden / Anzahl Arbeitstage
 - Tagesbewertung fürs Saldo:
@@ -124,14 +124,15 @@ Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt 
   - `Büro`/`Homeoffice` mit Zeiten: Netto-Arbeitszeit − Soll
   - vergangener `Büro`-/`Homeoffice`-Tag ohne Zeiten: 0 h Ist (Saldo −Soll); per „Fehlende Tage mit Soll füllen“ in der Monatsübersicht nachtragbar
   - zukünftige Tage zählen nie, der heutige Tag nur, wenn bereits Zeiten erfasst sind
-- Übertrag ins Folgejahr: automatisch Übertrag + Jahressaldo des Vorjahres (ab dem ersten Jahr mit erfassten Zeiten), je Jahr manuell überschreibbar
+- Übertrag ins Folgejahr: automatisch Übertrag + Jahressaldo des Vorjahres (ab dem ersten Jahr mit erfassten Zeiten). Die manuelle Bearbeitung in der Jahresübersicht ist seit Issue #89 entfallen; ein zuvor gespeicherter manueller Wert (`arbeitszeitUebertragByYear`) wirkt weiterhin
+- Überstunden-Kacheln zeigen nur den Saldo (Dashboard: Gesamtsaldo inkl. Übertrag, Monatsübersicht: Saldo des Monats, Jahresübersicht: Gesamtsaldo des Jahres) plus ggf. den Hinweis auf Tage ohne Zeiten — keine Ist/Soll-Angaben (Issue #89)
 - Die Netto-Arbeitszeit wird nicht gespeichert, sondern berechnet (`src/lib/arbeitszeit.ts`)
 
 ## 6. UI-Anforderungen
 
 - **Dashboard** (Startseite, Issue #53): Anwesenheitsquote, heutiger Status (direkt änderbar), Stempeln und Überstunden-Saldo
 - **Monatsübersicht:** Kalenderansicht (Monat) als zentrale Eingabe: Tag anklicken → Status wählen (bzw. Arbeitszeit erfassen); Kacheln für Quote, Urlaub je Art, Arbeitsweg und Überstunden
-- **Jahresübersicht:** Monatstabelle (Quote, km, Saldo), Urlaubs-/Krankheits-/Dienstreise-Zeiträume, Überstunden-Übertrag
+- **Jahresübersicht:** Monatstabelle (Quote, km, Saldo), Urlaubs-/Krankheits-/Dienstreise-Zeiträume, Überstunden-Saldo
 - **Handwerkerleistungen** und **Werbungskosten** als eigene Bereiche (Steuerteil, siehe 8)
 - Anwesenheitsquote (gegen die individuelle Home-Office-Quote) permanent sichtbar (z. B. im Kalender-Header oder als Dashboard-Kachel)
 - Übersicht verbleibender Urlaubstage (gesamt + pro Art)

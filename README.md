@@ -10,7 +10,7 @@ Produktiv im Einsatz (Firebase Hosting, Deploy automatisch bei Merge auf `main`)
 
 - **Dashboard:** Anwesenheitsquote, heutiger Status (direkt änderbar), Stempeln (Kommen/Gehen) und Überstunden-Saldo
 - **Monatsübersicht:** Kalender als zentrale Eingabe (ein Status pro Tag), Kacheln für Quote, Urlaub je Art, Arbeitsweg (km) und Überstunden; fehlende Tage lassen sich mit dem Soll füllen
-- **Jahresübersicht:** Monatstabelle (Quote, km, Saldo), Urlaubs-, Krankheits- und Dienstreise-Zeiträume, Überstunden-Übertrag
+- **Jahresübersicht:** Monatstabelle (Quote, km, Saldo), Urlaubs-, Krankheits- und Dienstreise-Zeiträume, Überstunden-Saldo
 - **Arbeitszeiterfassung:** mehrere Arbeitsblöcke pro Tag oder nur Stunden, gesetzliche Mindestpause (§ 4 ArbZG), Saldo gegen die Wochenstunden mit Übertrag ins Folgejahr
 - **Urlaub:** frei definierbare Urlaubsarten je Jahr mit Kontingent und Rhythmus (z. B. Dispositionstag 1×/Quartal), automatischer Resturlaub-Übertrag
 - **Profil:** Adressen mit Adressprüfung und kürzestem Arbeitsweg, Bundesland (Feiertage), Arbeitstage Mo–So, Homeoffice-Schalter/-Quote/-Wochentage, AG-freie Tage, Wochenstunden, Farbdesign + Hell/Dunkel, Beleg-Ablage und OneDrive-Verbindung
