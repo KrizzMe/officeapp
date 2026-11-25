@@ -1,6 +1,6 @@
 import type { HandwerkerBeleg, UserProfile, WerbungskostenBeleg } from '../types/models'
 
-/** MwSt-Satz der Referenz-Excel (Blatt "Handwerkerleistungen"). */
+/** MwSt-Satz (19 %) für die Netto/Brutto-Aufteilung bei Handwerkerleistungen. */
 export const MWST_FAKTOR = 1.19
 
 /** § 35a EStG: 20 % der Arbeitskosten, höchstens 1.200 € pro Jahr. */
@@ -32,7 +32,7 @@ export interface HandwerkerBerechnung {
   handwerkerleistungBrutto: number
 }
 
-/** Formeln wie in der Excel: Netto = Brutto / 1,19; Handwerkerleistung = Netto - Material; zzgl. MwSt = * 1,19. */
+/** Formeln: Netto = Brutto / 1,19; Handwerkerleistung = Netto - Material; zzgl. MwSt = * 1,19. */
 export function berechneHandwerker(beleg: Pick<HandwerkerBeleg, 'rechnungsbetrag' | 'materialkosten'>): HandwerkerBerechnung {
   const netto = beleg.rechnungsbetrag / MWST_FAKTOR
   const handwerkerleistung = netto - beleg.materialkosten
@@ -85,7 +85,7 @@ export function summeJeMonat<T extends { reDatum: string }>(belege: T[], wert: (
   return result
 }
 
-/** Summen je Kategorie, absteigend nach Betrag (entspricht der Pivot der Excel). */
+/** Summen je Kategorie, absteigend nach Betrag. */
 export function summeJeKategorie(belege: WerbungskostenBeleg[]): { kategorie: string; betrag: number }[] {
   const map = new Map<string, number>()
   for (const b of belege) map.set(b.kategorie, (map.get(b.kategorie) ?? 0) + b.betrag)

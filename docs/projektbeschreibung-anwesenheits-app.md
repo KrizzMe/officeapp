@@ -2,12 +2,12 @@
 
 ## 1. Kontext & Ziel
 
-Ablösung einer bestehenden, komplexen Excel-Datei, die pro Jahr neu aufgesetzt werden musste. Die Excel wurde bisher von zwei Personen (Ehepaar) gemeinsam genutzt, um für die Steuererklärung Handwerkerabrechnungen, Werbungskosten und Arbeitswegestrecken zu sammeln, sowie um die vom Arbeitgeber geforderte Anwesenheitsquote (Büro vs. Homeoffice) zu berechnen.
+Web-App für mehrere Nutzer, um für die Steuererklärung Handwerkerabrechnungen, Werbungskosten und Arbeitswegestrecken zu sammeln, sowie um die vom Arbeitgeber geforderte Anwesenheitsquote (Büro vs. Homeoffice) zu berechnen.
 
 **MVP-Scope:** Kalenderfunktion + Anwesenheits-/Urlaubstracking, jeweils pro Nutzer.
-**Ursprünglich außerhalb des MVP, inzwischen umgesetzt:** Steuerteil (Handwerkerabrechnungen, Werbungskosten-Belege inkl. Beleg-Scan, Issues #10/#79/#81) und Arbeitszeiterfassung mit Überstunden-Saldo (Issue #83), siehe Abschnitte 5.6 und 8.
+**Ursprünglich außerhalb des MVP, inzwischen umgesetzt:** Steuerteil (Handwerkerabrechnungen, Werbungskosten-Belege inkl. Beleg-Scan, Issues #10/#79/#81) und Arbeitszeiterfassung mit Überstunden-Saldo (Issue #83), siehe Abschnitte 5.6 und 7.
 
-Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik übernehmen, aber ein sauberes, eigenes Datenmodell entwerfen.
+Die App setzt auf ein sauberes, eigenes Datenmodell.
 
 ## 2. Tech-Stack
 
@@ -18,12 +18,12 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Beleg-Auslesung (Issue #79): eigene Serverfunktion auf Vercel (`vercel-api/`, Mistral Vision), KI-Key nur im Backend
 - Beleg-Ablage (Issue #79/#81): OneDrive über Microsoft Graph + MSAL.js
 - Adressprüfung/Arbeitsweg (Issue #61): OpenStreetMap Nominatim + OSRM
-- Keine eigene Verschlüsselung für den Steuerdaten-Bereich (Issue #11, entschieden — siehe Abschnitt 8)
+- Keine eigene Verschlüsselung für den Steuerdaten-Bereich (Issue #11, entschieden — siehe Abschnitt 7)
 
 ## 3. Nutzer & Multi-User
 
 - Multi-User von Anfang an, nicht nachträglich ergänzt
-- Jeder Nutzer hat einen eigenen, isolierten Datensatz (Kalender, Profil, Urlaubskonto) — **keine** gemeinsame Tabellensicht wie bisher in der Excel
+- Jeder Nutzer hat einen eigenen, isolierten Datensatz (Kalender, Profil, Urlaubskonto) — **keine** gemeinsame Tabellensicht
 - Zielgruppe: zwei Nutzer (Ehepaar), die App muss aber nicht auf genau zwei Accounts hart codiert sein
 - Optional/später: eine gemeinsame Ansicht (z. B. für Urlaubsplanung) — für MVP nicht erforderlich
 
@@ -36,7 +36,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 - Standard-Arbeitsweg in km; die Adressprüfung (Issue #61) geocodiert beide Adressen und berechnet die kürzeste Straßenverbindung als Referenzwert — der Standard-Arbeitsweg bleibt frei abweichend pflegbar
 - Regelurlaub und Resturlaub aus dem Vorjahr — beide als Urlaubsarten modelliert (siehe 4.3)
 - Frei definierbare **Urlaubsarten** (siehe 4.3) — pro Nutzer individuell, da sich die Arten zwischen den beiden Nutzern unterscheiden (z. B. Dispositionstage nur bei einem, Sonderurlaub nur bei der anderen Person)
-- Bundesland (für automatische Feiertagszuordnung — die bisherige Excel nutzt bayerische Feiertage, das sollte aber nicht hart codiert sein)
+- Bundesland (für automatische Feiertagszuordnung — nicht hart codiert)
 - Arbeitstage (Mo-So einzeln wählbar, Issue #34) — Default Mo-Fr; bestimmt, welche Wochentage arbeitsfrei sind statt fest Sa/So anzunehmen, z. B. für Teilzeitkräfte mit Arbeitstagen Do-So
 - Home Office erlaubt (an/aus) — manche Tätigkeiten erlauben grundsätzlich kein Homeoffice; ist der Schalter aus, ist der Tagesstatus `Homeoffice` im Kalender nicht wählbar
 - Home-Office-Quote (max. % der möglichen Arbeitstage) — Vorgabe, die im Dashboard der tatsächlichen Homeoffice-Quote gegenübergestellt wird
@@ -50,7 +50,7 @@ Die App muss die Excel **nicht strukturell nachbilden** — Berechnungslogik üb
 
 ### 4.2 Tagesstatus (ein Eintrag pro Tag im Kalender)
 
-Statt der bisherigen zwei getrennten Excel-Felder (Homeoffice-Flag + Abwesenheits-Dropdown) **ein einziger Status pro Tag**:
+Statt zwei getrennter Felder (Homeoffice-Flag + Abwesenheits-Dropdown) **ein einziger Status pro Tag**:
 
 - `Büro` (Standard-Fallback für jeden Arbeitstag ohne andere Markierung — siehe 5.2)
 - `Homeoffice`
@@ -77,7 +77,7 @@ Jede Urlaubsart hat:
 
 Urlaubsarten werden **je Jahr** gepflegt (Issue #72); ein Jahr ohne eigene Liste übernimmt die Arten des Vorjahres. Der Resturlaub wird automatisch aus den ungenutzten Urlaubstagen des Vorjahres berechnet, kann aber manuell überschrieben werden (Issue #74).
 
-## 5. Berechnungslogik (aus bestehender Excel übernommen)
+## 5. Berechnungslogik
 
 ### 5.1 Anwesenheitsquote
 
@@ -93,7 +93,7 @@ Anwesenheitsquote = (Büro-Tage + Dienstreise-Tage) / Mögliche Arbeitstage
 
 ### 5.2 Standard-Fallback-Logik für Bürotage
 
-Jeder Arbeitstag (laut Profil, Default Mo–Fr; kein Feiertag, kein AG-freier Tag) ohne anderen gesetzten Status gilt automatisch als `Büro` mit der Standard-Wegstrecke. Der Nutzer markiert nur die Ausnahmen (Homeoffice, Urlaub, Dienstreise, Krank, …). Das minimiert die Klicks im Alltag und entspricht der bisherigen Excel-Logik.
+Jeder Arbeitstag (laut Profil, Default Mo–Fr; kein Feiertag, kein AG-freier Tag) ohne anderen gesetzten Status gilt automatisch als `Büro` mit der Standard-Wegstrecke. Der Nutzer markiert nur die Ausnahmen (Homeoffice, Urlaub, Dienstreise, Krank, …). Das minimiert die Klicks im Alltag.
 
 Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt zukünftigen** Monat (nicht der aktuelle Monat, auch nicht ein vergangener) und auf einen im Profil gewählten Homeoffice-Wochentag, gilt er stattdessen als `Homeoffice`. Das ist reine Berechnungslogik ohne eigene Firestore-Einträge — Änderungen an den Homeoffice-Wochentagen wirken sich dadurch automatisch nie auf den aktuellen oder vergangene Monate aus. Einzelne Tage bleiben weiterhin manuell überschreibbar.
 
@@ -105,7 +105,7 @@ Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt 
 
 ### 5.4 Urlaubskontingente
 
-- **Gesamtkontingent** (alle Urlaubsarten zusammen) UND **pro einzelner Urlaubsart** wird getrennt getrackt (in der bisherigen Excel über mehrere SUMPRODUCT-Formeln gelöst — in der neuen App sauber pro Urlaubsart modellieren, nicht nachbauen)
+- **Gesamtkontingent** (alle Urlaubsarten zusammen) UND **pro einzelner Urlaubsart** wird getrennt getrackt (sauber pro Urlaubsart modelliert)
 - Anzeige verbleibender Tage pro Urlaubsart und gesamt
 
 ### 5.5 Dispositionstage-Regel (Beispiel für Urlaubsarten mit Rhythmus)
@@ -137,13 +137,9 @@ Ausnahme (Issue #39): Fällt ein Werktag ohne eigenen Eintrag in einen **strikt 
 - Übersicht verbleibender Urlaubstage (gesamt + pro Art)
 - Responsive: vollwertig nutzbar auf Smartphone und Desktop
 
-## 7. Referenz
+## 7. Roadmap (nicht Teil des MVP-Auftrags)
 
-Die bestehende Excel-Datei (inkl. aller Formeln für Anwesenheitsquote, Urlaubszählung und Wegstrecken-Zuordnung) liegt als Referenz vor und sollte für die exakte Berechnungslogik herangezogen werden.
-
-## 8. Roadmap (nicht Teil des MVP-Auftrags)
-
-- Steuerteil (Issue #10, umgesetzt): Handwerkerleistungen und Werbungskosten je Nutzer in den Firestore-Collections `handwerker` und `werbungskosten` (Rechnungsdatum, Beträge, Kategorie, optionaler Beleg-Verweis). Berechnung wie in der Excel: Netto = Brutto / 1,19, Arbeitskosten = Netto − Material, Arbeitskosten inkl. MwSt = × 1,19; Richtwert Steuerermäßigung 20 % (max. 1.200 €/Jahr). Monats-/Jahresübersicht, kein Export.
+- Steuerteil (Issue #10, umgesetzt): Handwerkerleistungen und Werbungskosten je Nutzer in den Firestore-Collections `handwerker` und `werbungskosten` (Rechnungsdatum, Beträge, Kategorie, optionaler Beleg-Verweis). Berechnung: Netto = Brutto / 1,19, Arbeitskosten = Netto − Material, Arbeitskosten inkl. MwSt = × 1,19; Richtwert Steuerermäßigung 20 % (max. 1.200 €/Jahr). Monats-/Jahresübersicht, kein Export.
 - Steuerdaten-Schutz (Issue #11, entschieden): keine eigene Verschlüsselung; strikte Firestore-Rules, nur Beträge + Verweis in der App (Originale im privaten Cloud-Speicher), minimale Cloud-Rechte, KI/OCR-Keys nur im Backend.
 - Beleg-Scan (Issue #79, umgesetzt): Foto(s) oder PDF eines Belegs → Auslesen von Datum, Firma/Shop, Leistung/Artikel, Rechnungsnummer, Beträgen und Kategorie per KI (Vercel-Funktion `vercel-api/`, Mistral). Digitale PDFs werden über ihre Textebene gelesen, gescannte PDFs und Fotos als Bilder (bis zu 8 pro Beleg). Mehrere Fotos werden zu einem PDF zusammengefasst und in OneDrive unter `<Stamm-Pfad>/<Jahr>/<Ordnername>` abgelegt (Dateiname `JJJJ.MM.TT_Artikel` bzw. `JJJJ.MM.TT_Firma-Leistung`); der Link wird als Beleg-Verweis gespeichert. Ohne konfigurierte Umgebungsvariablen bleibt die Funktion ausgeblendet.
 - OneDrive-Verbindung im Profil verwalten (Issue #81, umgesetzt): Status, Verbinden, Trennen. Ohne eigenen Stamm-Pfad nur App-Ordner-Rechte (`Files.ReadWrite.AppFolder`).
