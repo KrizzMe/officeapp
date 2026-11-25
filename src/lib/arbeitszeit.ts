@@ -8,9 +8,13 @@ import { effectiveDayStatus } from './attendance'
  * ganzen Minuten, damit Summen nicht durch Gleitkomma-Rundung abdriften.
  */
 
-/** Arbeitszeit eines Tages: Arbeitsblöcke plus optional selbst eingetragene Pause. */
+/**
+ * Arbeitszeit eines Tages: Arbeitsblöcke oder (CR 3) nur eine Stundenzahl
+ * (`stundenMin`, dann ist `bloecke` leer), plus optional selbst eingetragene Pause.
+ */
 export interface Arbeitszeit {
   bloecke: ArbeitsBlock[]
+  stundenMin?: number
   pauseMin?: number
 }
 
@@ -42,9 +46,12 @@ export function formatUhrzeit(min: number): string {
  * Altformat (nur `beginn`/`ende`) werden als ein Block gelesen.
  */
 export function arbeitszeitOf(
-  entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'pauseMin'> | undefined,
+  entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'stundenMin' | 'pauseMin'> | undefined,
 ): Arbeitszeit | undefined {
   if (!entry) return undefined
+  if (entry.stundenMin !== undefined && entry.stundenMin > 0) {
+    return { bloecke: [], stundenMin: entry.stundenMin, pauseMin: entry.pauseMin }
+  }
   const bloecke = entry.bloecke?.length
     ? entry.bloecke
     : entry.beginn && entry.ende
@@ -116,6 +123,23 @@ export interface NettoArbeitszeit {
  * Ebenfalls `null` bei ungültigen Blöcken.
  */
 export function berechneNetto(zeit: Arbeitszeit, offenBisMin?: number): NettoArbeitszeit | null {
+  const eigenePauseMin = Math.max(0, Math.round(zeit.pauseMin ?? 0))
+
+  if (zeit.stundenMin !== undefined) {
+    // Nur Stunden (CR 3): wie ein einzelner Block der Länge stundenMin.
+    const anwesendMin = Math.round(zeit.stundenMin)
+    if (!(anwesendMin > 0)) return null
+    const zusatzPauseMin = Math.max(0, gesetzlichePauseMin(anwesendMin) - eigenePauseMin)
+    return {
+      anwesendMin,
+      lueckenMin: 0,
+      eigenePauseMin,
+      zusatzPauseMin,
+      gesetzlichAngewendet: zusatzPauseMin > 0,
+      nettoMin: Math.max(0, anwesendMin - eigenePauseMin - zusatzPauseMin),
+    }
+  }
+
   const offen = hatOffenenBlock(zeit)
   if (offen && offenBisMin === undefined) return null
   if (pruefeBloecke(zeit.bloecke, offen) !== null) return null
@@ -128,7 +152,6 @@ export function berechneNetto(zeit: Arbeitszeit, offenBisMin?: number): NettoArb
   const summeMin = spannen.reduce((sum, s) => sum + (s.ende - s.beginn), 0)
   const anwesendMin = spannen[spannen.length - 1].ende - spannen[0].beginn
   const lueckenMin = anwesendMin - summeMin
-  const eigenePauseMin = Math.max(0, Math.round(zeit.pauseMin ?? 0))
   const zusatzPauseMin = Math.max(0, gesetzlichePauseMin(anwesendMin) - lueckenMin - eigenePauseMin)
   return {
     anwesendMin,
@@ -138,6 +161,25 @@ export function berechneNetto(zeit: Arbeitszeit, offenBisMin?: number): NettoArb
     gesetzlichAngewendet: zusatzPauseMin > 0,
     nettoMin: Math.max(0, summeMin - eigenePauseMin - zusatzPauseMin),
   }
+}
+
+/**
+ * Kleinste Anwesenheit (für „Nur Stunden“), die nach Abzug der gesetzlichen
+ * Mindestpause genau `nettoMin` ergibt, z. B. 7:36 h → 8:06 h (CR 3, „Monat mit Soll füllen“).
+ */
+export function anwesenheitFuerNetto(nettoMin: number): number {
+  for (const pause of [0, 30, 45]) {
+    const anwesend = nettoMin + pause
+    if (gesetzlichePauseMin(anwesend) <= pause) return anwesend
+  }
+  return nettoMin + 45
+}
+
+/** Eingabe einer Dauer ("7:30", "7,5") → Minuten, `null` bei ungültiger oder nicht positiver Eingabe. */
+export function parseDauer(value: string): number | null {
+  if (/^\s*[+\-−]/.test(value)) return null
+  const min = parseSaldo(value)
+  return min !== null && min > 0 ? min : null
 }
 
 /*
@@ -291,6 +333,16 @@ export function summiereArbeitszeit(
     if (t.art === 'fehlt') summe.fehlendeTage++
   }
   return summe
+}
+
+/**
+ * Vergangene Büro-/Homeoffice-Tage ganz ohne Zeiten (CR 3, „Monat mit Soll
+ * füllen“). Tage mit offenem Block („Ende fehlt“) zählen nicht dazu.
+ */
+export function tageOhneZeiten(days: Date[], entries: Map<string, DayEntry>, ctx: ArbeitszeitKontext): Date[] {
+  return days.filter(
+    (date) => tagesSaldoFuer(date, entries, ctx).art === 'fehlt' && !arbeitszeitOf(entries.get(toIsoDate(date))),
+  )
 }
 
 /** Frühestes Jahr mit erfassten Zeiten, `undefined` wenn noch nie Zeiten erfasst wurden. */

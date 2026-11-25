@@ -1540,3 +1540,15 @@ select.input:focus {
   flex-wrap: wrap;
   margin-top: var(--space-2);
 }
+
+.zeit-modus {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.month-fill-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}

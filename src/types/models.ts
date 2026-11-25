@@ -237,6 +237,12 @@ export interface DayEntry {
   /** Altformat (erste Version von #83): ein Block als Beginn/Ende, wird beim nächsten Speichern zu `bloecke`. */
   beginn?: string
   ende?: string
+  /**
+   * Alternative zu `bloecke` (Issue #83, CR 3): nur die Anwesenheit des Tages
+   * in Minuten, ohne Uhrzeiten (z. B. zum Nachtragen). Davon wird wie bei
+   * einem einzelnen Block die gesetzliche Mindestpause abgezogen.
+   */
+  stundenMin?: number
   /** Optional selbst eingetragene Pause in Minuten, zusätzlich zu den Lücken zwischen den Blöcken. */
   pauseMin?: number
 }

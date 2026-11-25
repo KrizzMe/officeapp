@@ -89,12 +89,15 @@ export async function setDayEntryGrund(uid: string, entries: DayEntry[], grund: 
  * (`beginn`/`ende`) wird dabei zu `bloecke`. Firestore lehnt `undefined`-Werte
  * ab, daher nur gesetzte Felder (ein laufender Block hat kein `ende`).
  */
-function zeitFelder(entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'pauseMin'> | undefined): Partial<DayEntry> {
+function zeitFelder(
+  entry: Pick<DayEntry, 'bloecke' | 'beginn' | 'ende' | 'stundenMin' | 'pauseMin'> | undefined,
+): Partial<DayEntry> {
   const zeit = arbeitszeitOf(entry)
   if (!zeit) return {}
-  const felder: Partial<DayEntry> = {
-    bloecke: zeit.bloecke.map((b) => (b.ende ? { beginn: b.beginn, ende: b.ende } : { beginn: b.beginn })),
-  }
+  const felder: Partial<DayEntry> =
+    zeit.stundenMin !== undefined
+      ? { stundenMin: zeit.stundenMin }
+      : { bloecke: zeit.bloecke.map((b) => (b.ende ? { beginn: b.beginn, ende: b.ende } : { beginn: b.beginn })) }
   if (zeit.pauseMin !== undefined && zeit.pauseMin > 0) felder.pauseMin = zeit.pauseMin
   return felder
 }
@@ -113,7 +116,7 @@ export async function setDayStatus(
   existing: DayEntry | undefined,
 ): Promise<void> {
   const zeit = zeitFelder(existing)
-  if (status === defaultStatus && !zeit.bloecke) {
+  if (status === defaultStatus && !zeit.bloecke && !zeit.stundenMin) {
     await clearDayEntry(uid, date)
     return
   }

@@ -6,6 +6,7 @@ import {
   formatDauer,
   formatSaldo,
   minutenSeitMitternacht,
+  parseDauer,
   pruefeBloecke,
   sortiereBloecke,
   type Arbeitszeit,
@@ -35,6 +36,8 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
   const [bloecke, setBloecke] = useState<ArbeitsBlock[]>(
     vorhanden ? vorhanden.bloecke.map((b) => ({ beginn: b.beginn, ende: b.ende ?? '' })) : [{ ...LEERER_BLOCK }],
   )
+  const [modus, setModus] = useState<'bloecke' | 'stunden'>(vorhanden?.stundenMin !== undefined ? 'stunden' : 'bloecke')
+  const [stunden, setStunden] = useState(vorhanden?.stundenMin !== undefined ? formatDauer(vorhanden.stundenMin) : '')
   const [pause, setPause] = useState(vorhanden?.pauseMin ? String(vorhanden.pauseMin) : '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,9 +54,16 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
       .filter((b) => b.beginn || b.ende)
       .map((b) => (b.ende ? { beginn: b.beginn, ende: b.ende } : { beginn: b.beginn })),
   )
-  const zeit: Arbeitszeit = { bloecke: bereinigt, ...(pauseMin ? { pauseMin } : {}) }
-  const netto = berechneNetto(zeit, istHeute ? minutenSeitMitternacht(new Date()) : undefined)
-  const laeuft = bereinigt.length > 0 && !bereinigt[bereinigt.length - 1].ende
+  const stundenMin = parseDauer(stunden)
+  const zeit: Arbeitszeit =
+    modus === 'stunden'
+      ? { bloecke: [], ...(stundenMin !== null ? { stundenMin } : {}), ...(pauseMin ? { pauseMin } : {}) }
+      : { bloecke: bereinigt, ...(pauseMin ? { pauseMin } : {}) }
+  const netto =
+    modus === 'stunden' && stundenMin === null
+      ? null
+      : berechneNetto(zeit, istHeute ? minutenSeitMitternacht(new Date()) : undefined)
+  const laeuft = modus === 'bloecke' && bereinigt.length > 0 && !bereinigt[bereinigt.length - 1].ende
 
   const updateBlock = (index: number, feld: keyof ArbeitsBlock, value: string) =>
     setBloecke((prev) => prev.map((b, i) => (i === index ? { ...b, [feld]: value } : b)))
@@ -76,6 +86,14 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
       setError('Pause bitte in ganzen Minuten angeben.')
       return
     }
+    if (modus === 'stunden') {
+      if (stundenMin === null) {
+        setError('Bitte die Stunden als Std:Min (z. B. 8:00) oder Dezimalzahl (z. B. 8,5) angeben.')
+        return
+      }
+      void run(zeit)
+      return
+    }
     const fehler = pruefeBloecke(bereinigt, istHeute)
     if (fehler) {
       setError(fehler)
@@ -93,47 +111,82 @@ export function ArbeitszeitDialog({ date, entry, sollMin, onSave, onClose }: Pro
           Arbeitszeit {titel}
         </h3>
 
-        <div className="zeit-bloecke">
-          {bloecke.map((block, index) => (
-            <div key={index} className="zeit-block-row">
-              <label className="field">
-                <span>Beginn</span>
-                <input
-                  className="input"
-                  type="time"
-                  value={block.beginn}
-                  onChange={(e) => updateBlock(index, 'beginn', e.target.value)}
-                />
-              </label>
-              <label className="field">
-                <span>Ende{istHeute && index === bloecke.length - 1 ? ' (leer = läuft)' : ''}</span>
-                <input
-                  className="input"
-                  type="time"
-                  value={block.ende ?? ''}
-                  onChange={(e) => updateBlock(index, 'ende', e.target.value)}
-                />
-              </label>
-              {bloecke.length > 1 && (
-                <button
-                  type="button"
-                  className="btn btn-secondary zeit-block-remove"
-                  aria-label={`Block ${index + 1} entfernen`}
-                  onClick={() => setBloecke((prev) => prev.filter((_, i) => i !== index))}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="zeit-modus" role="radiogroup" aria-label="Art der Eingabe">
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => setBloecke((prev) => [...prev, { ...LEERER_BLOCK }])}
+            role="radio"
+            aria-checked={modus === 'bloecke'}
+            className={modus === 'bloecke' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+            onClick={() => setModus('bloecke')}
           >
-            + Arbeitsblock
+            Von–Bis
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={modus === 'stunden'}
+            className={modus === 'stunden' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+            onClick={() => setModus('stunden')}
+          >
+            Nur Stunden
           </button>
         </div>
+
+        {modus === 'stunden' ? (
+          <label className="field">
+            <span>Anwesenheit (Std:Min oder z. B. 8,5)</span>
+            <input
+              className="input"
+              value={stunden}
+              onChange={(e) => setStunden(e.target.value)}
+              placeholder="8:00"
+              inputMode="decimal"
+              autoFocus
+            />
+          </label>
+        ) : (
+          <div className="zeit-bloecke">
+            {bloecke.map((block, index) => (
+              <div key={index} className="zeit-block-row">
+                <label className="field">
+                  <span>Beginn</span>
+                  <input
+                    className="input"
+                    type="time"
+                    value={block.beginn}
+                    onChange={(e) => updateBlock(index, 'beginn', e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  <span>Ende{istHeute && index === bloecke.length - 1 ? ' (leer = läuft)' : ''}</span>
+                  <input
+                    className="input"
+                    type="time"
+                    value={block.ende ?? ''}
+                    onChange={(e) => updateBlock(index, 'ende', e.target.value)}
+                  />
+                </label>
+                {bloecke.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary zeit-block-remove"
+                    aria-label={`Block ${index + 1} entfernen`}
+                    onClick={() => setBloecke((prev) => prev.filter((_, i) => i !== index))}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setBloecke((prev) => [...prev, { ...LEERER_BLOCK }])}
+            >
+              + Arbeitsblock
+            </button>
+          </div>
+        )}
 
         <label className="field">
           <span>Pause (Min., optional)</span>

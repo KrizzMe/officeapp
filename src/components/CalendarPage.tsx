@@ -14,7 +14,14 @@ import { MonthStats } from './MonthStats'
 import { ArbeitszeitDialog } from './ArbeitszeitDialog'
 import { ArbeitszeitSaldoTile } from './ArbeitszeitSaldoTile'
 import { useArbeitszeitKonto } from '../hooks/useArbeitszeitKonto'
-import { formatDauer, formatSaldo, summiereArbeitszeit, type Arbeitszeit } from '../lib/arbeitszeit'
+import {
+  anwesenheitFuerNetto,
+  formatDauer,
+  formatSaldo,
+  summiereArbeitszeit,
+  tageOhneZeiten,
+  type Arbeitszeit,
+} from '../lib/arbeitszeit'
 
 interface Props {
   user: User
@@ -27,6 +34,7 @@ export function CalendarPage({ user, profile }: Props) {
   const [month, setMonth] = useState(today.getMonth())
   const [warning, setWarning] = useState<string | null>(null)
   const [zeitDate, setZeitDate] = useState<Date | null>(null)
+  const [filling, setFilling] = useState(false)
 
   const entries = useYearEntries(user.uid, year)
 
@@ -86,6 +94,41 @@ export function CalendarPage({ user, profile }: Props) {
     () => (konto.ctx ? summiereArbeitszeit(currentMonthDays, entries, konto.ctx) : null),
     [konto.ctx, currentMonthDays, entries],
   )
+
+  const ohneZeiten = useMemo(
+    () => (konto.ctx ? tageOhneZeiten(currentMonthDays, entries, konto.ctx) : []),
+    [konto.ctx, currentMonthDays, entries],
+  )
+
+  /**
+   * Alle vergangenen Büro-/Homeoffice-Tage des Monats ohne Zeiten mit dem
+   * Soll füllen (CR 3), gespeichert als „Nur Stunden“ mit der Anwesenheit,
+   * die nach Pausenabzug genau das Soll ergibt.
+   */
+  const handleFillMonth = async () => {
+    if (!konto.ctx || ohneZeiten.length === 0) return
+    const sollMin = konto.ctx.sollMin
+    const anwesend = anwesenheitFuerNetto(sollMin)
+    const frage =
+      `${ohneZeiten.length} ${ohneZeiten.length === 1 ? 'Tag' : 'Tage'} ohne Zeiten im ${MONTH_LABELS[month]} ` +
+      `mit dem Soll von ${formatDauer(sollMin)} h füllen (gespeichert als ${formatDauer(anwesend)} h Anwesenheit ` +
+      `abzüglich Pause)? Einzelne Tage kannst du danach anpassen.`
+    if (!window.confirm(frage)) return
+    setFilling(true)
+    setWarning(null)
+    try {
+      await Promise.all(
+        ohneZeiten.map((date) => {
+          const iso = toIsoDate(date)
+          return setDayArbeitszeit(user.uid, iso, { bloecke: [], stundenMin: anwesend }, defaultStatusOf(date), entries.get(iso))
+        }),
+      )
+    } catch (err) {
+      setWarning(`Füllen fehlgeschlagen: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setFilling(false)
+    }
+  }
 
   const defaultStatusOf = (date: Date) => {
     const s = effectiveDayStatus(date, profile.bundesland, agFreieTage, undefined, arbeitstage, homeofficeWeekdays)
@@ -181,6 +224,14 @@ export function CalendarPage({ user, profile }: Props) {
           onStatusChange={handleStatusChange}
           onEditZeit={setZeitDate}
         />
+
+        {ohneZeiten.length > 0 && (
+          <div className="month-fill-row">
+            <button type="button" className="btn btn-secondary btn-sm" disabled={filling} onClick={() => void handleFillMonth()}>
+              {filling ? 'Fülle…' : `Fehlende Tage mit Soll füllen (${ohneZeiten.length})`}
+            </button>
+          </div>
+        )}
       </div>
 
       {zeitDate && (
