@@ -183,6 +183,7 @@ export interface UserProfile {
    * Manuell gesetzter Überstunden-Übertrag je Jahr in Minuten (Issue #83),
    * Schlüssel = Jahreszahl als String. Jahre ohne Eintrag übernehmen
    * automatisch den Endsaldo des Vorjahres (siehe lib/arbeitszeit.ts).
+   * Seit Issue #89 in der UI nicht mehr bearbeitbar; bestehende Werte wirken weiter.
    */
   arbeitszeitUebertragByYear?: Record<string, number>
 }

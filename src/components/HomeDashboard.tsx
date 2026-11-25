@@ -14,7 +14,7 @@ import { AttendanceQuotaTile } from './AttendanceQuotaTile'
 import { StatusDropdown } from './Calendar/StatusDropdown'
 import { ArbeitszeitSaldoTile } from './ArbeitszeitSaldoTile'
 import { useArbeitszeitKonto } from '../hooks/useArbeitszeitKonto'
-import { arbeitszeitOf, formatSaldo, hatOffenenBlock, istZeiterfassungsStatus } from '../lib/arbeitszeit'
+import { arbeitszeitOf, hatOffenenBlock, istZeiterfassungsStatus } from '../lib/arbeitszeit'
 import { StempelTile } from './StempelTile'
 
 interface Props {
@@ -116,15 +116,11 @@ export function HomeDashboard({ user, profile }: Props) {
           uid={user.uid}
           entry={entries.get(todayIso)}
           defaultStatus={defaultStatusId}
-          sollMin={konto.ctx?.sollMin ?? null}
           offeneTage={offeneTage}
         />
       )}
 
       <ArbeitszeitSaldoTile label="Überstunden-Saldo" saldoMin={konto.ctx ? konto.gesamtSaldoMin : null}>
-        <span className="stat-sub">
-          Stand heute, inkl. Übertrag {formatSaldo(konto.uebertrag.minuten)} h aus {year - 1}
-        </span>
         {konto.jahr.fehlendeTage > 0 && (
           <span className="stat-sub stat-sub--warning">
             {konto.jahr.fehlendeTage} {konto.jahr.fehlendeTage === 1 ? 'Tag' : 'Tage'} in {year} ohne Zeiten

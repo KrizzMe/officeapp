@@ -5,9 +5,7 @@ import { parseIsoDate, toIsoDate } from '../lib/dates'
 import {
   arbeitszeitOf,
   berechneNetto,
-  feierabendPrognose,
   formatDauer,
-  formatSaldo,
   formatUhrzeit,
   hatOffenenBlock,
   minutenSeitMitternacht,
@@ -23,8 +21,6 @@ interface Props {
   entry: DayEntry | undefined
   /** Berechneter Default-Status von heute (für das Speichern ohne expliziten Status). */
   defaultStatus: string
-  /** Soll je Arbeitstag in Minuten, `null` ohne Wochenstunden im Profil. */
-  sollMin: number | null
   /** Vergangene Tage mit offenem Block (Ende vergessen), ISO-Daten. */
   offeneTage: string[]
 }
@@ -32,9 +28,10 @@ interface Props {
 /**
  * Stempeln auf dem Dashboard (Issue #83, CR): „Beginn“ und „Ende“ im Wechsel
  * mit der aktuellen, gerundeten Uhrzeit; jeder Durchgang ergibt einen
- * Arbeitsblock. Zeigt live die Arbeitszeit des Tages und die Feierabend-Prognose.
+ * Arbeitsblock. Zeigt live die Arbeitszeit des Tages und den Beginn des ersten
+ * Blocks (ohne Saldo/Feierabend-Prognose, Issue #89).
  */
-export function StempelTile({ uid, entry, defaultStatus, sollMin, offeneTage }: Props) {
+export function StempelTile({ uid, entry, defaultStatus, offeneTage }: Props) {
   const [jetzt, setJetzt] = useState(() => new Date())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,9 +45,8 @@ export function StempelTile({ uid, entry, defaultStatus, sollMin, offeneTage }: 
   const zeit = arbeitszeitOf(entry)
   const laeuft = hatOffenenBlock(zeit)
   const netto = zeit ? berechneNetto(zeit, minutenSeitMitternacht(jetzt)) : null
+  const ersterBlock = zeit?.bloecke[0]
   const letzterBlock = zeit?.bloecke[zeit.bloecke.length - 1]
-  const prognose = laeuft && zeit && sollMin !== null ? feierabendPrognose(zeit, sollMin, jetzt) : null
-  const sollErreicht = netto !== null && sollMin !== null && netto.nettoMin >= sollMin
 
   const speichern = async (neu: Arbeitszeit) => {
     setSaving(true)
@@ -88,23 +84,10 @@ export function StempelTile({ uid, entry, defaultStatus, sollMin, offeneTage }: 
       <span className="stat-value stempel-value">{formatDauer(netto?.nettoMin ?? 0)} h</span>
 
       <span className="stat-sub">
-        {laeuft && letzterBlock
-          ? `Läuft seit ${letzterBlock.beginn}`
-          : letzterBlock?.ende
-            ? `Unterbrochen seit ${letzterBlock.ende}`
-            : 'Noch nicht gestempelt'}
-        {netto && sollMin !== null && ` · Saldo heute ${formatSaldo(netto.nettoMin - sollMin)} h`}
+        {ersterBlock?.beginn ? `Beginn: ${ersterBlock.beginn} Uhr` : 'Noch nicht gestempelt'}
       </span>
 
-      {sollMin !== null && (laeuft || sollErreicht) && (
-        <span className="stat-sub">
-          {sollErreicht
-            ? `Soll von ${formatDauer(sollMin)} h erreicht ✓`
-            : prognose
-              ? `Feierabend ab ${formatUhrzeit(prognose.klickMin)} Uhr (gebucht ${formatUhrzeit(prognose.gebuchtMin)})`
-              : `Soll von ${formatDauer(sollMin)} h heute nicht mehr erreichbar`}
-        </span>
-      )}
+      {!laeuft && letzterBlock?.ende && <span className="stat-sub">Unterbrochen seit {letzterBlock.ende} Uhr</span>}
 
       {offeneTage.length > 0 && (
         <span className="stat-sub stat-sub--warning">
