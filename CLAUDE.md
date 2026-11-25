@@ -5,6 +5,15 @@
 - Immer wenn ein Pull Request erstellt wurde, fragen wie es weitergehen soll, statt von sich aus weitere Schritte (z. B. Ready for review, Review anfordern) zu unternehmen.
 - WICHTIG: Jede Rückfrage an den Nutzer — ausnahmslos, überall in diesem Workflow und in diesem Repo, wo "fragen"/"Rückfrage" steht — immer über das AskUserQuestion-Tool mit klickbaren Antwortoptionen stellen. Niemals eine Frage als reiner Fließtext am Ende einer Nachricht stellen, auch nicht beiläufig oder als Nebensatz.
 
+## Projektkontext (Kurzüberblick)
+
+- Überblick, Setup und Deployment: `README.md`; fachliche Anforderungen und Berechnungslogik: `docs/projektbeschreibung-anwesenheits-app.md`; Datenmodell: `src/types/models.ts`.
+- Berechnungslogik liegt in `src/lib/` (z. B. `attendance.ts`, `vacation.ts`, `arbeitszeit.ts`, `commute.ts`, `steuern.ts`), UI in `src/components/`.
+- Prüfen vor einem PR: `npm run build` (tsc + vite) und `npm run lint`. Automatisierte Tests gibt es noch nicht (Issue #66).
+- Die CI deployt nur das Firebase **Hosting**. Änderungen an `firestore.rules`/`firestore.indexes.json` müssen separat deployt werden (`firebase deploy --only firestore`) — im PR darauf hinweisen.
+- `vercel-api/` ist ein eigenes Vercel-Projekt (Beleg-Auslesung per Mistral) und wird nicht über die Firebase-Pipeline deployt.
+- Bei neuen Features oder geänderter Logik `README.md` (Status) und die Projektbeschreibung mitpflegen.
+
 ## Standard-Workflow für neue Anforderungen
 
 "Ticket" = GitHub Issue in diesem Repo.

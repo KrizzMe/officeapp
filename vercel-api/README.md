@@ -1,7 +1,7 @@
 # vercel-api — Beleg-Auslesung (Issue #79)
 
-Kleine Serverfunktion, die ein Belegfoto per Mistral Vision in Rechnungsdaten
-übersetzt. Läuft als **eigenes Vercel-Projekt** neben dem Firebase Hosting der App
+Kleine Serverfunktion, die Belegfotos, gescannte PDF-Seiten oder den Text digitaler PDFs
+per Mistral in Rechnungsdaten übersetzt. Läuft als **eigenes Vercel-Projekt** neben dem Firebase Hosting der App
 (die App selbst bleibt unverändert auf Firebase).
 
 ## Einrichtung (einmalig)
@@ -26,4 +26,5 @@ Kleine Serverfunktion, die ein Belegfoto per Mistral Vision in Rechnungsdaten
 `{ "imageDataUrls": ["data:image/jpeg;base64,…"], "kategorien": ["Büromaterial", …] }` (bis zu 8 Bilder, z. B. die Seiten eines gescannten PDFs oder mehrere Fotos) oder statt der Bilder `{ "text": "…", "kategorien": […] }` mit dem Text eines digitalen PDFs.
 Antwort: siehe `BelegResult` in `api/extract-beleg.ts`.
 
-Das Bild wird weder gespeichert noch geloggt.
+Bilder und Text werden weder gespeichert noch geloggt. Die Funktion prüft das Firebase-ID-Token
+(nur angemeldete App-Nutzer); Browser-Aufrufe (CORS) sind nur von den in `ALLOWED_ORIGINS` eingetragenen Origins erlaubt.
